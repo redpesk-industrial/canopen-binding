@@ -1,0 +1,82 @@
+{
+    "$schema": "http://iot.bzh/download/public/schema/json/ctl-schema.json",
+    "metadata": {
+      "uid": "canopen-svc",
+      "version": "1.0",
+      "api": "canopen",
+      "info": "Set up can0 at the beat rate selected on the module"
+    },
+    "plugins": [
+      {
+        "uid": "Virtual-CANopen",
+        "info": "Plugin to handle user custom registry encoding/decoding",
+        "spath": "package/lib/:./lib/plugins:./var",
+        "libs": [
+          "kingpigeon.ctlso"
+        ]
+      }
+    ], 
+    "canopen": [
+      {
+        "uid": "CANopen_Master",
+        "info": "CANopen Master",
+        "uri" : "vcan0",
+        "nodId": 1,
+        "dcf": "coapp-fiber-master.dcf",
+        "slaves": [
+          {
+            "uid": "Virtual-CANopen-slave-1",
+            "info": "Virtual CANopen slave 1",
+            "prefix": "Slave1",
+            "nodId": 127,
+            "sensors": [
+              {
+                "uid": "DIN01_STATUS",
+                "type": "Coil_Input",
+                "format" : "BOOL",
+                "register" : 0
+              },
+              {
+                "uid": "D01_FREQUENCY",
+                "type": "Register_Holding",
+                "format" : "INT32",
+                "register" : 7
+              },
+              {
+                "uid": "D01_DUTY",
+                "type": "Register_Holding",
+                "format" : "INT16",
+                "register" : 9
+              }
+            ]
+          },
+          {
+            "uid": "Virtual-CANopen-slave-2",
+            "info": "Virtual CANopen slave 2",
+            "prefix": "Slave2",
+            "nodId": 2,
+            "sensors": [
+              {
+                "uid": "DIN01_STATUS",
+                "type": "Coil_Input",
+                "format" : "BOOL",
+                "register" : 0
+              },
+              {
+                "uid": "D01_FREQUENCY",
+                "type": "Register_Holding",
+                "format" : "INT32",
+                "register" : 7
+              },
+              {
+                "uid": "D01_DUTY",
+                "type": "Register_Holding",
+                "format" : "INT16",
+                "register" : 9
+              }
+            ]
+          }
+        ]
+      }
+    ]
+}
