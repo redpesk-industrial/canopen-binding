@@ -10,9 +10,9 @@
 #include <lely/coapp/fiber_driver.hpp>
 #include <lely/coapp/master.hpp>
 
-//#include <iostream>
 #include <map>
 #include <iostream>
+#include <systemd/sd-event.h>
 //#include <poll.h>
 
 #define NUM_OP 8
@@ -20,6 +20,7 @@
 class CANopenDriver : public lely::canopen::FiberDriver {
   public:
     using lely::canopen::FiberDriver::FiberDriver;
+    //CANopenDriver::CANopenDriver();
 
   private:
     /*void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override;
@@ -85,21 +86,27 @@ class CANopenDriver : public lely::canopen::FiberDriver {
 
 class AglCANopen{
   public:
+    AglCANopen();
     AglCANopen(const char * uri, const char * dcfFile, uint8_t nodId = 1);
-    int addslave(int slaveId);
+    void init(const char * uri, const char * dcfFile, uint8_t nodId = 1);
+    void addSlave(int slaveId);
     bool chanIsOpen();
+    void start();
+    void start(sd_event *e);
     ~AglCANopen();
   
   private:
-    lely::io::Context ctx;
-    lely::io::Poll poll = lely::io::Poll(ctx);
-    lely::io::FdLoop loop = lely::io::FdLoop(poll);
-    lely::ev::Executor exec = loop.get_executor();
-    lely::io::Timer timer = lely::io::Timer(poll, exec, CLOCK_MONOTONIC);
-    lely::io::CanController * ctrl;
-    lely::io::CanChannel chan = lely::io::CanChannel(poll, exec);
-    lely::canopen::AsyncMaster * master;
-    std::map<int, CANopenDriver> Drivers;
+    lely::io::Context m_ctx;
+    lely::io::Poll m_poll {m_ctx};
+    lely::io::FdLoop m_loop = lely::io::FdLoop(m_poll);
+    lely::ev::Executor m_exec = m_loop.get_executor();
+    lely::io::Timer m_timer = lely::io::Timer(m_poll, m_exec, CLOCK_MONOTONIC);
+    std::shared_ptr<lely::io::CanController> m_ctrl;
+    lely::io::CanChannel m_chan = lely::io::CanChannel(m_poll, m_exec);
+    std::shared_ptr<lely::canopen::AsyncMaster> m_master;
+    std::map<int, std::shared_ptr<CANopenDriver>> m_drivers;
+    int m_handler(sd_event_source*, int, uint32_t, void* userdata);
+
 };
 
 #endif /* _CANOPEN_DRIVER_INCLUDE_ */

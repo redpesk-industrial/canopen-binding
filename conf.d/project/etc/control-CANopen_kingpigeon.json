@@ -4,7 +4,7 @@
       "uid": "canopen-svc",
       "version": "1.0",
       "api": "canopen",
-      "info": "Set up can0 at the beat rate selected on the module"
+      "info": "Meta inforamtions"
     },
     "plugins": [
       {

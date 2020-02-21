@@ -57,17 +57,40 @@ void CANopenDriver::OnSync(uint8_t cnt, const lely::canopen::DriverBase::time_po
     }
 }*/
 
+
+
 AglCANopen::AglCANopen(const char * uri, const char * dcfFile, uint8_t nodId){
-    ctrl = new lely::io::CanController(uri);
-    chan.open(*ctrl);
-    master = new lely::canopen::AsyncMaster(timer, chan, dcfFile, "", nodId);
+    m_ctrl = std::make_shared<lely::io::CanController>(uri);
+    m_chan.open(*m_ctrl);
+    m_master = std::make_shared<lely::canopen::AsyncMaster>(m_timer, m_chan, dcfFile, "", nodId);
+}
+
+void AglCANopen::addSlave(int slaveId){
+    m_drivers[slaveId] = std::make_shared<CANopenDriver>(m_exec, *m_master, slaveId);
 }
 
 bool AglCANopen::chanIsOpen(){
-    return chan.is_open();
+    return m_chan.is_open();
 }
 
-AglCANopen::~AglCANopen(){
-    free(ctrl);
-    free(master);
+void AglCANopen::start(){
+    m_master->Reset();
 }
+
+void AglCANopen::start(sd_event *e){
+    m_master->Reset();
+    struct sd_event_source* event_source = nullptr;
+    auto handler = [](sd_event_source*, int, uint32_t, void* userdata) {
+        lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
+        poll.wait(0);
+        return 0;
+    };
+    auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(m_poll.get_poll())));
+    sd_event_add_io(e, &event_source, m_poll.get_fd(), EPOLLIN, handler, userdata);
+}
+
+int AglCANopen::m_handler(sd_event_source*, int, uint32_t, void* userdata) {
+        lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
+        poll.wait(0);
+        return 0;
+    }

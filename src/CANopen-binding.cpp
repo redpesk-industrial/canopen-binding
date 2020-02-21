@@ -201,6 +201,8 @@ static int SensorLoadOne(afb_api_t api, CANopenSlaveT *slave, CANopenSensorT *se
 static int SlaveLoadOne(afb_api_t api, CANopenRtuT *rtu, CANopenSlaveT *slave, json_object *slaveJ) {
     int err = 0;
     json_object *sensorsJ = NULL;
+    CtlConfigT *ctrlConfig = (CtlConfigT*)afb_api_get_userdata(api);
+    AglCANopen *CanMaster = (AglCANopen*)ctrlConfig->external;
 
     // should already be allocated
     assert (slaveJ);
@@ -245,8 +247,9 @@ static int SlaveLoadOne(afb_api_t api, CANopenRtuT *rtu, CANopenSlaveT *slave, j
             AFB_API_ERROR(api, "CANopenLoadOne: fail to find =%s", slave->dcf);
             return ERROR;
         }
-        canMaster.addSlave(slave->nodId, dcfFile);
+        CanMaster.addSlave(slave->nodId, dcfFile);
     }*/
+    CanMaster->addSlave(slave->nodId);
     return 0;
 }
 
@@ -254,7 +257,8 @@ static int CANopenLoadOne(afb_api_t api, CANopenRtuT *rtu, json_object *rtuJ) {
     int err = 0;
     //json_object *sensorsJ = NULL;
     json_object *slavesJ = NULL;
-
+    CtlConfigT *ctrlConfig = nullptr;
+    AglCANopen *CanMaster = nullptr;
     // should already be allocated
     assert (rtuJ); 
     assert (api);
@@ -279,10 +283,13 @@ static int CANopenLoadOne(afb_api_t api, CANopenRtuT *rtu, json_object *rtuJ) {
     }
     //std::cout << "DCF file found : " << dcfFile << std::endl;
     // if uri is provided let's try to connect now
+    
     if (rtu->uri) {
         //err = CANopenRtuConnect (api, rtu);
-        AglCANopen canMaster(rtu->uri, dcfFile, rtu->nodId);
-        if (!canMaster.chanIsOpen()) {
+        ctrlConfig = (CtlConfigT*)afb_api_get_userdata(api);
+        CanMaster = new AglCANopen(rtu->uri, dcfFile, rtu->nodId);
+        ctrlConfig->external = CanMaster;
+        if (!CanMaster->chanIsOpen()) {
             AFB_API_ERROR(api, "CANopenLoadOne: fail to connect can uid=%s uri=%s", rtu->uid, rtu->uid);
             return ERROR;
         }
@@ -304,6 +311,18 @@ static int CANopenLoadOne(afb_api_t api, CANopenRtuT *rtu, json_object *rtuJ) {
         if (err) return ERROR;
     }
 
+    //CanMaster->start();
+    CanMaster->start(afb_daemon_get_event_loop());
+    /*struct sd_event_source* event_source = nullptr;
+
+    auto handler = [](sd_event_source*, int, uint32_t, void* userdata) {
+        lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
+        poll.wait(0);
+        return 0;
+    };
+    auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(CanMaster-> poll.get_poll())));
+    sd_event_add_io(afb_daemon_get_event_loop(), &event_source, poll.get_fd(), EPOLLIN, handler, userdata);
+    */
     return 0;   
 }
 
