@@ -27,6 +27,7 @@
 #include <filescan-utils.h>
 
 #include <iostream> //temp
+#include <map>
 
 #define ERROR -1
 
@@ -66,7 +67,7 @@ static char* fullPathToDCF(afb_api_t api, const char *dcfFile){
 // retrieval in HalConfigExec)
 static CtlSectionT ctrlSections[] = {
     //{ .key = "plugins", .loadCB = PluginConfig, .handle= mbEncoderRegister},
-    { .key = "onload", .uid = nullptr, .info = nullptr, .loadCB = OnloadConfig, .handle = nullptr, .actions = nullptr },
+    //{ .key = "onload", .uid = nullptr, .info = nullptr, .loadCB = OnloadConfig, .handle = nullptr, .actions = nullptr },
     { .key = "canopen", .uid = nullptr, .info = nullptr, .loadCB = CANopenConfig, .handle = nullptr, .actions = nullptr },
     { .key = nullptr, .uid = nullptr, .info = nullptr, .loadCB = nullptr,  .handle = nullptr, .actions = nullptr }
 };
@@ -326,7 +327,7 @@ static int CANopenLoadOne(afb_api_t api, CANopenRtuT *rtu, json_object *rtuJ) {
     return 0;   
 }
 
-static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ) {
+/*static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ) {
     CANopenRtuT *rtus;
     int err;
 
@@ -353,6 +354,39 @@ static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ
 
     // add static controls verbs
     err = CtrlLoadStaticVerbs (api, CtrlApiVerbs, (void*) rtus);
+    if (err) {
+        AFB_API_ERROR(api, "CtrlLoadOneApi fail to Registry static API verbs");
+        return ERROR;
+    }
+    
+    return 0;
+    AFB_API_ERROR (api, "Fail to initialise CANopen check Json Config");
+    return -1;    
+}*/
+
+static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ) {
+    //CANopenRtuT *rtus;
+    int err;
+    //std::map<int,std::shared_ptr<AglCANopen>> *CANopenMasters;
+    AglCANopen *CANopenMaster;
+
+    // everything is done during initial config call
+    if (!rtusJ) return 0;
+
+    // Canopen can only have one Master;
+    if (json_object_is_type(rtusJ, json_type_array)) {
+        AFB_API_ERROR(api, "CANopenConfig : Multiple CANopen forbiden");
+        return ERROR;
+    }
+
+    //std::cout << "DEBEUG INFO : rtuJ = " << json_object_to_json_string(rtusJ) << "\n";
+
+    CANopenMaster = new AglCANopen(api, rtusJ, afb_daemon_get_event_loop());
+    if (!CANopenMaster->isRuning()) return ERROR;
+
+
+    // add static controls verbs
+    err = CtrlLoadStaticVerbs (api, CtrlApiVerbs, (void*) CANopenMaster);
     if (err) {
         AFB_API_ERROR(api, "CtrlLoadOneApi fail to Registry static API verbs");
         return ERROR;
