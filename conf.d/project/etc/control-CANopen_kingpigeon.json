@@ -24,32 +24,6 @@
     "dcf": "coapp-fiber-master.dcf",
     "slaves": [
       {
-        "uid": "Virtual-CANopen-slave-1",
-        "info": "Virtual CANopen slave 1",
-        "prefix": "Slave1",
-        "nodId": 127,
-        "sensors": [
-          {
-            "uid": "DIN01_STATUS",
-            "type": "Coil_Input",
-            "format" : "BOOL",
-            "register" : 0
-          },
-          {
-            "uid": "D01_FREQUENCY",
-            "type": "Register_Holding",
-            "format" : "INT32",
-            "register" : 7
-          },
-          {
-            "uid": "D01_DUTY",
-            "type": "Register_Holding",
-            "format" : "INT16",
-            "register" : 9
-          }
-        ]
-      },
-      {
         "uid": "CANopen-slave-2",
         "info": "CANopen slave 2",
         "prefix": "Slave2",

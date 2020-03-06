@@ -9,19 +9,39 @@
 #include <lely/io2/sys/timer.hpp>
 #include <lely/coapp/fiber_driver.hpp>
 #include <lely/coapp/master.hpp>
+#include <lely/coapp/slave.hpp>
+
 
 #include <map>
 #include <array>
 #include <iostream>
 #include <systemd/sd-event.h>
-//#include <poll.h>
+#include <poll.h>
 #include <afb/afb-binding>
 
 #define NUM_OP 8
-#define MAX_CANOPEN_SLAVES 127
-#define MAX_CANOPEN_SENSORS 64
 
 class CANopenSensor;
+
+/* FOR DEBUG
+class MySlave : public lely::canopen::BasicSlave {
+ public:
+  using lely::canopen::BasicSlave::BasicSlave;
+
+ private:
+  void
+  OnSync(uint8_t, const time_point&) noexcept override {
+    uint32_t val = (*this)[0x2002][0];
+    printf("slave: sent PDO with value %d\n", val);
+
+    val = (*this)[0x2001][0];
+    printf("slave: received PDO with value %d\n", val);
+    // Echo the value back to the master on the next SYNC.
+    (*this)[0x2002][0] = val;
+  }
+};
+//*/
+
 class CANopenSlaveDriver : public lely::canopen::FiberDriver {
   public:
     using lely::canopen::FiberDriver::FiberDriver;
@@ -46,6 +66,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     }
     
     //uint8_t nodId();
+    afb_req_t m_current_req;
 
   private:
     const char * m_uid;
@@ -62,27 +83,40 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override;
     void OnDeconfig(::std::function<void(::std::error_code ec)> res) noexcept override;
     void OnSync(uint8_t cnt, const lely::canopen::DriverBase::time_point&) noexcept override;*/
+    
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
+        std::cout << m_prefix << " ON RPDO WRITE" << std::endl;
         if (idx == 0x2002 && subidx == 0){
-            uint32_t val = rpdo_mapped[idx][subidx];
+            uint8_t val = rpdo_mapped[idx][subidx];
             printf("master: received object 2002:00 : %x\n", val);
+            //uint8_t i = tpdo_mapped[0x2001][0];
+            //tpdo_mapped[0x2001][0] = i++;
+            //printf("master: sent PDO with value %d\n", i);
         }
     //uint32_t val = rpdo_mapped[idx][subidx];
     //tap_test(val == (n_ > 3 ? n_ - 3 : 0));
     }
 
-    void OnBoot(lely::canopen::NmtState, char es, const ::std::string&) noexcept override {
+    void OnBoot(lely::canopen::NmtState nmtState, char es, const ::std::string&) noexcept override {
+        std::cout << m_prefix << " ON BOOT" << std::endl;
+        //if(nmtState == lely::canopen::NmtState::PREOP) master.Command(lely::canopen::NmtCommand::START); 
         if(!es) printf("master: slave #%d successfully booted\n", id());
         // Start SYNC production.
         master[0x1006][0] = UINT32_C(1000000);
     }
 
     void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override {
+        std::cout << m_prefix << " ON CONFIG" << std::endl;
         try {
             printf("master: configuring slave #%d\n", id());
 
-            Wait(AsyncWrite<::std::string>(0x2000, 0, "Hello, world!"));
-            auto value = Wait(AsyncRead<::std::string>(0x2000, 0));
+            Wait(AsyncWrite<uint8_t>(0x6200, 0x01, 0x01));
+            Wait(AsyncWrite<uint16_t>(0x1800, 0x05, 0x0000));
+            Wait(AsyncWrite<uint32_t>(0x1802, 0x01, 0x80000382));
+            //Wait(AsyncWrite<uint32_t>(0x1400, 0x01, 0x00000181));
+
+
+            auto value = Wait(AsyncRead<uint32_t>(0x6200, 0x01));
             std::cout << "On config receved : " <<  value << std::endl;
 
             res({});
@@ -92,28 +126,32 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     }
 
     void OnDeconfig(::std::function<void(::std::error_code ec)> res) noexcept override {
+        std::cout << m_prefix << " ON DECONFIG" << std::endl;
         printf("master: deconfiguring slave #%d\n", id());
         res({});
     }
 
     void OnSync(uint8_t cnt, const lely::canopen::DriverBase::time_point&) noexcept override{
-        printf("master: sent SYNC #%d\n", cnt);
+        
+        //std::cout << m_prefix << " ON SYNC" << std::endl;
+        
+        //printf("master: sent SYNC #%d\n", cnt);
 
         // Object 2001:00 on the slave was updated by a PDO from the master.
-        uint32_t val = tpdo_mapped[0x2001][0];
+        uint8_t val = rpdo_mapped[0x2002][0];
         printf("master: sent PDO with value %d\n", val);
         // Increment the value for the next SYNC.
-        tpdo_mapped[0x2001][0] = ++val;
+        tpdo_mapped[0x2001][0] = val;
 
         // Initiate a clean shutdown.
-        if (++n_ >= NUM_OP){
+        /*if (++n_ >= NUM_OP){
             master.AsyncDeconfig(id()).submit(
                 GetExecutor(),
                 [&]() {
                     master.GetContext().shutdown();
                 }
             );
-        }
+        }*/
     }
     uint32_t n_{0};
 };
@@ -134,9 +172,11 @@ class AglCANopen{
     }
     void start();
     void start(sd_event *e);
+
     ~AglCANopen();
   
   private:
+    lely::io::IoGuard m_IoGuard;
     lely::io::Context m_ctx;
     lely::io::Poll m_poll;
     lely::io::FdLoop m_loop;
@@ -153,6 +193,11 @@ class AglCANopen{
     //std::map<int, std::shared_ptr<CANopenSlaveDriver>> m_slaves;
     std::vector<std::shared_ptr<CANopenSlaveDriver>> m_slaves;
     bool m_isRuning = false;
+
+    /* FOR BEBUG
+    lely::io::CanChannel m_schan;
+    std::shared_ptr<MySlave> m_vslaves;
+    //*/
 };
 
 class CANopenSensor{

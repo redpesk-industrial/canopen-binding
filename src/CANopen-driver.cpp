@@ -3,12 +3,40 @@
 #include <ctl-config.h>
 
 #include <string.h>
-#include <iostream> //temp
+//#include <iostream> //temp
+#include <net/if.h>
+#include <sys/types.h>
+//#include <sys/socket.h>
+#include <sys/ioctl.h>
+//#include <lely/ev/future.hpp>
+
+
+static int aglCANopenHandler(sd_event_source*, int, uint32_t, void* userdata) {
+    lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
+    poll.wait(0);
+    return 0;
+}
+
+static int socketTxQline(std::string ifname){
+    int s;
+    struct ifreq ifr;
+    strcpy(ifr.ifr_name, ifname.c_str());
+    if((s = socket(PF_CAN, SOCK_RAW, 1)) < 0) {
+		std::cout << "Error while opening socket : " << ifname << " not reachable\n";
+		return -1;
+	}
+    if(ioctl(s, SIOCGIFTXQLEN, &ifr)<0){
+        std::cout << "Error : Could not assess " << ifname << " informations\n";
+        return -1;
+    }
+    return ifr.ifr_qlen;
+}
 
 static void slaveDynRequest(afb_req_t request){
     json_object * queryJ = afb_req_json(request);
     CANopenSlaveDriver * slave = (CANopenSlaveDriver *) afb_req_get_vcbdata(request);
-    slave->request (request, queryJ);
+    //slave->Post(slave->request(request, queryJ));
+    slave->request(request, queryJ);
 }
 
 static void sensorDynRequest(afb_req_t request){
@@ -53,6 +81,7 @@ AglCANopen::AglCANopen(const char * uri, const char * dcfFile, uint8_t nodId)
     , m_exec {m_loop.get_executor()}
     , m_timer {m_poll, m_exec, CLOCK_MONOTONIC}
     , m_chan {m_poll, m_exec}
+    //, m_schan {m_poll, m_exec} //FOR DEBUG
      
 {
     m_ctrl = std::make_shared<lely::io::CanController>(uri);
@@ -66,6 +95,7 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ,sd_event *e, uint8_t nod
     , m_exec {m_loop.get_executor()}
     , m_timer {m_poll, m_exec, CLOCK_MONOTONIC}
     , m_chan {m_poll, m_exec}
+    //, m_schan {m_poll, m_exec} //FOR DEBUG
 {
     int err = 0;
     //json_object *sensorsJ = NULL;
@@ -101,14 +131,39 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ,sd_event *e, uint8_t nod
     
     //err = CANopenRtuConnect (api, rtu);
     try{
+        // On linux fisical can the default TX queue length is 10. CanController sets
+        // it to 128 if it is too small, which requires the CAP_NET_ADMIN capability
+        // (the reason for this is to ensure proper blocking and polling behavior, see
+        // section 3.4 in https://rtime.felk.cvut.cz/can/socketcan-qdisc-final.pdf).
+        // There are two ways to avoid the need for sudo:
+        // * Increase the size of the transmit queue : ip link set can0 txqueuelen 128
+        // * Set CanController TX queue lengt to linux default : CanController ctrl("can0", 10)
+        //   but this may cause frames to be dropped.
         m_ctrl = std::make_shared<lely::io::CanController>(m_uri);
     }catch(std::system_error & e){
-        err = get_errc();
-        std::cout << "ERROR : err = " << err << "\n";
-        std::cout << "Caught system_error with code " << e.code() 
-                  << " meaning " << e.what() << '\n';
+        std::cout << e.what() << std::endl;
+        int txqlen = socketTxQline(m_uri);
+        if( txqlen > -1 && txqlen < 128)
+            std::cout << "ERROR : " << m_uri << " TX queue length is curently " << txqlen << ", this is to short. The  minimum requiered is 128\n";
     }
+
     
+    /* FOR DEBUG creating an actual slave
+    std::cout << "DEBUG : creating virtual slave !!!!!!!" << std::endl;
+    m_schan.open(*m_ctrl);
+    if(!m_schan.is_open()){
+        AFB_API_ERROR(api, "AglCANopen::AglCANopen: fail to creat virtual slave");
+        return;
+    }
+    const char * slaveDCF = fullPathToDCF(api, "coapp-fiber-slave.dcf");
+    if (!strlen(slaveDCF)){
+        AFB_API_ERROR(api, "AglCANopen::AglCANopen: fail to find =%s", slaveDCF);
+        return;
+    }
+    m_vslaves = std::make_shared<MySlave>(m_timer, m_schan, slaveDCF, "", 0x02);
+    m_vslaves->Reset();
+    //*/
+
     m_chan.open(*m_ctrl);
     m_master = std::make_shared<lely::canopen::AsyncMaster>(m_timer, m_chan, m_dcf, "", m_nodId);
     if (!m_chan.is_open()) {
@@ -134,8 +189,12 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ,sd_event *e, uint8_t nod
     }
 
     //CanMaster->start();
-    this->start(afb_daemon_get_event_loop());
-
+    //this->start(afb_daemon_get_event_loop());
+    m_master->Reset();
+    struct sd_event_source* event_source = nullptr;
+    auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(m_poll.get_poll())));
+    err = sd_event_add_io(afb_daemon_get_event_loop(), &event_source, m_poll.get_fd(), EPOLLIN, aglCANopenHandler, userdata);
+    if(err == 0) m_isRuning = true;
 }
 
 void AglCANopen::addSlave(int slaveId){
@@ -146,18 +205,18 @@ void AglCANopen::start(){
     m_master->Reset();
 }
 
-void AglCANopen::start(sd_event *e){
-    m_master->Reset();
-    struct sd_event_source* event_source = nullptr;
-    auto handler = [](sd_event_source*, int, uint32_t, void* userdata) {
-        lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
-        poll.wait(0);
-        return 0;
-    };
-    auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(m_poll.get_poll())));
-    int err = sd_event_add_io(e, &event_source, m_poll.get_fd(), EPOLLIN, handler, userdata);
-    if(err == 0) m_isRuning = true;
-}
+// void AglCANopen::start(sd_event *e){
+//     m_master->Reset();
+//     struct sd_event_source* event_source = nullptr;
+//     auto handler = [](sd_event_source*, int, uint32_t, void* userdata) {
+//         lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
+//         poll.wait(0);
+//         return 0;
+//     };
+//     auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(m_poll.get_poll())));
+//     int err = sd_event_add_io(e, &event_source, m_poll.get_fd(), EPOLLIN, handler, userdata);
+//     if(err == 0) m_isRuning = true;
+// }
 
 CANopenSlaveDriver::CANopenSlaveDriver(
         ev_exec_t * exec,
@@ -224,16 +283,17 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
     const char *action;
     json_object *dataJ = nullptr;
     json_object *responseJ = nullptr;
-    uint16_t idx;
-    uint8_t subidx;
-    uint32_t val;
+    int idx;
+    int subidx;
+    int val;
+    int size;
     int err;
 
     /*if (!m_context) {
         afb_req_fail_f(
             request,
             "not-connected",
-            "CANopenSensor::request: RTU not connected rtu=%s sensor=%s query=%s",
+            "CANopenSlaveDriver::request: RTU not connected rtu=%s sensor=%s query=%s",
             m_slave->uid(),
             m_uid,
             json_object_get_string(queryJ)
@@ -241,7 +301,7 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         return;
     };*/
 
-    std::cout << "DEBUG : \"" << m_prefix << "\" have been caled with argument : " << json_object_get_string(queryJ) << "\n";
+    //std::cout << "DEBUG : \"" << m_prefix << "\" have been caled with argument : " << json_object_get_string(queryJ) << "\n";
 
     err= wrap_json_unpack(queryJ, "{ss s?o !}",
         "action", &action,
@@ -252,29 +312,53 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         afb_req_fail_f(
             request,
             "query-error",
-            "CANopenSensor::request: invalid 'json' rtu=%s query=%s",
+            "CANopenSlaveDriver::request: invalid 'json' rtu=%s query=%s",
             m_prefix, json_object_get_string(queryJ)
         );
         return;
     }
 
     if (!strcasecmp (action, "WRITE")) {
-        err= wrap_json_unpack(dataJ, "{si si si !}",
+        err= wrap_json_unpack(dataJ, "{si si si si!}",
             "id", &idx,
             "subid", &subidx,
-            "val", &val
+            "val", &val,
+            "size", &size
         );
 
         if (err) {
             afb_req_fail_f(
                 request,
                 "query-error",
-                "CANopenSensor::request: invalid %s action data 'json' rtu=%s data=%s",
+                "CANopenSlaveDriver::request: invalid %s action data 'json' rtu=%s data=%s",
                 action, m_uid, json_object_get_string(dataJ)
             );
             return;
         }
-        AsyncWrite(idx, subidx, val);
+        printf("DEBUG : SDO write to %s[%x][%x] val %x\n with %d bytes", m_prefix, idx, subidx, val, size);
+        switch (size)
+        {
+        case 1:
+            AsyncWrite<uint8_t>(idx, subidx, val);
+            break;
+        case 2:
+            AsyncWrite<uint16_t>(idx, subidx, val);
+            break;
+        case 3:
+            AsyncWrite<uint32_t>(idx, subidx, val);
+            break;
+        case 4:
+            AsyncWrite<uint32_t>(idx, subidx, val);
+            break;
+        default:
+            afb_req_fail_f(
+                request,
+                "query-error",
+                "CANopenSlaveDriver::request: invalid size %d. Avalable size (in byte) are 1, 2, 3 or 4",
+                size
+            );
+            break;
+        }
 
     } else if (!strcasecmp (action, "READ")) {
         err= wrap_json_unpack(dataJ, "{si si !}",
@@ -291,8 +375,17 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
             );
             return;
         }
-        val = Wait(AsyncRead<uint32_t>(idx, subidx));
-        responseJ = json_object_new_int(val);
+
+        m_current_req = request;
+        afb_req_addref(m_current_req);
+
+        Post([this, request, idx, subidx]() {
+            auto v = Wait(AsyncRead<uint32_t>((uint16_t)idx, (uint8_t)subidx));
+            std::cout << "Async read of slave " << (int)id() << " [" << std::hex << idx << "]:[" << subidx << "] returned " << v << std::endl;
+            afb_req_success(request, json_object_new_int(v), NULL);
+            afb_req_unref(request);
+        });
+        return;
 
     } /*else if (!strcasecmp (action, "SUBSCRIBE")) {
         err= this->eventCreate (&responseJ);
@@ -305,30 +398,15 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
             err=afb_req_unsubscribe(request, m_event); 
             if (err) goto OnSubscribeError;
         }
-    }*/ else {
+    }*/
+    else {
         afb_req_fail_f (request, "syntax-error", "CANopenSensor::request: action='%s' UNKNOWN rtu=%s query=%s"
             , action, m_uid, json_object_get_string(queryJ));
         return; 
     }
-  
     // everything looks good let's response
     afb_req_success(request, responseJ, NULL);
     return;
-
-    /*OnWriteError:
-        afb_req_fail_f (request, "write-error", "CANopenSensor::request: fail to write data=%s rtu=%s sensor=%s error=%s"
-            , json_object_get_string(dataJ), m_uid, sensor->uid, CANopen_strerror(errno));
-        return; 
-
-    OnReadError:
-        afb_req_fail_f (request, "read-error", "CANopenSensor::request: fail to read rtu=%s sensor=%s error=%s"
-        , m_uid, sensor->uid, CANopen_strerror(errno)); 
-        return;
-
-    OnSubscribeError:
-        afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to subscribe rtu=%s sensor=%s error=%s"
-        , m_uid, sensor->uid, CANopen_strerror(errno)); 
-        return;*/
 }
 
 CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveDriver * slaveDriver)

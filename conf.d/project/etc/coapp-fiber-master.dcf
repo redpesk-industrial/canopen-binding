@@ -9,7 +9,7 @@ BaudRate_250=1
 BaudRate_500=1
 BaudRate_800=1
 BaudRate_1000=1
-LSS_Supported=1
+LSS_Supported=0
 NrOfRxPDO=4
 NrOfTxPDO=4
 CompactPDO=0x3f
@@ -120,7 +120,7 @@ DefaultValue=4
 ParameterName=Vendor-ID
 DataType=0x0007
 AccessType=ro
-DefaultValue=0x00000360
+DefaultValue=60000
 
 [1018sub2]
 ParameterName=Product code
@@ -152,13 +152,13 @@ DefaultValue=0x02
 ParameterName=COB-ID used by RPDO
 DataType=0x0007
 AccessType=rw
-DefaultValue=0x1FF
+DefaultValue=0x182
 
 [1400sub2]
 ParameterName=Transmission type
 DataType=0x0005
 AccessType=rw
-DefaultValue=0x01
+DefaultValue=255
 
 [1600]
 ParameterName=RPDO mapping parameter
@@ -169,7 +169,7 @@ CompactSubObj=1
 
 [1600Value]
 NrOfEntries=1
-1=0x20020020
+1=0x20020008
 
 [1800]
 SubNumber=3
@@ -186,7 +186,7 @@ DefaultValue=0x02
 ParameterName=COB-ID used by TPDO
 DataType=0x0007
 AccessType=rw
-DefaultValue=$NODEID+0x180
+DefaultValue=0x202
 
 [1800sub2]
 ParameterName=Transmission type
@@ -203,7 +203,7 @@ CompactSubObj=1
 
 [1A00Value]
 NrOfEntries=1
-1=0x20010020
+1=0x20010008
 
 [1F80]
 ParameterName=NMT startup
@@ -220,17 +220,17 @@ CompactSubObj=127
 
 [1F81Value]
 NrOfEntries=1
-127=0x00000005
+2=0x00000005
 
 [2001]
 ParameterName=TPDO test
-DataType=0x0007
+DataType=0x0005
 AccessType=rw
 PDOMapping=1
 
 [2002]
 ParameterName=RPDO test
-DataType=0x0007
+DataType=0x0005
 AccessType=rw
 PDOMapping=1
 
@@ -238,7 +238,7 @@ PDOMapping=1
 ParameterName=Remote TPDO number and node-ID
 DataType=0x0007
 AccessType=rw
-DefaultValue=0x0000017f
+DefaultValue=0x00000102
 
 [5A00]
 ParameterName=Remote TPDO mapping
@@ -249,13 +249,13 @@ CompactSubObj=1
 
 [5A00Value]
 NrOfEntries=1
-1=0x20020020
+1=0x20020008
 
 [5C00]
 ParameterName=Remote RPDO number and node-ID
 DataType=0x0007
 AccessType=rw
-DefaultValue=0x0000017f
+DefaultValue=0x00000102
 
 [5E00]
 ParameterName=Remote RPDO mapping
@@ -266,4 +266,4 @@ CompactSubObj=1
 
 [5E00Value]
 NrOfEntries=1
-1=0x20010020
+1=0x20010008
