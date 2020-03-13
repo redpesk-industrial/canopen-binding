@@ -20,7 +20,8 @@
 
 // Le contexte de sensor loader au moment de l'API n'est retrouvé avec le request ****
 
-#include "CANopen-driver.hpp" /*1*/
+#include "AglCANopen.hpp"
+//#include "CANopen-driver.hpp" /*1*/
 #include "CANopen-binding.hpp" /*2*/
 
 #include <ctl-config.h>
@@ -29,39 +30,41 @@
 #include <iostream> //temp
 #include <map>
 
-#define ERROR -1
+#ifndef ERROR
+  #define ERROR -1
+#endif
 
 static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ);
 
-static char* fullPathToDCF(afb_api_t api, const char *dcfFile){
+// static char* fullPathToDCF(afb_api_t api, const char *dcfFile){
     
-    int err = 0;
+//     int err = 0;
 
-    char *fullpath = nullptr;
-    char *filename = nullptr;
+//     char *fullpath = nullptr;
+//     char *filename = nullptr;
 
-    //std::cout << "search for DCF file..." << std::endl;
+//     //std::cout << "search for DCF file..." << std::endl;
 
-    json_object * pathToDCF = ScanForConfig (CONTROL_CONFIG_PATH, CTL_SCAN_RECURSIVE, dcfFile, "");
+//     json_object * pathToDCF = ScanForConfig (CONTROL_CONFIG_PATH, CTL_SCAN_RECURSIVE, dcfFile, "");
     
-    if(!pathToDCF){
-        AFB_API_ERROR(api, "CANopenLoadOne: fail to find dcf file '%s'", dcfFile);
-        return nullptr;
-    }
-    err = wrap_json_unpack(pathToDCF, "[{ss, ss}]",
-                            "fullpath", &fullpath,
-                            "filename", &filename);
-    if (err) {
-        AFB_API_ERROR(api, "Fail to parse pathToDCF JSON : (%s)", json_object_to_json_string(pathToDCF));
-        return nullptr;
-    }
-    //std::cout << "pathToDCF = " << json_object_to_json_string(pathToDCF) << std::endl;
+//     if(!pathToDCF){
+//         AFB_API_ERROR(api, "CANopenLoadOne: fail to find dcf file '%s'", dcfFile);
+//         return nullptr;
+//     }
+//     err = wrap_json_unpack(pathToDCF, "[{ss, ss}]",
+//                             "fullpath", &fullpath,
+//                             "filename", &filename);
+//     if (err) {
+//         AFB_API_ERROR(api, "Fail to parse pathToDCF JSON : (%s)", json_object_to_json_string(pathToDCF));
+//         return nullptr;
+//     }
+//     //std::cout << "pathToDCF = " << json_object_to_json_string(pathToDCF) << std::endl;
 
-    strncat(fullpath, "/" , strlen(fullpath));
-    strncat(fullpath, dcfFile , strlen(fullpath));
+//     strncat(fullpath, "/" , strlen(fullpath));
+//     strncat(fullpath, dcfFile , strlen(fullpath));
 
-    return fullpath;
-}
+//     return fullpath;
+// }
 
 // Config Section definition (note: controls section index should match handle
 // retrieval in HalConfigExec)
@@ -127,7 +130,7 @@ static afb_verb_t CtrlApiVerbs[] = {
     /* VERB'S NAME         FUNCTION TO CALL         SHORT DESCRIPTION */
     { .verb = "ping", .callback = PingTest, .auth = nullptr, .info = "CANopen API ping test", .vcbdata = nullptr, .session = 0, .glob = 0},
     { .verb = "info", .callback = InfoRtu, .auth = nullptr, .info = "CANopen List RTUs", .vcbdata = nullptr, .session = 0, .glob = 0},
-    { .verb = NULL, .callback = nullptr, .auth = nullptr, .info = nullptr, .vcbdata = nullptr, .session = 0, .glob = 0} /* marker for end of the array */
+    { .verb = nullptr, .callback = nullptr, .auth = nullptr, .info = nullptr, .vcbdata = nullptr, .session = 0, .glob = 0} /* marker for end of the array */
 };
 
 static int CtrlLoadStaticVerbs (afb_api_t api, afb_verb_t *verbs, void *vcbdata) {
@@ -147,185 +150,185 @@ static int CtrlLoadStaticVerbs (afb_api_t api, afb_verb_t *verbs, void *vcbdata)
     CANopenRtuRequest (request, rtu, queryJ);
 }*/
 
-static void SensorDynRequest(afb_req_t request) {
+// static void SensorDynRequest(afb_req_t request) {
 
-    // retrieve action handle from request and execute the request
-    json_object *queryJ = afb_req_json(request);
-    CANopenSensorT* sensor = (CANopenSensorT*) afb_req_get_vcbdata(request);
-    CANopenSensorRequest (request, sensor, queryJ);
-}
+//     // retrieve action handle from request and execute the request
+//     json_object *queryJ = afb_req_json(request);
+//     CANopenSensorT* sensor = (CANopenSensorT*) afb_req_get_vcbdata(request);
+//     CANopenSensorRequest (request, sensor, queryJ);
+// }
 
-static int SensorLoadOne(afb_api_t api, CANopenSlaveT *slave, CANopenSensorT *sensor, json_object *sensorJ) {
-    int err = 0;
-    const char *type=NULL;
-    const char *format=NULL;
-    const char *privilege=NULL;
-    afb_auth_t *authent=NULL;
-    json_object *argsJ=NULL;
-    char* apiverb;
-    //CANopenSourceT source;
+// static int SensorLoadOne(afb_api_t api, CANopenSlaveT *slave, CANopenSensorT *sensor, json_object *sensorJ) {
+//     int err = 0;
+//     const char *type=NULL;
+//     const char *format=NULL;
+//     const char *privilege=NULL;
+//     afb_auth_t *authent=NULL;
+//     json_object *argsJ=NULL;
+//     char* apiverb;
+//     //CANopenSourceT source;
 
-    // should already be allocated
-    assert (sensorJ);
+//     // should already be allocated
+//     assert (sensorJ);
 
-    // set default values
-    memset(sensor, 0, sizeof (CANopenSensorT));
-    sensor->slave = slave;
-    //sensor->iddle = rtu->iddle;
-    sensor->count = 1;
+//     // set default values
+//     memset(sensor, 0, sizeof (CANopenSensorT));
+//     sensor->slave = slave;
+//     //sensor->iddle = rtu->iddle;
+//     sensor->count = 1;
 
-    err = wrap_json_unpack(sensorJ, "{ss,ss,si,s?s,s?s,s?s,s?i,s?i,s?i,s?o !}",
-                "uid", &sensor->uid,
-                "type", &type,
-                "register", &sensor->registry,
-                "info", &sensor->info,
-                "privilege", &privilege,
-                "format", &format,
-                "iddle", &sensor->iddle,
-                "count", &sensor->count,
-                "args", &argsJ);
-    if (err) {
-        AFB_API_ERROR(api, "SensorLoadOne: Fail to parse sensor: %s", json_object_to_json_string(sensorJ));
-        return ERROR;
-    }
+//     err = wrap_json_unpack(sensorJ, "{ss,ss,si,s?s,s?s,s?s,s?i,s?i,s?i,s?o !}",
+//                 "uid", &sensor->uid,
+//                 "type", &type,
+//                 "register", &sensor->registry,
+//                 "info", &sensor->info,
+//                 "privilege", &privilege,
+//                 "format", &format,
+//                 "iddle", &sensor->iddle,
+//                 "count", &sensor->count,
+//                 "args", &argsJ);
+//     if (err) {
+//         AFB_API_ERROR(api, "SensorLoadOne: Fail to parse sensor: %s", json_object_to_json_string(sensorJ));
+//         return ERROR;
+//     }
 
-    err = asprintf (&apiverb, "%s/%s", slave->prefix, sensor->uid);
-    err = afb_api_add_verb(api, (const char*) apiverb, sensor->info, SensorDynRequest, sensor, authent, 0, 0);
-    if (err) {
-        AFB_API_ERROR(api, "SensorLoadOne: fail to register API verb=%s", apiverb);
-        return ERROR;
-    }
+//     err = asprintf (&apiverb, "%s/%s", slave->prefix, sensor->uid);
+//     err = afb_api_add_verb(api, (const char*) apiverb, sensor->info, SensorDynRequest, sensor, authent, 0, 0);
+//     if (err) {
+//         AFB_API_ERROR(api, "SensorLoadOne: fail to register API verb=%s", apiverb);
+//         return ERROR;
+//     }
 
-    return 0;  
-}
+//     return 0;  
+// }
 
-static int SlaveLoadOne(afb_api_t api, CANopenRtuT *rtu, CANopenSlaveT *slave, json_object *slaveJ) {
-    int err = 0;
-    json_object *sensorsJ = NULL;
-    CtlConfigT *ctrlConfig = (CtlConfigT*)afb_api_get_userdata(api);
-    AglCANopen *CanMaster = (AglCANopen*)ctrlConfig->external;
+// static int SlaveLoadOne(afb_api_t api, CANopenRtuT *rtu, CANopenSlaveT *slave, json_object *slaveJ) {
+//     int err = 0;
+//     json_object *sensorsJ = NULL;
+//     CtlConfigT *ctrlConfig = (CtlConfigT*)afb_api_get_userdata(api);
+//     AglCANopen *CanMaster = (AglCANopen*)ctrlConfig->external;
 
-    // should already be allocated
-    assert (slaveJ);
+//     // should already be allocated
+//     assert (slaveJ);
 
-    //memset(rtu, 0, sizeof (CANopenRtuT)); // default is empty
+//     //memset(rtu, 0, sizeof (CANopenRtuT)); // default is empty
 
-    // set default values
-    memset(slave, 0, sizeof (CANopenSlaveT));
-    slave->rtu   = rtu;
-    slave->count = 1;
-    err = wrap_json_unpack(slaveJ, "{ss,s?s,ss,s?s,si,so !}",
-            "uid", &slave->uid,
-            "info", &slave->info,
-            "prefix", &slave->prefix,
-            "dcf", &slave->dcf,
-            "nodId", &slave->nodId,
-            "sensors", &sensorsJ);
-    if (err) {
-        AFB_API_ERROR(api, "Fail to parse rtu JSON : (%s)", json_object_to_json_string(slaveJ));
-        return ERROR;
-    }
-    // loop on sensors
-    if (json_object_is_type(sensorsJ, json_type_array)) {
-        int count = (int)json_object_array_length(sensorsJ);
-        slave->sensors= (CANopenSensorT*)calloc(count + 1, sizeof (CANopenSensorT));
+//     // set default values
+//     memset(slave, 0, sizeof (CANopenSlaveT));
+//     slave->rtu   = rtu;
+//     slave->count = 1;
+//     err = wrap_json_unpack(slaveJ, "{ss,s?s,ss,s?s,si,so !}",
+//             "uid", &slave->uid,
+//             "info", &slave->info,
+//             "prefix", &slave->prefix,
+//             "dcf", &slave->dcf,
+//             "nodId", &slave->nodId,
+//             "sensors", &sensorsJ);
+//     if (err) {
+//         AFB_API_ERROR(api, "Fail to parse rtu JSON : (%s)", json_object_to_json_string(slaveJ));
+//         return ERROR;
+//     }
+//     // loop on sensors
+//     if (json_object_is_type(sensorsJ, json_type_array)) {
+//         int count = (int)json_object_array_length(sensorsJ);
+//         slave->sensors= (CANopenSensorT*)calloc(count + 1, sizeof (CANopenSensorT));
 
-        for (int idx = 0; idx < count; idx++) {
-            json_object *sensorJ = json_object_array_get_idx(sensorsJ, idx);
-            err = SensorLoadOne(api, slave, &slave->sensors[idx], sensorJ);
-            if (err) return ERROR;
-        }
+//         for (int idx = 0; idx < count; idx++) {
+//             json_object *sensorJ = json_object_array_get_idx(sensorsJ, idx);
+//             err = SensorLoadOne(api, slave, &slave->sensors[idx], sensorJ);
+//             if (err) return ERROR;
+//         }
 
-    } else {
-        slave->sensors= (CANopenSensorT*) calloc(2, sizeof(CANopenSensorT));
-        err= SensorLoadOne(api, slave, &slave->sensors[0], sensorsJ);
-        if (err) return ERROR;
-    }
-    /*//Atache a slave to the master
-    if(!strlen(slave->dcf)){
-        const char *dcfFile = fullPathToDCF(api, slave->dcf);
-        if (!strlen(dcfFile)) {
-            AFB_API_ERROR(api, "CANopenLoadOne: fail to find =%s", slave->dcf);
-            return ERROR;
-        }
-        CanMaster.addSlave(slave->nodId, dcfFile);
-    }*/
-    CanMaster->addSlave(slave->nodId);
-    return 0;
-}
+//     } else {
+//         slave->sensors= (CANopenSensorT*) calloc(2, sizeof(CANopenSensorT));
+//         err= SensorLoadOne(api, slave, &slave->sensors[0], sensorsJ);
+//         if (err) return ERROR;
+//     }
+//     /*//Atache a slave to the master
+//     if(!strlen(slave->dcf)){
+//         const char *dcfFile = fullPathToDCF(api, slave->dcf);
+//         if (!strlen(dcfFile)) {
+//             AFB_API_ERROR(api, "CANopenLoadOne: fail to find =%s", slave->dcf);
+//             return ERROR;
+//         }
+//         CanMaster.addSlave(slave->nodId, dcfFile);
+//     }*/
+//     CanMaster->addSlave(slave->nodId);
+//     return 0;
+// }
 
-static int CANopenLoadOne(afb_api_t api, CANopenRtuT *rtu, json_object *rtuJ) {
-    int err = 0;
-    //json_object *sensorsJ = NULL;
-    json_object *slavesJ = NULL;
-    CtlConfigT *ctrlConfig = nullptr;
-    AglCANopen *CanMaster = nullptr;
-    // should already be allocated
-    assert (rtuJ); 
-    assert (api);
+// static int CANopenLoadOne(afb_api_t api, CANopenRtuT *rtu, json_object *rtuJ) {
+//     int err = 0;
+//     //json_object *sensorsJ = NULL;
+//     json_object *slavesJ = NULL;
+//     CtlConfigT *ctrlConfig = nullptr;
+//     AglCANopen *CanMaster = nullptr;
+//     // should already be allocated
+//     assert (rtuJ); 
+//     assert (api);
 
-    memset(rtu, 0, sizeof (CANopenRtuT)); // default is empty
-    rtu->nodId = 1;
-    err = wrap_json_unpack(rtuJ, "{ss,s?s,ss,s?s,s?i,so !}",
-            "uid", &rtu->uid,
-            "info", &rtu->info,
-            "uri", &rtu->uri,
-            "dcf", &rtu->dcf,
-            "nodId", &rtu->nodId,
-            "slaves", &slavesJ);
-    if (err) {
-        AFB_API_ERROR(api, "Fail to parse rtu JSON : (%s)", json_object_to_json_string(rtuJ));
-        return ERROR;
-    }
-    const char *dcfFile = fullPathToDCF(api, rtu->dcf);
-    if (!strlen(dcfFile)) {
-        AFB_API_ERROR(api, "CANopenLoadOne: fail to find =%s", rtu->dcf);
-        return ERROR;
-    }
-    //std::cout << "DCF file found : " << dcfFile << std::endl;
-    // if uri is provided let's try to connect now
+//     memset(rtu, 0, sizeof (CANopenRtuT)); // default is empty
+//     rtu->nodId = 1;
+//     err = wrap_json_unpack(rtuJ, "{ss,s?s,ss,s?s,s?i,so !}",
+//             "uid", &rtu->uid,
+//             "info", &rtu->info,
+//             "uri", &rtu->uri,
+//             "dcf", &rtu->dcf,
+//             "nodId", &rtu->nodId,
+//             "slaves", &slavesJ);
+//     if (err) {
+//         AFB_API_ERROR(api, "Fail to parse rtu JSON : (%s)", json_object_to_json_string(rtuJ));
+//         return ERROR;
+//     }
+//     const char *dcfFile = fullPathToDCF(api, rtu->dcf);
+//     if (!strlen(dcfFile)) {
+//         AFB_API_ERROR(api, "CANopenLoadOne: fail to find =%s", rtu->dcf);
+//         return ERROR;
+//     }
+//     //std::cout << "DCF file found : " << dcfFile << std::endl;
+//     // if uri is provided let's try to connect now
     
-    if (rtu->uri) {
-        //err = CANopenRtuConnect (api, rtu);
-        ctrlConfig = (CtlConfigT*)afb_api_get_userdata(api);
-        CanMaster = new AglCANopen(rtu->uri, dcfFile, rtu->nodId);
-        ctrlConfig->external = CanMaster;
-        if (!CanMaster->chanIsOpen()) {
-            AFB_API_ERROR(api, "CANopenLoadOne: fail to connect can uid=%s uri=%s", rtu->uid, rtu->uid);
-            return ERROR;
-        }
-    }
+//     if (rtu->uri) {
+//         //err = CANopenRtuConnect (api, rtu);
+//         ctrlConfig = (CtlConfigT*)afb_api_get_userdata(api);
+//         CanMaster = new AglCANopen(rtu->uri, dcfFile, rtu->nodId);
+//         ctrlConfig->external = CanMaster;
+//         if (!CanMaster->chanIsOpen()) {
+//             AFB_API_ERROR(api, "CANopenLoadOne: fail to connect can uid=%s uri=%s", rtu->uid, rtu->uid);
+//             return ERROR;
+//         }
+//     }
 
-    // loop on slaves
-    if (json_object_is_type(slavesJ, json_type_array)) {
-        int count = (int)json_object_array_length(slavesJ);
-        rtu->slaves= (CANopenSlaveT*)calloc(count + 1, sizeof (CANopenSlaveT));
+//     // loop on slaves
+//     if (json_object_is_type(slavesJ, json_type_array)) {
+//         int count = (int)json_object_array_length(slavesJ);
+//         rtu->slaves= (CANopenSlaveT*)calloc(count + 1, sizeof (CANopenSlaveT));
 
-        for (int idx = 0; idx < count; idx++) {
-            json_object *slaveJ = json_object_array_get_idx(slavesJ, idx);
-            err = SlaveLoadOne(api, rtu, &rtu->slaves[idx], slaveJ);
-            if (err) return ERROR;
-        }
-    } else {
-        rtu->slaves= (CANopenSlaveT*) calloc(2, sizeof(CANopenSlaveT));
-        err= SlaveLoadOne(api, rtu, &rtu->slaves[0], slavesJ);
-        if (err) return ERROR;
-    }
+//         for (int idx = 0; idx < count; idx++) {
+//             json_object *slaveJ = json_object_array_get_idx(slavesJ, idx);
+//             err = SlaveLoadOne(api, rtu, &rtu->slaves[idx], slaveJ);
+//             if (err) return ERROR;
+//         }
+//     } else {
+//         rtu->slaves= (CANopenSlaveT*) calloc(2, sizeof(CANopenSlaveT));
+//         err= SlaveLoadOne(api, rtu, &rtu->slaves[0], slavesJ);
+//         if (err) return ERROR;
+//     }
 
-    //CanMaster->start();
-    CanMaster->start(afb_daemon_get_event_loop());
-    /*struct sd_event_source* event_source = nullptr;
+//     //CanMaster->start();
+//     CanMaster->start(afb_daemon_get_event_loop());
+//     /*struct sd_event_source* event_source = nullptr;
 
-    auto handler = [](sd_event_source*, int, uint32_t, void* userdata) {
-        lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
-        poll.wait(0);
-        return 0;
-    };
-    auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(CanMaster-> poll.get_poll())));
-    sd_event_add_io(afb_daemon_get_event_loop(), &event_source, poll.get_fd(), EPOLLIN, handler, userdata);
-    */
-    return 0;   
-}
+//     auto handler = [](sd_event_source*, int, uint32_t, void* userdata) {
+//         lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
+//         poll.wait(0);
+//         return 0;
+//     };
+//     auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(CanMaster-> poll.get_poll())));
+//     sd_event_add_io(afb_daemon_get_event_loop(), &event_source, poll.get_fd(), EPOLLIN, handler, userdata);
+//     */
+//     return 0;   
+// }
 
 /*static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ) {
     CANopenRtuT *rtus;

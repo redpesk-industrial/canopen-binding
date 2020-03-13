@@ -21,31 +21,31 @@
     "info": "CANopen Master",
     "uri" : "can0",
     "nodId": 1,
-    "dcf": "coapp-fiber-master.dcf",
+    "dcf": "kp1-master.dcf",
     "slaves": [
       {
         "uid": "CANopen-slave-2",
         "info": "CANopen slave 2",
-        "prefix": "Slave2",
+        "prefix": "slave2",
         "nodId": 2,
         "sensors": [
           {
-            "uid": "DIN01_STATUS",
-            "type": "Coil_Input",
-            "format" : "BOOL",
-            "register" : 0
+            "uid": "DIN01",
+            "type": "RPDO",
+            "format" : "uint16",
+            "register" : 2097664
           },
           {
-            "uid": "D01_FREQUENCY",
-            "type": "Register_Holding",
-            "format" : "INT32",
-            "register" : 7
+            "uid": "DIN01_EVENT_TIMER",
+            "type": "SDO",
+            "format" : "uint16",
+            "register" : 1572869
           },
           {
-            "uid": "D01_DUTY",
-            "type": "Register_Holding",
-            "format" : "INT16",
-            "register" : 9
+            "uid": "DOUT01",
+            "type": "TPDO",
+            "format" : "uint16",
+            "register" : 6553856
           }
         ]
       }

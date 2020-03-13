@@ -21,7 +21,11 @@ PROJECT_TARGET_ADD(CANopen)
 	file(GLOB CHEADERS [a-z]*.hpp)
 
 	# Define project Targets
-	add_library(${TARGET_NAME} MODULE CANopen-driver.cpp CANopen-binding.cpp CANopen-glue.cpp)
+	add_library(${TARGET_NAME} MODULE CANopenSlaveDriver.cpp
+									  CANopenSensor.cpp
+									  AglCANopen.cpp
+									  CANopen-binding.cpp
+									  CANopen-glue.cpp)
 
     #target_compile_options(${TARGET_NAME}
     #    PUBLIC  -Wno-unused-variable

@@ -16,6 +16,8 @@
         "--workdir=.",
         "--roothttp=.",
         "--token=",
+        "--tracereq=all",
+        "--traceapi=all",
         "--verbose",
         "--verbose",
         "--verbose",
