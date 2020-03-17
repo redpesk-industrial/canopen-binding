@@ -123,7 +123,6 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
 
         regId = uint16_t(idx);
         subRegId = uint8_t(subidx);
-        //printf("DEBUG : SDO write to %s[%x][%x] val %x\n with %d bytes", m_prefix, idx, subidx, val, size);
         switch (size)
         {
         case 1:
@@ -138,9 +137,6 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         case 4:
             AsyncWrite<uint32_t>(regId, subRegId, val);
             break;
-        // case 5:
-        //     AsyncWrite<std::string>(regId, subRegId, "");
-        //     break;
         default:
             afb_req_fail_f(
                 request,
@@ -181,24 +177,7 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         });
         return;
 
-     } //else if (!strcasecmp (action, "SUBSCRIBE")) {
-        
-    //     /*try {
-    //         AglCANopen::avalableTypeCBs.at("UINT32")(1,0);
-    //     } catch(const std::out_of_range &e) {
-    //         std::cerr << "Exception at " << e.what() << std::endl;
-    //     }*/
-    //     // err= this->eventCreate (&responseJ);
-    //     // //if (err) goto OnSubscribeError;
-    //     // err=afb_req_subscribe(request, m_event); 
-    //     // //if (err) goto OnSubscribeError;
-
-    // }  else if (!strcasecmp (action, "UNSUBSCRIBE")) {   // Fulup ***** Virer l'event quand le count est à zero
-    //     if (m_event) {
-    //         err=afb_req_unsubscribe(request, m_event); 
-    //         if (err) goto OnSubscribeError;
-    //     }
-    // }
+    } 
     else {
         afb_req_fail_f (request, "syntax-error", "CANopenSensor::request: action='%s' UNKNOWN rtu=%s query=%s"
             , action, m_uid, json_object_get_string(queryJ));
@@ -209,8 +188,8 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
     return;
 }
 
-void CANopenSlaveDriver::addSensorEvent(uint16_t reg, uint8_t subreg, afb_event_t event){
-    Post([this, reg, subreg, event]() {
-        m_sensorEventQueue.insert(m_sensorEventQueue.end(),{reg, subreg, event});
+void CANopenSlaveDriver::addSensorEvent(CANopenSensor * sensor){
+    Post([this, sensor]() {
+        m_sensorEventQueue.insert(m_sensorEventQueue.end(), sensor);
     });
 }

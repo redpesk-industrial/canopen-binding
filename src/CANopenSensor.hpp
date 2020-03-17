@@ -16,6 +16,12 @@ class CANopenSensor{
     public: 
         CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveDriver * slaveDriver);
         void request (afb_req_t request, json_object * queryJ);
+        int read(json_object **inputJ);
+        int write(json_object *inputJ);
+        inline afb_event_t getEvent(){return m_event;}
+        inline uint16_t getReg(){return m_register;}
+        inline uint8_t getSubReg(){return m_subRegister;}
+
         //~CANopenSensor();
     
     private:
@@ -40,10 +46,10 @@ class CANopenSensor{
         // TimerHandleT *m_timer;
         afb_api_t m_api;
         afb_event_t m_event;
-        void *m_context;
-        typedef int (*TypeCB)(CANopenSensor*, json_object*);
-        TypeCB m_readCB;
-        TypeCB m_writeCB;
+        // void *m_context;
+        // typedef int (*TypeCB)(CANopenSensor*, json_object*);
+        // TypeCB m_readCB;
+        // TypeCB m_writeCB;
         
         
         //TypeCB m_TypeCB;
@@ -61,8 +67,6 @@ class CANopenSensor{
             int (*readCB) (CANopenSensor* sensor, json_object **inputJ);
             int (*writeCB)(CANopenSensor* sensor, json_object *outputJ);
         } m_function;
-
-        
         
         //static const std::map<std::string, TypeCB, TypeCB> m_sensorType;
 
@@ -90,17 +94,24 @@ class CANopenSensor{
         static int coSDOreadUint8(CANopenSensor* sensor, json_object** outputJ);
         static int coSDOreadUint16(CANopenSensor* sensor, json_object** outputJ);
         static int coSDOreadUint32(CANopenSensor* sensor, json_object** outputJ);
+        static int coPDOwriteUint8(CANopenSensor* sensor, json_object* inputJ);
+        static int coPDOwriteUint16(CANopenSensor* sensor, json_object* inputJ);
+        static int coPDOwriteUint32(CANopenSensor* sensor, json_object* inputJ);
+        static int coPDOreadUint8(CANopenSensor* sensor, json_object** outputJ);
+        static int coPDOreadUint16(CANopenSensor* sensor, json_object** outputJ);
+        static int coPDOreadUint32(CANopenSensor* sensor, json_object** outputJ);
 
-        static const std::map<std::string, TypeCB> m_avalableReadCBs;
-        static const std::map<std::string, TypeCB> m_avalableWriteCBs;
+
+        // static const std::map<std::string, TypeCB> m_avalableReadCBs;
+        // static const std::map<std::string, TypeCB> m_avalableWriteCBs;
 
         static const std::map<std::string, CANopenFunctionCbS> m_SDOfunctionCBs;
         static const std::map<std::string, CANopenFunctionCbS> m_RPDOfunctionCBs;
         static const std::map<std::string, CANopenFunctionCbS> m_TPDOfunctionCBs;
-
         static const std::map<std::string, uint> m_AvalableTypes;
+        static const std::map<uint, std::map<std::string, CANopenSensor::CANopenFunctionCbS>> m_encodingTable;
 };
 
-#else
-#warning "_CANOPENSENSOR_INCLUDE_"
+// #else
+// #warning "_CANOPENSENSOR_INCLUDE_"
 #endif /* _CANOPENSENSOR_INCLUDE_ */

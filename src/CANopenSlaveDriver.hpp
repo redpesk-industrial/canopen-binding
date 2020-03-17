@@ -3,7 +3,7 @@
 
 #include <lely/coapp/fiber_driver.hpp>
 
-//#include "CANopenSensor.hpp"
+#include "CANopenSensor.hpp"
 //#include "AglCANopen.hpp"
 
 //#include <queue>
@@ -28,18 +28,11 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     );
     
     void request (afb_req_t request, json_object * queryJ);
+    void addSensorEvent(CANopenSensor* sensor);
 
-    void addSensorEvent(uint16_t reg, uint8_t subreg, afb_event_t event);
-
-    const char * uid(){
-        return m_uid;
-    }
-    const char * info(){
-        return m_info;
-    }
-    const char * prefix(){
-        return m_prefix;
-    }
+    const char * uid() {return m_uid;}
+    const char * info() {return m_info;}
+    const char * prefix() {return m_prefix;}
     
     afb_req_t m_current_req;
 
@@ -50,12 +43,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     const char * m_dcf;
     uint m_count;
     std::vector<std::shared_ptr<CANopenSensor>> m_sensors;
-    struct coEvent{
-        uint16_t reg;
-        uint8_t subReg;
-        afb_event_t event;
-    };
-    std::vector<coEvent> m_sensorEventQueue;
+    std::vector<CANopenSensor*> m_sensorEventQueue;
     
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
         // std::cout << m_prefix << " ON RPDO WRITE" << std::endl;
@@ -67,13 +55,15 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
         // }
         int i = 0;
         for (auto x: m_sensorEventQueue){
-            if(idx == x.reg && subidx == x.subReg){
-                uint16_t val = rpdo_mapped[idx][subidx];
-                afb_event_push (x.event, json_object_new_int((int)val));
+            if(idx == x->getReg() && subidx == x->getSubReg()){
+                //auto val = rpdo_mapped[idx][subidx];
+                json_object * responseJ;
+                x->read(&responseJ);
+                afb_event_push (x->getEvent(), responseJ);
             }
             i++;
         }
-        std::cout << "m_sensorEventQueue.size = " << m_sensorEventQueue.size() << "donn " << i << "actions" << std::endl;
+        //std::cout << "m_sensorEventQueue.size = " << m_sensorEventQueue.size() << "donn " << i << "actions" << std::endl;
 
     }
 
@@ -94,8 +84,6 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
             Wait(AsyncWrite<uint32_t>(0x1802, 0x01, 0x80000382));
             // Wait(AsyncWrite<uint32_t>(0x1400, 0x01, 0x00000181));
             //*/
-
-
             auto value = Wait(AsyncRead<uint32_t>(0x6200, 0x01));
             std::cout << "On config receved : " <<  value << std::endl;
 

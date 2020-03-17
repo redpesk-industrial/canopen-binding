@@ -53,9 +53,6 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     //m_iddle = rtu->iddle;
     m_count = 1;
 
-    // m_readCB = nullptr;
-    // m_writeCB = nullptr;
-
     err = wrap_json_unpack(sensorJ, "{ss,ss,si,s?s,s?s,s?s,s?i,s?o !}",
                 "uid", &m_uid,
                 "type", &type,
@@ -85,13 +82,6 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
        authent->text = privilege;
     }
 
-    // //Find sensor Type
-    // try{
-    //     m_readCB = m_avalableReadCBs.at(format);
-    // } catch(std::out_of_range){
-    //     AFB_API_ERROR(api, "CANopenSensor: could not find sensor format %s", format);
-    //     return;
-    // }
     try{
         m_type = m_AvalableTypes.at(type);
     } catch(std::out_of_range){
@@ -99,8 +89,15 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
         return;
     }
 
+    // try{
+    //     auto formatMap = m_encodingTable.at(m_type);
+    // }catch(std::out_of_range){
+    //     AFB_API_ERROR(api, "CANopenSensor: could not find sensor type reference %d", m_type);
+    //     return;
+    // }
+
     try{
-        m_function = m_SDOfunctionCBs.at(format);
+        m_function = m_encodingTable.at(m_type).at(format);
     } catch(std::out_of_range){
         AFB_API_ERROR(api, "CANopenSensor: could not find sensor format %s", format);
         return;
@@ -123,7 +120,6 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
 
 void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
     
-    //CANopenRtuT *rtu = sensor->rtu;
     char *action;
     json_object *dataJ = nullptr;
     json_object *responseJ = nullptr;
@@ -145,26 +141,15 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
     }
 
     if (!strcasecmp (action, "WRITE")) {
-        /*if (!m_function->writeCB) goto OnWriteError;
-        err = (m_function->writeCB) (this, dataJ);
-        if (err) goto OnWriteError;*/
-        // uint val = json_object_get_int(dataJ);
-        // printf("DEBUG : writing %d on sensor [%x][%x]", val, m_register, m_subRegister);
-        // m_slave->tpdo_mapped[m_register][m_subRegister] = val;
         if(!m_function.writeCB){
             afb_req_fail_f (request, "Write-error", "CANopenSensor::request: No write function avalable for %s : %s"
             , m_slave->uid(), m_uid); 
             return;
         }
-        m_function.writeCB(this, dataJ);
+        write(dataJ);
 
     }
     else if (!strcasecmp (action, "READ")) {
-        /*if (!m_function->readCB) goto OnReadError;
-        err = (m_function->readCB) (this, &responseJ);
-        if (err) goto OnReadError;*/
-        //uint val = m_slave->rpdo_mapped[m_register][m_subRegister];
-        //printf("DEBUG : writing %d on sensor [%x][%x]", val, m_register, m_subRegister);
         if(!m_function.readCB){
             afb_req_fail_f (request, "read-error", "CANopenSensor::request: No read function avalable for %s : %s"
             , m_slave->uid(), m_uid); 
@@ -177,7 +162,6 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
                 json_object *responseJ;
                 m_function.readCB(this, &responseJ);
                 std::cout << "DEBUG : Async read of slave : " << m_slave->id() << " [" << std::hex << m_register << "]:[" << m_subRegister << "] returned " << json_object_get_string(responseJ) << std::endl;
-                //*responseJ = json_object_new_int(6584);
                 afb_req_success(request, responseJ, NULL);
                 afb_req_unref(request);
             });
@@ -190,13 +174,13 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
     else if (!strcasecmp (action, "SUBSCRIBE")) {
         err = eventCreate();
         if (err) return;
-        err=afb_req_subscribe(request, m_event); 
+        err = afb_req_subscribe(request, m_event); 
         if (err){
             afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to subscribe slave=%s sensor=%s"
-            , m_slave->uid(), m_uid); 
+            , m_slave->uid(), m_uid);
             return;
         }
-
+        m_slave->rpdo_mapped[m_register][m_subRegister];
     }
     else if (!strcasecmp (action, "UNSUBSCRIBE")) {
         if (m_event) {
@@ -213,29 +197,27 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
             , action, m_slave->uid(), m_uid, json_object_get_string(queryJ));
         return; 
     }
-  
     // everything looks good let's responde
     afb_req_success(request, responseJ, NULL);
     return;
+}
 
-    /*OnWriteError:
-        afb_req_fail_f (request, "write-error", "CANopenSensor::request: fail to write data=%s rtu=%s sensor=%s error=%s"
-            , json_object_get_string(dataJ), m_uid, sensor->uid, CANopen_strerror(errno));
-        return; 
-
-    OnReadError:
-        afb_req_fail_f (request, "read-error", "CANopenSensor::request: fail to read rtu=%s sensor=%s error=%s"
-        , m_uid, sensor->uid, CANopen_strerror(errno)); 
-        return;
-
-    OnSubscribeError:
-        afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to subscribe rtu=%s sensor=%s error=%s"
-        , m_uid, sensor->uid, CANopen_strerror(errno)); 
-        return;*/
+int CANopenSensor::read(json_object **responseJ){
+    if(!m_function.readCB) return ERROR;
+    m_function.readCB(this, responseJ);
+    return 0;
+}
+int CANopenSensor::write(json_object *output){
+    if(!m_function.writeCB) return -1;
+    m_function.writeCB(this, output);
+    return 0;
 }
 
 int CANopenSensor::eventCreate(){
-    if(!m_function.readCB) return ERROR;
+    if(!m_function.readCB){
+        AFB_API_ERROR(m_api, "CANopenSensor::eventCreate: sensor '%s' is not readable", m_uid);  
+        return ERROR;
+    }
     if (!m_event) {
         m_event = afb_api_make_event(m_api, m_uid);
         if (!m_event) {
@@ -243,10 +225,45 @@ int CANopenSensor::eventCreate(){
             return ERROR;
         }
     }
-    m_slave->addSensorEvent(m_register, m_subRegister, m_event);
+    m_slave->addSensorEvent(this);
     return 0;
 }
-    
+
+// const std::map<std::string, CANopenSensor::TypeCB> CANopenSensor::m_avalableReadCBs{
+//     {"uint8",  coSDOreadUint8},
+//     {"uint16", coSDOreadUint16},
+//     {"uint32", coSDOreadUint32}
+// };
+
+const std::map<std::string, CANopenSensor::CANopenFunctionCbS> CANopenSensor::m_SDOfunctionCBs{
+    {"uint8", {coSDOreadUint8, coSDOwriteUint8}},
+    {"uint16",{coSDOreadUint16, coSDOwriteUint16}},
+    {"uint32",{coSDOreadUint32, coSDOwriteUint32}},
+};
+
+const std::map<std::string, CANopenSensor::CANopenFunctionCbS> CANopenSensor::m_RPDOfunctionCBs{
+    {"uint8", {coPDOreadUint8, nullptr}},
+    {"uint16",{coPDOreadUint16, nullptr}},
+    {"uint32",{coPDOreadUint32, nullptr}},
+};
+
+const std::map<std::string, CANopenSensor::CANopenFunctionCbS> CANopenSensor::m_TPDOfunctionCBs{
+    {"uint8", {nullptr, coPDOwriteUint8}},
+    {"uint16",{nullptr, coPDOwriteUint16}},
+    {"uint32",{nullptr, coPDOwriteUint32}},
+};
+
+const std::map<std::string, uint> CANopenSensor::m_AvalableTypes{
+    {"SDO", CO_TYPE_SDO},
+    {"TPDO", CO_TYPE_TPDO},
+    {"RPDO", CO_TYPE_RPDO}
+};
+
+const std::map<uint, std::map<std::string, CANopenSensor::CANopenFunctionCbS>> CANopenSensor::m_encodingTable{
+    {CO_TYPE_SDO, CANopenSensor::m_SDOfunctionCBs},
+    {CO_TYPE_TPDO, CANopenSensor::m_TPDOfunctionCBs},
+    {CO_TYPE_RPDO, CANopenSensor::m_RPDOfunctionCBs}
+};
 
 int CANopenSensor::coSDOwriteUint8(CANopenSensor* sensor, json_object* inputJ){
     int val = json_object_get_int(inputJ);
@@ -269,56 +286,59 @@ int CANopenSensor::coSDOwriteUint32(CANopenSensor* sensor, json_object* inputJ){
 int CANopenSensor::coSDOreadUint8(CANopenSensor* sensor, json_object** responseJ){
     int val = sensor->m_slave->Wait(sensor->m_slave->AsyncRead<uint8_t>(sensor->m_register, sensor->m_subRegister));
     // std::cout << "DEBUG : CANopenSensor::coSDOreadUint8 : read val = " << val << std::endl;
-    AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint8 : read val = %d", val);
+    // AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint8 : read val = %d", val);
     *responseJ = json_object_new_int(val);
-    AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint8 : read Json val = %s", json_object_get_string(*responseJ));
+    // AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint8 : read Json val = %s", json_object_get_string(*responseJ));
     return 0;
 }
 
 int CANopenSensor::coSDOreadUint16(CANopenSensor* sensor, json_object** responseJ){
     int val = sensor->m_slave->Wait(sensor->m_slave->AsyncRead<uint16_t>(sensor->m_register, sensor->m_subRegister));
     // std::cout << "DEBUG : CANopenSensor::coSDOreadUint16 : read val = " << val << std::endl;
-    AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint16 : read val = %d", val);
+    // AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint16 : read val = %d", val);
     *responseJ = json_object_new_int(val);
-    AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint16 : read Json val = %s", json_object_get_string(*responseJ));
+    // AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint16 : read Json val = %s", json_object_get_string(*responseJ));
     return 0;
 }
 
 int CANopenSensor::coSDOreadUint32(CANopenSensor* sensor, json_object** responseJ){
     int val = sensor->m_slave->Wait(sensor->m_slave->AsyncRead<uint32_t>(sensor->m_register, sensor->m_subRegister));
     // std::cout << "DEBUG : CANopenSensor::coSDOreadUint8 : read val = " << val << std::endl;
-    AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint32 : read val = %d", val);
+    // AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint32 : read val = %d", val);
     *responseJ = json_object_new_int(val);
-    AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint32 : read Json val = %s", json_object_get_string(*responseJ));
+    // AFB_API_DEBUG(sensor->m_api,"CANopenSensor::coSDOreadUint32 : read Json val = %s", json_object_get_string(*responseJ));
     return 0;
 }
 
-// const std::map<std::string, CANopenSensor::TypeCB> CANopenSensor::m_avalableReadCBs{
-//     {"uint8",  coSDOreadUint8},
-//     {"uint16", coSDOreadUint16},
-//     {"uint32", coSDOreadUint32}
-// };
+int CANopenSensor::coPDOwriteUint8(CANopenSensor* sensor, json_object* inputJ){
+    sensor->m_slave->tpdo_mapped[sensor->m_register][sensor->m_subRegister] = (uint8_t)json_object_get_int(inputJ);
+    return 0;
+}
 
-const std::map<std::string, CANopenSensor::CANopenFunctionCbS> CANopenSensor::m_SDOfunctionCBs{
-    {"uint8", {coSDOreadUint8, coSDOwriteUint8}},
-    {"uint16",{coSDOreadUint16, coSDOwriteUint16}},
-    {"uint32",{coSDOreadUint32, coSDOwriteUint32}},
-};
+int CANopenSensor::coPDOwriteUint16(CANopenSensor* sensor, json_object* inputJ){
+    sensor->m_slave->tpdo_mapped[sensor->m_register][sensor->m_subRegister] = (uint16_t)json_object_get_int(inputJ);
+    return 0;
+}
 
-const std::map<std::string, CANopenSensor::CANopenFunctionCbS> CANopenSensor::m_RPDOfunctionCBs{
-    // {"uint8", {coPDOreadUint8, nullptr}},
-    // {"uint16",{coPDOreadUint16, nullptr}},
-    // {"uint32",{coPDOreadUint32, nullptr}},
-};
+int CANopenSensor::coPDOwriteUint32(CANopenSensor* sensor, json_object* inputJ){
+    sensor->m_slave->tpdo_mapped[sensor->m_register][sensor->m_subRegister] = (uint32_t)json_object_get_int(inputJ);
+    return 0;
+}
 
-const std::map<std::string, CANopenSensor::CANopenFunctionCbS> CANopenSensor::m_TPDOfunctionCBs{
-    // {"uint8", {nullptr, coPDOwriteUint8}},
-    // {"uint16",{nullptr, coPDOwriteUint16}},
-    // {"uint32",{nullptr, coPDOwriteUint32}},
-};
+int CANopenSensor::coPDOreadUint8(CANopenSensor* sensor, json_object** outputJ){
+    uint8_t val = sensor->m_slave->rpdo_mapped[sensor->m_register][sensor->m_subRegister];
+    *outputJ = json_object_new_int(val);
+    return 0;
+}
 
-const std::map<std::string, uint> CANopenSensor::m_AvalableTypes{
-    {"SDO", CO_TYPE_SDO},
-    {"TPDO", CO_TYPE_TPDO},
-    {"RPDO", CO_TYPE_RPDO}
-};
+int CANopenSensor::coPDOreadUint16(CANopenSensor* sensor, json_object** outputJ){
+    uint16_t val = sensor->m_slave->rpdo_mapped[sensor->m_register][sensor->m_subRegister];
+    *outputJ = json_object_new_int(val);
+    return 0;
+}
+
+int CANopenSensor::coPDOreadUint32(CANopenSensor* sensor, json_object** outputJ){
+    uint32_t val = sensor->m_slave->rpdo_mapped[sensor->m_register][sensor->m_subRegister];
+    *outputJ = json_object_new_int(val);
+    return 0;
+}

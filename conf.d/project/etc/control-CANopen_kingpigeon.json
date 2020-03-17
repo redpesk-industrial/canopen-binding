@@ -43,7 +43,7 @@
           },
           {
             "uid": "DOUT01",
-            "type": "TPDO",
+            "type": "SDO",
             "format" : "uint16",
             "register" : 6553856
           }
