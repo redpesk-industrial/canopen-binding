@@ -7,10 +7,6 @@
 
 CTLP_CAPI_REGISTER("kingpigeon");
 
-extern "C"{
-    static int kingpigeon_bool_din4(CANopenSensor* sensor, json_object** outputJ);
-}
-    
 static int kingpigeon_bool_din4(CANopenSensor* sensor, json_object** outputJ){
     CANopenEncoder::coPDOreadUint16(sensor, outputJ);
     uint16_t val = (uint16_t)json_object_get_int(*outputJ);
@@ -29,6 +25,7 @@ std::map<std::string, CANopenEncodeCbS> kingpigeonRPDO{
 encodingTableT KingPigeonEncodingTable {
     {"RPDO",{kingpigeonRPDO}}
 };
+
 CTLP_ONLOAD(plugin, coEncoderHandle) {
     if(!coEncoderHandle)
         return -1;
