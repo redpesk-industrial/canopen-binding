@@ -122,22 +122,21 @@ int CANopenEncoder::coPDOreadUint32(CANopenSensor* sensor, json_object** outputJ
 
 
 std::map<std::string, CANopenEncodeCbS> CANopenEncoder::SDOfunctionCBs = {
-    {"uint8", {CANopenEncoder::coSDOreadUint8, CANopenEncoder::coSDOwriteUint8}},
-    {"uint16",{CANopenEncoder::coSDOreadUint16, CANopenEncoder::coSDOwriteUint16}},
-    {"uint32",{CANopenEncoder::coSDOreadUint32, CANopenEncoder::coSDOwriteUint32}},
+    {"uint8", {coSDOreadUint8, coSDOwriteUint8}},
+    {"uint16",{coSDOreadUint16, coSDOwriteUint16}},
+    {"uint32",{coSDOreadUint32, coSDOwriteUint32}},
 };
 
-
 std::map<std::string, CANopenEncodeCbS> CANopenEncoder::RPDOfunctionCBs {
-    {"uint8", {CANopenEncoder::coPDOreadUint8, nullptr}},
-    {"uint16",{CANopenEncoder::coPDOreadUint16, nullptr}},
-    {"uint32",{CANopenEncoder::coPDOreadUint32, nullptr}},
+    {"uint8", {coPDOreadUint8, nullptr}},
+    {"uint16",{coPDOreadUint16, nullptr}},
+    {"uint32",{coPDOreadUint32, nullptr}},
 };
 
 std::map<std::string, CANopenEncodeCbS> CANopenEncoder::TPDOfunctionCBs {
-    {"uint8", {nullptr, CANopenEncoder::coPDOwriteUint8}},
-    {"uint16",{nullptr, CANopenEncoder::coPDOwriteUint16}},
-    {"uint32",{nullptr, CANopenEncoder::coPDOwriteUint32}},
+    {"uint8", {nullptr, coPDOwriteUint8}},
+    {"uint16",{nullptr, coPDOwriteUint16}},
+    {"uint32",{nullptr, coPDOwriteUint32}},
 };
 
 encodingTableT CANopenEncoder::encodingTable{
