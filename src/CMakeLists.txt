@@ -15,30 +15,40 @@
 ###########################################################################
 
 # Add target to project dependency list
+PROJECT_TARGET_ADD(CANopenEncoder)
+	# Define project Targets
+	add_library(${TARGET_NAME} SHARED CANopen-encoder.cpp)
+
+	SET_TARGET_PROPERTIES(${TARGET_NAME} PROPERTIES
+		LABELS "LIBRARY"
+		IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/lib${TARGET_NAME}.so
+	)
+
+# Add target to project dependency list
 PROJECT_TARGET_ADD(CANopen)
 
 	# compile any C file starting with a lower case
 	file(GLOB CHEADERS *.hpp)
 
 	# Define project Targets
-	add_library(${TARGET_NAME} MODULE CANopenSlaveDriver.cpp
-									  CANopenSensor.cpp
-									  AglCANopen.cpp
-									  CANopen-binding.cpp
-									  CANopen-encoder.cpp)
-
-    #target_compile_options(${TARGET_NAME}
-    #    PUBLIC  -Wno-unused-variable
-    #)
+	add_library(${TARGET_NAME} MODULE AglCANopen.cpp
+					CANopen-binding.cpp
+					CANopen-glue.cpp
+					CANopenSensor.cpp
+					CANopenSlaveDriver.cpp
+					)
 
 	# Binder exposes a unique public entry point
 	SET_TARGET_PROPERTIES(${TARGET_NAME} PROPERTIES
 		PREFIX "afb-"
 		LABELS "BINDING"
 		LINK_FLAGS ${BINDINGS_LINK_FLAG}
+		INSTALL_RPATH "$ORIGIN"
 		IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/*${TARGET_NAME}.so
 		OUTPUT_NAME ${TARGET_NAME}
 	)
+
+	target_link_libraries(${TARGET_NAME} ${link_libraries} CANopenEncoder)
 
 INSTALL(FILES ${CHEADERS}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

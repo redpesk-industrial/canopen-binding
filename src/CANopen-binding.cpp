@@ -40,7 +40,7 @@ static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ
 // Config Section definition (note: controls section index should match handle
 // retrieval in HalConfigExec)
 static CtlSectionT ctrlSections[] = {
-    { .key = "plugins", .uid = nullptr, .info = nullptr, .loadCB = PluginConfig, .handle= nullptr, .actions = nullptr},
+    { .key = "plugins", .uid = nullptr, .info = nullptr, .loadCB = PluginConfig, .handle= (void*) &CANopenEncoder::instance(), .actions = nullptr},
     //{ .key = "onload", .uid = nullptr, .info = nullptr, .loadCB = OnloadConfig, .handle = nullptr, .actions = nullptr },
     { .key = "canopen", .uid = nullptr, .info = nullptr, .loadCB = CANopenConfig, .handle = nullptr, .actions = nullptr },
     { .key = nullptr, .uid = nullptr, .info = nullptr, .loadCB = nullptr,  .handle = nullptr, .actions = nullptr }
@@ -121,8 +121,6 @@ static int CtrlInitOneApi(afb_api_t api) {
 //Fonction de pré init de l'API
 static int CtrlLoadOneApi(void* vcbdata, afb_api_t api) {
     CtlConfigT* ctrlConfig = (CtlConfigT*)vcbdata;
-
-    ctrlConfig->external = (void*)new CANopenEncoder();
 
     // save closure as api's data context
     afb_api_set_userdata(api, ctrlConfig);

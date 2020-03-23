@@ -29,10 +29,11 @@ std::map<std::string, CANopenEncodeCbS> kingpigeonRPDO{
 encodingTableT KingPigeonEncodingTable {
     {"RPDO",{kingpigeonRPDO}}
 };
+CTLP_ONLOAD(plugin, coEncoderHandle) {
+    if(!coEncoderHandle)
+        return -1;
 
-CTLP_ONLOAD(plugin, registryCB) {
-    CtlConfigT* ctrlConfig = (CtlConfigT*)afb_api_get_userdata(plugin->api);
-    CANopenEncoder* coEncoder = (CANopenEncoder*)ctrlConfig->external;
+    CANopenEncoder* coEncoder = (CANopenEncoder*)coEncoderHandle;
     coEncoder->addEncoder(KingPigeonEncodingTable);
     return 0;
 }

@@ -7,8 +7,16 @@
     #define ERROR -1
 #endif
 
-CANopenEncodeCbS CANopenEncoder::getfunctionCB(std::string type, std::string format){
+CANopenEncoder::CANopenEncoder() {}
 
+/// @brief Return singleton instance of configuration object.
+CANopenEncoder& CANopenEncoder::instance()
+{
+	static CANopenEncoder encoder;
+	return encoder;
+}
+
+CANopenEncodeCbS CANopenEncoder::getfunctionCB(std::string type, std::string format){
     CANopenEncodeCbS fn;
 
     try{

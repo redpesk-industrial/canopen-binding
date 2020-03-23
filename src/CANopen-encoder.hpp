@@ -16,9 +16,9 @@ typedef std::map<std::string, std::map<std::string, CANopenEncodeCbS>> encodingT
 
 class CANopenEncoder
 {
-
 public:
     CANopenEncodeCbS getfunctionCB(std::string type, std::string format);
+    static CANopenEncoder& instance();
     int addEncoder(encodingTableT newEncodingTable);
 
     static int coSDOwriteUint8(CANopenSensor* sensor, json_object* inputJ);
@@ -35,6 +35,8 @@ public:
     static int coPDOreadUint32(CANopenSensor* sensor, json_object** outputJ);
 
 private:
+    CANopenEncoder(); ///< Private constructor for singleton implementation
+
     static std::map<std::string, CANopenEncodeCbS> SDOfunctionCBs;
     static std::map<std::string, CANopenEncodeCbS> RPDOfunctionCBs;
     static std::map<std::string, CANopenEncodeCbS> TPDOfunctionCBs;

@@ -29,9 +29,12 @@ PROJECT_TARGET_ADD(kingpigeon)
 			LABELS "PLUGIN"
 			PREFIX ""
 			SUFFIX ".ctlso"
+			INSTALL_RPATH "$ORIGIN/.."
 			OUTPUT_NAME ${TARGET_NAME}
 	)
 
-	# compilation include path 
+	target_link_libraries(${TARGET_NAME} CANopenEncoder ${link_libraries})
+
+	# compilation include path
 	target_include_directories(${TARGET_NAME}
 	PRIVATE "${CMAKE_SOURCE_DIR}/src")
