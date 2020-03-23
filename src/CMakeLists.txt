@@ -18,14 +18,14 @@
 PROJECT_TARGET_ADD(CANopen)
 
 	# compile any C file starting with a lower case
-	file(GLOB CHEADERS [a-z]*.hpp)
+	file(GLOB CHEADERS *.hpp)
 
 	# Define project Targets
 	add_library(${TARGET_NAME} MODULE CANopenSlaveDriver.cpp
 									  CANopenSensor.cpp
 									  AglCANopen.cpp
 									  CANopen-binding.cpp
-									  CANopen-glue.cpp)
+									  CANopen-encoder.cpp)
 
     #target_compile_options(${TARGET_NAME}
     #    PUBLIC  -Wno-unused-variable

@@ -9,6 +9,7 @@
 //#include <queue>
 #include <afb/afb-binding>
 #include <ctl-config.h>
+#include <list>
 
 //*/For Debug
 #include <iostream>
@@ -29,10 +30,11 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     
     void request (afb_req_t request, json_object * queryJ);
     void addSensorEvent(CANopenSensor* sensor);
+    void delSensorEvent(CANopenSensor* sensor);
 
-    const char * uid() {return m_uid;}
-    const char * info() {return m_info;}
-    const char * prefix() {return m_prefix;}
+    inline const char * uid() {return m_uid;}
+    inline const char * info() {return m_info;}
+    inline const char * prefix() {return m_prefix;}
     
     afb_req_t m_current_req;
 
@@ -41,26 +43,28 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     const char * m_info;
     const char * m_prefix;
     const char * m_dcf;
+    afb_api_t m_api;
     uint m_count;
     std::vector<std::shared_ptr<CANopenSensor>> m_sensors;
-    std::vector<CANopenSensor*> m_sensorEventQueue;
+    std::list<CANopenSensor*> m_sensorEventQueue;
     
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
-        // std::cout << m_prefix << " ON RPDO WRITE" << std::endl;
-        // if (idx == 0x2002 && subidx == 0){
-        //     uint16_t val = rpdo_mapped[idx][subidx];
-        //     printf("master: received object 2002:00 : %x\n", val);
-        //     tpdo_mapped[0x2001][0] = val;
-        //     //count= afb_event_push (sensor->event, responseJ);
-        // }
+        
         int i = 0;
-        for (auto x: m_sensorEventQueue){
-            if(idx == x->getReg() && subidx == x->getSubReg()){
-                //auto val = rpdo_mapped[idx][subidx];
+        int err;
+        std::cout << "OnRpdoWrite Event list :" << std::endl;
+        for (auto sensor: m_sensorEventQueue){
+            std::cout << i << " " << sensor->uid();
+            if(idx == sensor->reg() && subidx == sensor->subReg()){
                 json_object * responseJ;
-                x->read(&responseJ);
-                afb_event_push (x->getEvent(), responseJ);
+                sensor->read(&responseJ);
+                err = afb_event_push (sensor->event(), responseJ);
+                std::cout << "actif";
+                if(err < 0){
+                    AFB_API_ERROR(m_api, "Could not push event from sensor %s", sensor->uid());
+                }
             }
+            std::cout << std::endl;
             i++;
         }
         //std::cout << "m_sensorEventQueue.size = " << m_sensorEventQueue.size() << "donn " << i << "actions" << std::endl;
@@ -110,7 +114,6 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
         // // Increment the value for the next SYNC.
         // tpdo_mapped[0x2001][0] = val;
     }
-    uint32_t n_{0};
 };
 #else
 #warning "_CANOPENSLAVEDRIVER_INCLUDE_"

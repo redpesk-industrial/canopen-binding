@@ -46,9 +46,6 @@ class AglCANopen{
     
     void start(sd_event *e);
 
-    typedef int (*TypeCB)(int, int);
-    static std::map<std::string, TypeCB> avalableTypeCBs;
-
     ~AglCANopen();
   
   private:
@@ -68,11 +65,6 @@ class AglCANopen{
     uint8_t m_nodId;
     std::vector<std::shared_ptr<CANopenSlaveDriver>> m_slaves;
     bool m_isRuning = false;
-
-    /* FOR BEBUG
-    lely::io::CanChannel m_schan;
-    std::shared_ptr<MySlave> m_vslaves;
-    //*/
 };
 #else
 #warning "_AGLCANOPEN_INCLUDE_"

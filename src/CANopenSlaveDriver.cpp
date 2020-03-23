@@ -37,9 +37,6 @@ CANopenSlaveDriver::CANopenSlaveDriver(
         return;
     }
 
-    //Add verd for SDO, MNT, Guard and emergency message / communication 
-    //err = afb_api_add_verb(api, m_prefix, m_info, slaveDynRequest, this, nullptr, 0, 0);
-
     // if not API prefix let's use RTU uid
     if (!m_prefix) m_prefix= m_uid;
 
@@ -191,5 +188,17 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
 void CANopenSlaveDriver::addSensorEvent(CANopenSensor * sensor){
     Post([this, sensor]() {
         m_sensorEventQueue.insert(m_sensorEventQueue.end(), sensor);
+    });
+}
+
+void CANopenSlaveDriver::delSensorEvent(CANopenSensor* sensor){
+    Post([this, sensor]() {
+        for(auto q = m_sensorEventQueue.begin() ; q != m_sensorEventQueue.end();){
+            if(!strcasecmp((*q)->uid(), sensor->uid())){
+                q = m_sensorEventQueue.erase(q);
+                std::cout << "DEBUG : sensor " << sensor->uid() << " removed from event list" << std::endl;
+            }
+            else q++;
+        }
     });
 }

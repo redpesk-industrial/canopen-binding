@@ -1,30 +1,39 @@
+#define AFB_BINDING_VERSION 3
+
+#include <ctl-config.h>
 //#include "CANopen-driver.hpp"
-#include "CANopenSlaveDriver.hpp"
-#include <ctl-plugin.h>
+//#include "CANopenSlaveDriver.hpp"
+#include "CANopen-encoder.hpp"
 
 
 CTLP_CAPI_REGISTER("kingpigeon");
 
-// extern "C" {
-//     static int kingPigeonOnConf(CANopenSlaveDriver* slave);
-//     static int kingPigeonOnBoot(CANopenSlaveDriver* slave);
-// }
+extern "C"{
+    static int kingpigeon_bool_din4(CANopenSensor* sensor, json_object** outputJ);
+}
+    
+static int kingpigeon_bool_din4(CANopenSensor* sensor, json_object** outputJ){
+    CANopenEncoder::coPDOreadUint16(sensor, outputJ);
+    uint16_t val = (uint16_t)json_object_get_int(*outputJ);
+    *outputJ = json_object_new_array();
+    json_object_array_add(*outputJ, json_object_new_boolean((json_bool)val & 0b00000001));
+    json_object_array_add(*outputJ, json_object_new_boolean((json_bool)val & 0b00000010));
+    json_object_array_add(*outputJ, json_object_new_boolean((json_bool)val & 0b00000100));
+    json_object_array_add(*outputJ, json_object_new_boolean((json_bool)val & 0b00001000));
+    return 0;
+}
 
-// static int kingPigeonOnConf(CANopenSlaveDriver* slave){
-//     slave->Wait(slave->AsyncWrite<uint8_t>(0x6200, 0x01, 0x01));
-//     slave->Wait(slave->AsyncWrite<uint16_t>(0x1800, 0x05, 0x0000));
-//     slave->Wait(slave->AsyncWrite<uint32_t>(0x1802, 0x01, 0x80000382));
-//     //Wait(AsyncWrite<uint32_t>(0x1400, 0x01, 0x00000181))
-// }
+std::map<std::string, CANopenEncodeCbS> kingpigeonRPDO{
+    {"bool_din4", {kingpigeon_bool_din4, nullptr}}
+};
 
-// static int kingPigeonOnBoot(CANopenSlaveDriver* slave){
-//     slave->Wait(slave->AsyncWrite<uint8_t>(0x6200, 0x01, 0x00));
-// }
+encodingTableT KingPigeonEncodingTable {
+    {"RPDO",{kingpigeonRPDO}}
+};
 
-
-// CTLP_ONLOAD(plugin, registryCB) {
-//     /*registerCbT callback = (registerCbT)registryCB;
-//     assert (callback);
-//     (*callback) (plugin->uid, pigeonEncoders);*/
-//     return 0;
-// }
+CTLP_ONLOAD(plugin, registryCB) {
+    CtlConfigT* ctrlConfig = (CtlConfigT*)afb_api_get_userdata(plugin->api);
+    CANopenEncoder* coEncoder = (CANopenEncoder*)ctrlConfig->external;
+    coEncoder->addEncoder(KingPigeonEncodingTable);
+    return 0;
+}
