@@ -28,13 +28,13 @@ int CANopenEncoder::addEncoder(encodingTableT newEncodingTable){
                 try{
                     // Checking for function
                     encodingTable.at(typeMap.first).at(functionMap.first);
-                }catch(std::out_of_range){
+                }catch(std::out_of_range&){
                     // If function does not existe add it
                     encodingTable.at(typeMap.first).insert(functionMap);
                     std::cout << "DEBUG : Function '" << functionMap.first << "added to encoding table" << std::endl;
                 }
             }
-        }catch(std::out_of_range){
+        }catch(std::out_of_range&){
             // if type does not existe add it
             encodingTable.insert(typeMap);
             std::cout << "DEBUG : type '" << typeMap.first << "added to encoding table" << std::endl;

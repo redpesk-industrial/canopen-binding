@@ -44,8 +44,6 @@ INSTALL(FILES ${CHEADERS}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
-target_link_libraries(${TARGET_NAME} appcontroller afb-helpers)
-
 include(GNUInstallDirs)
 configure_file(../${TARGET_NAME}.pc.in ${TARGET_NAME}.pc @ONLY)
 
