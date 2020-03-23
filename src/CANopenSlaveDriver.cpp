@@ -8,7 +8,6 @@
 static void slaveDynRequest(afb_req_t request){
     json_object * queryJ = afb_req_json(request);
     CANopenSlaveDriver * slave = (CANopenSlaveDriver *) afb_req_get_vcbdata(request);
-    //slave->Post(slave->request(request, queryJ));
     slave->request(request, queryJ);
 }
 
@@ -30,7 +29,6 @@ CANopenSlaveDriver::CANopenSlaveDriver(
             "info", &m_info,
             "prefix", &m_prefix,
             "dcf", &m_dcf,
-            //"nodId", &m_nodId,
             "sensors", &sensorsJ);
     if (err) {
         AFB_API_ERROR(api, "Fail to parse slave JSON : (%s)", json_object_to_json_string(slaveJ));
@@ -55,7 +53,7 @@ CANopenSlaveDriver::CANopenSlaveDriver(
     if (err) {
         AFB_API_ERROR(api, "CANopenSlaveDriver: fail to register API verb=%s", m_prefix);
         return;
-    } else std::cout << "DEBUG : verb \"" << adminCmd << "\" created !" << "\n";
+    }
 
     // loop on sensors
     if (json_object_is_type(sensorsJ, json_type_array)) {
@@ -138,7 +136,7 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
             afb_req_fail_f(
                 request,
                 "query-error",
-                "CANopenSlaveDriver::request: invalid size %d. Avalable size (in byte) are 1, 2, 3 or 4",
+                "CANopenSlaveDriver::request: invalid size %d. Available size (in byte) are 1, 2, 3 or 4",
                 size
             );
             break;
@@ -166,9 +164,10 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         afb_req_t current_req = request;
         afb_req_addref(current_req);
 
+        // Use "Post" to avoid asynchronous conflicts
         Post([this, request, regId, subRegId]() {
             auto v = Wait(AsyncRead<uint32_t>(regId, subRegId));
-            std::cout << "DEBUG : Async read of slave " << (int)id() << " [" << std::hex << regId << "]:[" << subRegId << "] returned " << v << std::endl;
+            AFB_REQ_DEBUG(request, "DEBUG : Async read of slave %d [%x]:[%x] returned %d", id(), regId, subRegId, v);
             afb_req_success(request, json_object_new_int(v), NULL);
             afb_req_unref(request);
         });
@@ -185,18 +184,21 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
     return;
 }
 
-void CANopenSlaveDriver::addSensorEvent(CANopenSensor * sensor){
+void CANopenSlaveDriver::addSensorEvent(CANopenSensor * sensor){ 
+    
+    // Use "Post" to avoid asynchronous conflicts
     Post([this, sensor]() {
         m_sensorEventQueue.insert(m_sensorEventQueue.end(), sensor);
     });
 }
 
 void CANopenSlaveDriver::delSensorEvent(CANopenSensor* sensor){
+    
+    // Use "Post" to avoid asynchronous conflicts
     Post([this, sensor]() {
         for(auto q = m_sensorEventQueue.begin() ; q != m_sensorEventQueue.end();){
             if(!strcasecmp((*q)->uid(), sensor->uid())){
                 q = m_sensorEventQueue.erase(q);
-                std::cout << "DEBUG : sensor " << sensor->uid() << " removed from event list" << std::endl;
             }
             else q++;
         }

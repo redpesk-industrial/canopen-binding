@@ -21,16 +21,22 @@ public:
     static CANopenEncoder& instance();
     int addEncoder(encodingTableT newEncodingTable);
 
-    static int coSDOwriteUint8(CANopenSensor* sensor, json_object* inputJ);
+    // available SDO encoding functions
+    static int coSDOwriteUint8 (CANopenSensor* sensor, json_object* inputJ);
     static int coSDOwriteUint16(CANopenSensor* sensor, json_object* inputJ);
     static int coSDOwriteUint32(CANopenSensor* sensor, json_object* inputJ);
-    static int coSDOreadUint8(CANopenSensor* sensor, json_object** outputJ);
+    static int coSDOwriteString(CANopenSensor* sensor, json_object* inputJ);
+    // available SDO decoding functions
+    static int coSDOreadUint8 (CANopenSensor* sensor, json_object** outputJ);
     static int coSDOreadUint16(CANopenSensor* sensor, json_object** outputJ);
     static int coSDOreadUint32(CANopenSensor* sensor, json_object** outputJ);
-    static int coPDOwriteUint8(CANopenSensor* sensor, json_object* inputJ);
+    static int coSDOreadString(CANopenSensor* sensor, json_object** outputJ);
+    // available PDO encoding functions
+    static int coPDOwriteUint8 (CANopenSensor* sensor, json_object* inputJ);
     static int coPDOwriteUint16(CANopenSensor* sensor, json_object* inputJ);
     static int coPDOwriteUint32(CANopenSensor* sensor, json_object* inputJ);
-    static int coPDOreadUint8(CANopenSensor* sensor, json_object** outputJ);
+    // available PDO decoding functions
+    static int coPDOreadUint8 (CANopenSensor* sensor, json_object** outputJ);
     static int coPDOreadUint16(CANopenSensor* sensor, json_object** outputJ);
     static int coPDOreadUint32(CANopenSensor* sensor, json_object** outputJ);
 

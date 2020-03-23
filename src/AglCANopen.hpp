@@ -8,32 +8,19 @@
 #include <lely/io2/sys/timer.hpp>
 #include <lely/coapp/master.hpp>
 
+
 #include <afb/afb-binding>
 #include <ctl-config.h>
-
 
 class CANopenSlaveDriver;
 
 class AglCANopen{
+
   public:
-    AglCANopen(afb_api_t api, json_object *rtuJ,sd_event *e, uint8_t nodId = 1);
-
-    void addSlave(int slaveId);
-
-    bool chanIsOpen(){
-        return m_chan.is_open();
-    }
-
-    bool isRuning(){
-        return m_isRuning;
-    }
-
-    void start();
-
-    void start(sd_event *e);
-
-    ~AglCANopen();
-
+    AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId = 1);
+    inline bool chanIsOpen(){ return m_chan.is_open(); }
+    inline bool isRuning(){ return m_isRuning; }
+  
   private:
     lely::io::IoGuard m_IoGuard;
     lely::io::Context m_ctx;
@@ -49,9 +36,9 @@ class AglCANopen{
     const char * m_uri = nullptr;
     const char * m_dcf = nullptr;
     uint8_t m_nodId;
+    // A vector referensing every slaves handle by the master
     std::vector<std::shared_ptr<CANopenSlaveDriver>> m_slaves;
     bool m_isRuning = false;
 };
-#else
-#warning "_AGLCANOPEN_INCLUDE_"
+
 #endif /* _AGLCANOPEN_INCLUDE_ */

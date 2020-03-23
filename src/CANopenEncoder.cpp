@@ -1,7 +1,7 @@
 // if 2 before 1 => conflict with 'is_error' betwin a lely function and a json define named identically
 #include "CANopenSlaveDriver.hpp" /*1*/
 #include "CANopenSensor.hpp" /*2*/
-#include "CANopen-encoder.hpp"
+#include "CANopenEncoder.hpp"
 
 #ifndef ERROR
     #define ERROR -1
@@ -37,15 +37,13 @@ int CANopenEncoder::addEncoder(encodingTableT newEncodingTable){
                     // Checking for function
                     encodingTable.at(typeMap.first).at(functionMap.first);
                 }catch(std::out_of_range&){
-                    // If function does not existe add it
+                    // If function does not exist add it
                     encodingTable.at(typeMap.first).insert(functionMap);
-                    std::cout << "DEBUG : Function '" << functionMap.first << "added to encoding table" << std::endl;
                 }
             }
         }catch(std::out_of_range&){
-            // if type does not existe add it
+            // if type does not exist add it
             encodingTable.insert(typeMap);
-            std::cout << "DEBUG : type '" << typeMap.first << "added to encoding table" << std::endl;
         }
     }
     return 0;
@@ -69,6 +67,12 @@ int CANopenEncoder::coSDOwriteUint32(CANopenSensor* sensor, json_object* inputJ)
     return 0;
 }
 
+int CANopenEncoder::coSDOwriteString(CANopenSensor* sensor, json_object* inputJ){
+    auto val = json_object_get_string(inputJ);
+    sensor->slave()->AsyncWrite<::std::string>(sensor->reg(), sensor->subReg(), val);
+    return 0;
+}
+
 int CANopenEncoder::coSDOreadUint8(CANopenSensor* sensor, json_object** responseJ){
     int val = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint8_t>(sensor->reg(), sensor->subReg()));
     *responseJ = json_object_new_int(val);
@@ -84,6 +88,12 @@ int CANopenEncoder::coSDOreadUint16(CANopenSensor* sensor, json_object** respons
 int CANopenEncoder::coSDOreadUint32(CANopenSensor* sensor, json_object** responseJ){
     int val = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint32_t>(sensor->reg(), sensor->subReg()));
     *responseJ = json_object_new_int(val);
+    return 0;
+}
+
+int CANopenEncoder::coSDOreadString(CANopenSensor* sensor, json_object** responseJ){
+    auto val = sensor->slave()->Wait(sensor->slave()->AsyncRead<::std::string>(sensor->reg(), sensor->subReg()));
+    *responseJ = json_object_new_string(val.c_str());
     return 0;
 }
 
@@ -125,18 +135,19 @@ std::map<std::string, CANopenEncodeCbS> CANopenEncoder::SDOfunctionCBs = {
     {"uint8", {coSDOreadUint8, coSDOwriteUint8}},
     {"uint16",{coSDOreadUint16, coSDOwriteUint16}},
     {"uint32",{coSDOreadUint32, coSDOwriteUint32}},
+    {"string",{coSDOreadString, coSDOwriteString}}
 };
 
 std::map<std::string, CANopenEncodeCbS> CANopenEncoder::RPDOfunctionCBs {
     {"uint8", {coPDOreadUint8, nullptr}},
     {"uint16",{coPDOreadUint16, nullptr}},
-    {"uint32",{coPDOreadUint32, nullptr}},
+    {"uint32",{coPDOreadUint32, nullptr}}
 };
 
 std::map<std::string, CANopenEncodeCbS> CANopenEncoder::TPDOfunctionCBs {
     {"uint8", {nullptr, coPDOwriteUint8}},
     {"uint16",{nullptr, coPDOwriteUint16}},
-    {"uint32",{nullptr, coPDOwriteUint32}},
+    {"uint32",{nullptr, coPDOwriteUint32}}
 };
 
 encodingTableT CANopenEncoder::encodingTable{

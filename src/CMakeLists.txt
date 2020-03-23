@@ -17,7 +17,7 @@
 # Add target to project dependency list
 PROJECT_TARGET_ADD(CANopenEncoder)
 	# Define project Targets
-	add_library(${TARGET_NAME} SHARED CANopen-encoder.cpp)
+	add_library(${TARGET_NAME} SHARED CANopenEncoder.cpp)
 
 	SET_TARGET_PROPERTIES(${TARGET_NAME} PROPERTIES
 		LABELS "LIBRARY"
@@ -31,9 +31,9 @@ PROJECT_TARGET_ADD(CANopen)
 	file(GLOB CHEADERS *.hpp)
 
 	# Define project Targets
-	add_library(${TARGET_NAME} MODULE AglCANopen.cpp
-					CANopen-binding.cpp
-					CANopen-glue.cpp
+	add_library(${TARGET_NAME} MODULE
+					AglCANopen.cpp
+					CANopenBinding.cpp
 					CANopenSensor.cpp
 					CANopenSlaveDriver.cpp
 					)

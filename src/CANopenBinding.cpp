@@ -17,19 +17,11 @@
 * limitations under the License.
 */
 
-
-// Le contexte de sensor loader au moment de l'API n'est retrouvé avec le request ****
-
 #include "AglCANopen.hpp"
-#include "CANopen-encoder.hpp"
-//#include "CANopen-driver.hpp" /*1*/
-//#include "CANopen-binding.hpp" /*2*/
+#include "CANopenEncoder.hpp"
 
 #include <ctl-config.h>
 #include <filescan-utils.h>
-
-#include <iostream> //temp
-//#include <map>
 
 #ifndef ERROR
   #define ERROR -1
@@ -58,7 +50,6 @@ static void PingTest (afb_req_t request) {
 
 // Static verb not depending on CANopen json config file
 static afb_verb_t CtrlApiVerbs[] = {
-    /* VERB'S NAME         FUNCTION TO CALL         SHORT DESCRIPTION */
     { .verb = "ping", .callback = PingTest, .auth = nullptr, .info = "CANopen API ping test", .vcbdata = nullptr, .session = 0, .glob = 0},
     { .verb = nullptr, .callback = nullptr, .auth = nullptr, .info = nullptr, .vcbdata = nullptr, .session = 0, .glob = 0} /* marker for end of the array */
 };
@@ -87,7 +78,8 @@ static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ
         return ERROR;
     }
 
-    CANopenMaster = new AglCANopen(api, rtusJ, afb_daemon_get_event_loop());
+    // Load CANopen network configuration and start
+    CANopenMaster = new AglCANopen(api, rtusJ);
     if (!CANopenMaster->isRuning()) return ERROR;
 
     // add static controls verbs
@@ -118,7 +110,6 @@ static int CtrlInitOneApi(afb_api_t api) {
     return err;
 }
 
-//Fonction de pré init de l'API
 static int CtrlLoadOneApi(void* vcbdata, afb_api_t api) {
     CtlConfigT* ctrlConfig = (CtlConfigT*)vcbdata;
 

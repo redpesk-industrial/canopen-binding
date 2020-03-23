@@ -5,16 +5,11 @@
 // if 2 before 1 => conflict with 'is_error' betwin a lely function and a json define named identically
 #include "CANopenSlaveDriver.hpp" /*1*/
 #include "CANopenSensor.hpp" /*2*/
-#include "CANopen-encoder.hpp"
-
+#include "CANopenEncoder.hpp"
 
 #ifndef ERROR
     #define ERROR -1
 #endif
-
-// #define CO_TYPE_SDO 1
-// #define CO_TYPE_TPDO 2
-// #define CO_TYPE_RPDO 3
 
 static void sensorDynRequest(afb_req_t request){
     // retrieve action handle from request and execute the request
@@ -69,7 +64,6 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     // check for an avalable sensor type
     CtlConfigT* ctrlConfig = (CtlConfigT*)afb_api_get_userdata(m_api);
     CANopenEncoder* coEncoder = (CANopenEncoder*)ctrlConfig->external;
-
     try{
         m_function = coEncoder->getfunctionCB(type, format);
     }catch(std::out_of_range&){
@@ -102,28 +96,24 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
     );
 
     if (err) {
-        afb_req_fail_f(
-            request,
-            "query-error",
-            "CANopenSensor::request: invalid 'json' rtu=%s sensor=%s query=%s",
-            m_slave->uid(), m_uid, json_object_get_string(queryJ)
-        );
+        afb_req_fail_f(request, "query-error", "CANopenSensor::request: invalid 'json' rtu=%s sensor=%s query=%s", m_slave->uid(), m_uid, json_object_get_string(queryJ));
         return;
     }
 
     if (!strcasecmp (action, "WRITE")) {
         if(!m_function.writeCB){
-            afb_req_fail_f (request, "Write-error", "CANopenSensor::request: No write function avalable for %s : %s"
-            , m_slave->uid(), m_uid);
+            afb_req_fail_f (request, "Write-error", "CANopenSensor::request: No write function available for %s : %s", m_slave->uid(), m_uid); 
             return;
         }
-        write(dataJ);
-
+        err = m_function.writeCB(this, dataJ);
+        if(err){
+            afb_req_fail_f (request, "Write-error", "CANopenSensor::request: Fail to write on sensor %s : %s", m_slave->uid(), m_uid); 
+            return;
+        }
     }
     else if (!strcasecmp (action, "READ")) {
         if(!m_function.readCB){
-            afb_req_fail_f (request, "read-error", "CANopenSensor::request: No read function avalable for %s : %s"
-            , m_slave->uid(), m_uid);
+            afb_req_fail_f (request, "read-error", "CANopenSensor::request: No read function available for %s : %s", m_slave->uid(), m_uid); 
             return;
         }
         if(m_asyncSensor){
@@ -131,77 +121,71 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
             afb_req_addref(current_req);
             m_slave->Post([this, request]() {
                 json_object *responseJ;
-                m_function.readCB(this, &responseJ);
-                std::cout << "DEBUG : Async read of slave : " << m_slave->id() << " [" << std::hex << m_register << "]:[" << m_subRegister << "] returned " << json_object_get_string(responseJ) << std::endl;
+                int err = m_function.readCB(this, &responseJ);
+                if(err){
+                    afb_req_fail_f (request, "read-error", "CANopenSensor::request: Fail to read sensor %s : %s", m_slave->uid(), m_uid); 
+                    return;
+                }
                 afb_req_success(request, responseJ, NULL);
                 afb_req_unref(request);
             });
             return;
         }
         else{
-            m_function.readCB(this, &responseJ);
+            int err = m_function.readCB(this, &responseJ);
+            if(err){
+                afb_req_fail_f (request, "read-error", "CANopenSensor::request: Fail to read sensor %s : %s", m_slave->uid(), m_uid); 
+                return;
+            }   
         }
     }
     else if (!strcasecmp (action, "SUBSCRIBE")) {
-        err = eventCreate();
-        if (err) return;
-        err = afb_req_subscribe(request, m_event);
-        if (err){
-            afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to subscribe slave=%s sensor=%s"
-            , m_slave->uid(), m_uid);
+        if(!m_function.readCB){
+            afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: sensor '%s' is not readable", m_uid);  
             return;
         }
-        //m_slave->rpdo_mapped[m_register][m_subRegister];
+        if (!m_event) {
+            m_event = afb_api_make_event(m_api, m_uid);
+            if (!m_event) {
+                afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to create event slave=%s sensor=%s", m_slave->uid(), m_uid);  
+                return;
+            }
+        }
+        m_slave->addSensorEvent(this);
+        err = afb_req_subscribe(request, m_event); 
+        if (err){
+            afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to subscribe slave=%s sensor=%s", m_slave->uid(), m_uid);
+            return;
+        }
     }
+
     else if (!strcasecmp (action, "UNSUBSCRIBE")) {
         if (m_event) {
-            err=afb_req_unsubscribe(request, m_event);
+            err = afb_req_unsubscribe(request, m_event);
             if (err) {
-                afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to unsubscribe slave=%s sensor=%s"
-                , m_slave->uid(), m_uid);
+                afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to unsubscribe slave=%s sensor=%s", m_slave->uid(), m_uid); 
                 return;
             }
             m_slave->delSensorEvent(this);
         }
     }
     else {
-        afb_req_fail_f (request, "syntax-error", "CANopenSensor::request: action='%s' UNKNOWN rtu=%s sensor=%s query=%s"
-            , action, m_slave->uid(), m_uid, json_object_get_string(queryJ));
-        return;
+        afb_req_fail_f (request, "syntax-error", "CANopenSensor::request: action='%s' UNKNOWN rtu=%s sensor=%s query=%s", action, m_slave->uid(), m_uid, json_object_get_string(queryJ));
+        return; 
     }
-    // everything looks good let's responde
+    // everything looks good let's respond
     afb_req_success(request, responseJ, NULL);
     return;
 }
 
 int CANopenSensor::read(json_object **responseJ){
     if(!m_function.readCB) return ERROR;
-    m_function.readCB(this, responseJ);
-    return 0;
+    int err = m_function.readCB(this, responseJ);
+    return err;
 }
 
 int CANopenSensor::write(json_object *output){
     if(!m_function.writeCB) return ERROR;
-    m_function.writeCB(this, output);
-    return 0;
-}
-
-afb_api_t CANopenSensor::api() {
-    return m_api;
-}
-
-int CANopenSensor::eventCreate(){
-    if(!m_function.readCB){
-        AFB_API_ERROR(m_api, "CANopenSensor::eventCreate: sensor '%s' is not readable", m_uid);
-        return ERROR;
-    }
-    if (!m_event) {
-        m_event = afb_api_make_event(m_api, m_uid);
-        if (!m_event) {
-            AFB_API_ERROR(m_api, "CANopenSensor::eventCreate: fail to create event slave=%s sensor=%s", m_slave->uid(), m_uid);
-            return ERROR;
-        }
-    }
-    m_slave->addSensorEvent(this);
-    return 0;
+    int err = m_function.writeCB(this, output);
+    return err;
 }
