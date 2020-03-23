@@ -55,7 +55,7 @@ int CANopenRtuConnect (afb_api_t api, CANopenRtuT *rtu){
 
     /*
     CtlConfigT* ctrlConfig = (CtlConfigT*)afb_api_get_userdata(api);
-    
+
     CANopenLelyHandler *coLely = nullptr;
     ctrlConfig->external = coLely;
 
@@ -65,14 +65,14 @@ int CANopenRtuConnect (afb_api_t api, CANopenRtuT *rtu){
     auto exec = loop.get_executor();
     coLely->timer = lely::io::Timer(coLely->poll, exec, CLOCK_MONOTONIC);
     coLely->ctrl = lely::io::CanController(rtu->uri);
-   
+
     // Creating a master
     coLely->chan = lely::io::CanChannel(coLely->poll, exec);
     coLely->chan->open(coLely->ctrl);
     if(coLely->chan->is_open()) printf("master: opened virtual CAN channel\n");
     coLely->master = lely::canopen::AsyncMaster(timer, coLely->chan, rtu->dcf, "", 1);
     coLely->driver = MyDriver(exec, coLely->master, rtu->slaveId);
-    
+
 
     coLely->master->Reset();
 

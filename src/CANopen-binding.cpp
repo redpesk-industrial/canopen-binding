@@ -56,51 +56,10 @@ static void PingTest (afb_req_t request) {
     afb_req_success_f(request,json_object_new_string(response), NULL);
 }
 
-// static void InfoRtu (afb_req_t request) {
-//     json_object *elemJ;
-//     int err, idx;
-//     int verbose=0;
-//     int length =0;
-//     CANopenRtuT *rtus = (CANopenRtuT*) afb_req_get_vcbdata(request);
-//     json_object *queryJ = afb_req_json(request);
-//     json_object *responseJ = json_object_new_array();
-
-//     err = wrap_json_unpack(queryJ, "{s?i s?i !}", "verbose", &verbose, "length", &length);
-//     if (err) {
-//         afb_req_fail (request, "ListRtu: invalid 'json' query=%s", json_object_get_string(queryJ));
-//         return;
-//     }
-
-//     // loop on every defined RTU
-//     for (idx=0; rtus[idx].uid; idx++) {
-//         switch (verbose) {
-//             case 0:
-//                 wrap_json_pack (&elemJ, "{ss ss}", "uid", rtus[idx].uid);
-//                 break;
-//             case 1:
-//             default:
-//                 wrap_json_pack (&elemJ, "{ss ss ss}", "uid", rtus[idx].uid, "uri",rtus[idx].uri, "info", rtus[idx].info);
-//                 break;
-//             case 2:
-//                 err= CANopenRtuIsConnected (request->api, &rtus[idx]);
-//                 if (err <0) {
-//                     wrap_json_pack (&elemJ, "{ss ss ss}", "uid", rtus[idx].uid, "uri",rtus[idx].uri, "info", rtus[idx].info);;
-//                 } else {
-//                     wrap_json_pack (&elemJ, "{ss ss ss sb}", "uid", rtus[idx].uid, "uri",rtus[idx].uri, "info", rtus[idx].info, "connected", err);;
-//                 }
-//                 break;
-//         }
-//         json_object_array_add(responseJ, elemJ);
-//     }
-//     afb_req_success(request, responseJ, NULL);
-// }
-
 // Static verb not depending on CANopen json config file
 static afb_verb_t CtrlApiVerbs[] = {
     /* VERB'S NAME         FUNCTION TO CALL         SHORT DESCRIPTION */
     { .verb = "ping", .callback = PingTest, .auth = nullptr, .info = "CANopen API ping test", .vcbdata = nullptr, .session = 0, .glob = 0},
-    // verb "info" not handle for now
-    // { .verb = "info", .callback = InfoRtu, .auth = nullptr, .info = "CANopen List RTUs", .vcbdata = nullptr, .session = 0, .glob = 0},
     { .verb = nullptr, .callback = nullptr, .auth = nullptr, .info = nullptr, .vcbdata = nullptr, .session = 0, .glob = 0} /* marker for end of the array */
 };
 
@@ -137,10 +96,10 @@ static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ
         AFB_API_ERROR(api, "CtrlLoadOneApi fail to Registry static API verbs");
         return ERROR;
     }
-    
+
     return 0;
     AFB_API_ERROR (api, "Fail to initialise CANopen check Json Config");
-    return -1;    
+    return -1;
 }
 
 
@@ -175,7 +134,7 @@ static int CtrlLoadOneApi(void* vcbdata, afb_api_t api) {
     afb_api_on_init(api, CtrlInitOneApi);
     afb_api_seal(api);
 
-    return error;    
+    return error;
 }
 
 int afbBindingEntry(afb_api_t api) {

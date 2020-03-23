@@ -36,17 +36,8 @@
   #define ERROR -1
 #endif
 
-/*typedef enum {
-  CO_TYPE_UNSET=0,      // Null is not a valid default
-  CO_COIL_STATUS,       // Func Code Read=01 WriteSingle=05 WriteMultiple=15
-  CO_COIL_INPUT,        // Func Code (read single only)=02
-  CO_REGISTER_INPUT,    // Func Code (read single only)=04 
-  CO_REGISTER_HOLDING,  // Func Code Read=03 WriteSingle=06 WriteMultiple=16
-} CANopenTypeE; */         
-
 // hack to get double link rtu<->sensor
 typedef struct CANopenSensorS CANopenSensorT;
-//typedef struct CANopenFunctionCbS CANopenFunctionCbT;
 typedef struct CANopenRtuS CANopenRtuT;
 typedef struct CANopenSlaveS CANopenSlaveT;
 typedef struct CANopenEncoderCbS CANopenFormatCbT;
@@ -95,7 +86,7 @@ struct CANopenSensorS {
   uint count;
   uint hertz;
   uint iddle;
-  uint16_t *buffer; 
+  uint16_t *buffer;
   CANopenFormatCbT *format;
   //CANopenFunctionCbT *function;
   CANopenSlaveT *slave;
@@ -115,7 +106,7 @@ struct CANopenSensorS {
 } ;*/
 
 typedef struct {
-  uint16_t *buffer; 
+  uint16_t *buffer;
   uint count;
   int iddle;
   CANopenSensorT *sensor;

@@ -132,12 +132,6 @@ std::map<std::string, CANopenEncodeCbS> CANopenEncoder::TPDOfunctionCBs {
     {"uint32",{nullptr, CANopenEncoder::coPDOwriteUint32}},
 };
 
-// std::map<std::string, CANopenType> CANopenEncoder::AvalableTypes{
-//     {"SDO", CO_SDO},
-//     {"TPDO", CO_TPDO},
-//     {"RPDO", CO_RPDO}
-// };
-
 encodingTableT CANopenEncoder::encodingTable{
     {"SDO", SDOfunctionCBs},
     {"TPDO", TPDOfunctionCBs},

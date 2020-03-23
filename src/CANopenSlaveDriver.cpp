@@ -89,7 +89,7 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         "action", &action,
         "data", &dataJ
     );
-    
+
     if (err) {
         afb_req_fail_f(
             request,
@@ -174,11 +174,11 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         });
         return;
 
-    } 
+    }
     else {
         afb_req_fail_f (request, "syntax-error", "CANopenSensor::request: action='%s' UNKNOWN rtu=%s query=%s"
             , action, m_uid, json_object_get_string(queryJ));
-        return; 
+        return;
     }
     // everything looks good let's response
     afb_req_success(request, responseJ, NULL);

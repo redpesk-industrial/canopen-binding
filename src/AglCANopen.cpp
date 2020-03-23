@@ -35,14 +35,14 @@ static int socketTxQline(std::string ifname){
 }
 
 const char * fullPathToDCF(afb_api_t api, const char *dcfFile){
-    
+
     int err = 0;
 
     char *fullpath = nullptr;
     char *filename = nullptr;
 
     json_object * pathToDCF = ScanForConfig (CONTROL_CONFIG_PATH, CTL_SCAN_RECURSIVE, dcfFile, "");
-    
+
     if(!pathToDCF){
         AFB_API_ERROR(api, "CANopenLoadOne: fail to find dcf file '%s'", dcfFile);
         return nullptr;
@@ -68,7 +68,7 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ,sd_event *e, uint8_t nod
     int err = 0;
     json_object *slavesJ = NULL;
 
-    assert (rtuJ); 
+    assert (rtuJ);
     assert (api);
 
     //memset(rtu, 0, sizeof (CANopenRtuT)); // default is empty
@@ -90,7 +90,7 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ,sd_event *e, uint8_t nod
         AFB_API_ERROR(api, "CANopenLoadOne: fail to find =%s", m_dcf);
         return;
     }
-    
+
     try{
         // On linux fisical can the default TX queue length is 10. CanController sets
         // it to 128 if it is too small, which requires the CAP_NET_ADMIN capability

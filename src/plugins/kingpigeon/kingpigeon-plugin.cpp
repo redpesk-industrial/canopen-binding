@@ -1,10 +1,9 @@
 #define AFB_BINDING_VERSION 3
 
 #include <ctl-config.h>
-//#include "CANopen-driver.hpp"
-//#include "CANopenSlaveDriver.hpp"
-#include "CANopen-encoder.hpp"
 
+#include "CANopenSensor.hpp"
+#include "CANopen-encoder.hpp"
 
 CTLP_CAPI_REGISTER("kingpigeon");
 

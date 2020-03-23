@@ -27,7 +27,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
         json_object * slaveJ,
         uint8_t nodId
     );
-    
+
     void request (afb_req_t request, json_object * queryJ);
     void addSensorEvent(CANopenSensor* sensor);
     void delSensorEvent(CANopenSensor* sensor);
@@ -35,7 +35,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     inline const char * uid() {return m_uid;}
     inline const char * info() {return m_info;}
     inline const char * prefix() {return m_prefix;}
-    
+
     afb_req_t m_current_req;
 
   private:
@@ -47,9 +47,9 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     uint m_count;
     std::vector<std::shared_ptr<CANopenSensor>> m_sensors;
     std::list<CANopenSensor*> m_sensorEventQueue;
-    
+
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
-        
+
         int i = 0;
         int err;
         std::cout << "OnRpdoWrite Event list :" << std::endl;
@@ -81,7 +81,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
         std::cout << m_prefix << " ON CONFIG" << std::endl;
         try {
             printf("master: configuring slave #%d\n", (int)id());
-            
+
             //*//On config debug parameters
             Wait(AsyncWrite<uint8_t>(0x6200, 0x01, 0x01));
             Wait(AsyncWrite<uint16_t>(0x1800, 0x05, 0x0000));
@@ -105,7 +105,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     }
 
     void OnSync(uint8_t cnt, const lely::canopen::DriverBase::time_point&) noexcept override{
-        
+
         //std::cout << m_prefix << " ON SYNC" << std::endl;
 
         // // Object 2001:00 on the slave was updated by a PDO from the master.
