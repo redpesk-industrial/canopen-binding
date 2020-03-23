@@ -71,8 +71,8 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     CANopenEncoder* coEncoder = (CANopenEncoder*)ctrlConfig->external;
 
     try{
-        m_function = coEncoder->functionCB(type, format);
-    }catch(std::out_of_range){
+        m_function = coEncoder->getfunctionCB(type, format);
+    }catch(std::out_of_range&){
         AFB_API_ERROR(m_api, "CANopenSensor: could not find sensor type %s format %s", type, format);
         return;
     }

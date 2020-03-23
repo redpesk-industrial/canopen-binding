@@ -7,8 +7,8 @@
     #define ERROR -1
 #endif
 
-CANopenEncodeCbS CANopenEncoder::functionCB(std::string type, std::string format){
-    
+CANopenEncodeCbS CANopenEncoder::getfunctionCB(std::string type, std::string format){
+
     CANopenEncodeCbS fn;
 
     try{

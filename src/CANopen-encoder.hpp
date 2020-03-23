@@ -18,9 +18,8 @@ class CANopenEncoder
 {
 
 public:
-    //CANopenEncoder();
+    CANopenEncodeCbS getfunctionCB(std::string type, std::string format);
     int addEncoder(encodingTableT newEncodingTable);
-    CANopenEncodeCbS functionCB(std::string type, std::string format);
 
     static int coSDOwriteUint8(CANopenSensor* sensor, json_object* inputJ);
     static int coSDOwriteUint16(CANopenSensor* sensor, json_object* inputJ);
