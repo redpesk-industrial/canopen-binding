@@ -79,7 +79,7 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
     uint16_t regId;
     int subidx;
     uint8_t subRegId;
-    int val;
+    double val;
     int size;
     int err;
 
@@ -99,7 +99,7 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
     }
 
     if (!strcasecmp(action, "WRITE")) {
-        err= wrap_json_unpack(dataJ, "{si si si si!}",
+        err= wrap_json_unpack(dataJ, "{si si sF si!}",
             "id", &idx,
             "subid", &subidx,
             "val", &val,
@@ -121,16 +121,20 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         switch (size)
         {
         case 1:
+            AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint8_t)val, regId, subRegId, m_uid);
             AsyncWrite<uint8_t>(regId, subRegId, (uint8_t)val);
             break;
         case 2:
+            AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint16_t)val, regId, subRegId, m_uid);
             AsyncWrite<uint16_t>(regId, subRegId, (uint16_t)val);
             break;
         case 3:
-            AsyncWrite<uint32_t>(regId, subRegId, val);
+            AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint32_t)val, regId, subRegId, m_uid);
+            AsyncWrite<uint32_t>(regId, subRegId, (uint32_t)val);
             break;
         case 4:
-            AsyncWrite<uint32_t>(regId, subRegId, val);
+            AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint32_t)val, regId, subRegId, m_uid);
+            AsyncWrite<uint32_t>(regId, subRegId, (uint32_t)val);
             break;
         default:
             afb_req_fail_f(
@@ -167,8 +171,8 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         // Use "Post" to avoid asynchronous conflicts
         Post([this, request, regId, subRegId]() {
             auto v = Wait(AsyncRead<uint32_t>(regId, subRegId));
-            AFB_REQ_DEBUG(request, "DEBUG : Async read of slave %d [%x]:[%x] returned %d", id(), regId, subRegId, v);
-            afb_req_success(request, json_object_new_int(v), NULL);
+            AFB_REQ_DEBUG(request, "DEBUG : Async read of slave %s [0x%x]:[0x%x] returned 0x%x", m_uid, regId, subRegId, v);
+            afb_req_success(request, json_object_new_int64(v), NULL);
             afb_req_unref(request);
         });
         return;

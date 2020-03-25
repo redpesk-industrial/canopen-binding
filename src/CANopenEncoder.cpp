@@ -62,7 +62,7 @@ int CANopenEncoder::coSDOwriteUint16(CANopenSensor* sensor, json_object* inputJ)
 }
 
 int CANopenEncoder::coSDOwriteUint32(CANopenSensor* sensor, json_object* inputJ){
-    int val = json_object_get_int(inputJ);
+    double val = (double)json_object_get_int64(inputJ);
     sensor->slave()->AsyncWrite<uint32_t>(sensor->reg(), sensor->subReg(), (uint32_t)val);
     return 0;
 }
@@ -86,8 +86,8 @@ int CANopenEncoder::coSDOreadUint16(CANopenSensor* sensor, json_object** respons
 }
 
 int CANopenEncoder::coSDOreadUint32(CANopenSensor* sensor, json_object** responseJ){
-    int val = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint32_t>(sensor->reg(), sensor->subReg()));
-    *responseJ = json_object_new_int(val);
+    int64_t val = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint32_t>(sensor->reg(), sensor->subReg()));
+    *responseJ = json_object_new_int64(val);
     return 0;
 }
 
@@ -108,7 +108,7 @@ int CANopenEncoder::coPDOwriteUint16(CANopenSensor* sensor, json_object* inputJ)
 }
 
 int CANopenEncoder::coPDOwriteUint32(CANopenSensor* sensor, json_object* inputJ){
-    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint32_t)json_object_get_int(inputJ);
+    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint32_t)json_object_get_int64(inputJ);
     return 0;
 }
 
@@ -126,7 +126,7 @@ int CANopenEncoder::coPDOreadUint16(CANopenSensor* sensor, json_object** outputJ
 
 int CANopenEncoder::coPDOreadUint32(CANopenSensor* sensor, json_object** outputJ){
     uint32_t val = sensor->slave()->rpdo_mapped[sensor->reg()][sensor->subReg()];
-    *outputJ = json_object_new_int(val);
+    *outputJ = json_object_new_int64(val);
     return 0;
 }
 
