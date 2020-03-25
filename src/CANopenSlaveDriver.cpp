@@ -1,4 +1,4 @@
-#include <strings.h>
+#include <string.h>
 
 // if 2 before 1 => conflict with 'is_error' betwin a lely function and a json define named identically
 #include "CANopenSlaveDriver.hpp" /*1*/
@@ -20,15 +20,16 @@ CANopenSlaveDriver::CANopenSlaveDriver(
     ) : lely::canopen::FiberDriver(exec, master, nodId)
 {
     int err = 0;
-    json_object *sensorsJ = NULL;
+    json_object *sensorsJ = nullptr;
     char* adminCmd;
     assert (slaveJ);
 
-    err = wrap_json_unpack(slaveJ, "{ss,s?s,ss,s?s,so}",
+    err = wrap_json_unpack(slaveJ, "{ss,s?s,ss,s?s,s?o,so}",
             "uid", &m_uid,
             "info", &m_info,
             "prefix", &m_prefix,
             "dcf", &m_dcf,
+            "onconf", &m_onconfJ,
             "sensors", &sensorsJ);
     if (err) {
         AFB_API_ERROR(api, "Fail to parse slave JSON : (%s)", json_object_to_json_string(slaveJ));
@@ -118,22 +119,19 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
 
         regId = uint16_t(idx);
         subRegId = uint8_t(subidx);
+        AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint32_t)val, regId, subRegId, m_uid);
         switch (size)
         {
         case 1:
-            AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint8_t)val, regId, subRegId, m_uid);
             AsyncWrite<uint8_t>(regId, subRegId, (uint8_t)val);
             break;
         case 2:
-            AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint16_t)val, regId, subRegId, m_uid);
             AsyncWrite<uint16_t>(regId, subRegId, (uint16_t)val);
             break;
         case 3:
-            AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint32_t)val, regId, subRegId, m_uid);
             AsyncWrite<uint32_t>(regId, subRegId, (uint32_t)val);
             break;
         case 4:
-            AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint32_t)val, regId, subRegId, m_uid);
             AsyncWrite<uint32_t>(regId, subRegId, (uint32_t)val);
             break;
         default:
@@ -207,4 +205,54 @@ void CANopenSlaveDriver::delSensorEvent(CANopenSensor* sensor){
             else q++;
         }
     });
+}
+
+void CANopenSlaveDriver::slavePerStartConfig(json_object * conf){
+    const char * actionInfo;
+    int reg;
+    int size;
+    double data;
+    int err;
+
+    err = wrap_json_unpack(conf, "{s?s,si,si,sF}",
+        "info", &actionInfo,
+        "register", &reg,
+        "size", &size,
+        "data", &data);
+    if (err) {
+        AFB_API_ERROR(m_api, "Fail to parse slave JSON : (%s)", json_object_to_json_string(conf));
+        return;
+    }
+    
+    // Get register and sub register from the parsed register
+    uint16_t idx = ((uint32_t)reg & 0x00ffff00)>>8;
+    uint8_t subIdx = (uint32_t)reg & 0x000000ff;
+
+    if(strlen(actionInfo))
+        AFB_NOTICE("%s : on config : %s", m_uid, actionInfo);
+    try{
+        switch (size)
+        {
+        case 1:
+            Wait(AsyncWrite<uint8_t>(idx, subIdx, (uint8_t)data));
+            break;
+        case 2:
+            Wait(AsyncWrite<uint16_t>(idx, subIdx, (uint16_t)data));
+            break;
+        case 3:
+            Wait(AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)data));
+            break;
+        case 4:
+            Wait(AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)data));
+            break;
+        default:
+            AFB_ERROR(
+                "slavePerStartConfig: invalid size %d. Available size (in byte) are 1, 2, 3 or 4",
+                size
+            );
+            break;
+        }
+    }catch(lely::canopen::SdoError& e){
+        AFB_ERROR("could not configure %s register [0x%x][0x%x] with value %x \nwhat() : %s", m_uid, idx, subIdx, (uint32_t)data, e.what());
+    }
 }

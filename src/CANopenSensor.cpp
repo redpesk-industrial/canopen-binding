@@ -157,6 +157,7 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
             afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to subscribe slave=%s sensor=%s", m_slave->uid(), m_uid);
             return;
         }
+        AFB_REQ_DEBUG(request, "Subscribe success on %s/%s register : [0x%x][0x%x]", m_slave->prefix(), m_uid, m_register, m_subRegister);
     }
 
     else if (!strcasecmp (action, "UNSUBSCRIBE")) {

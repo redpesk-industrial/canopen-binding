@@ -46,6 +46,9 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     uint m_count;
     std::vector<std::shared_ptr<CANopenSensor>> m_sensors;
     std::list<CANopenSensor*> m_sensorEventQueue;
+    json_object *m_onconfJ = nullptr;
+    
+    void slavePerStartConfig(json_object * conf);
 
     // This function gets called every time a value is written to the local object dictionary of the master
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
@@ -72,8 +75,21 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
         if(val <= 0) master[0x1006][0] = UINT32_C(10000);
     }//*/
 
-    /*// This function gets called during the boot-up process for the slave.
-    void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override {  
+    //*// This function gets called during the boot-up process for the slave.
+    void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override {
+        //onConfigActions();
+        if(m_onconfJ){
+            if (json_object_is_type(m_onconfJ, json_type_array)) {
+                int count = (int)json_object_array_length(m_onconfJ);
+                for (int idx = 0; idx < count; idx++) {
+                    json_object *conf = json_object_array_get_idx(m_onconfJ, idx);
+                    slavePerStartConfig(conf);
+                }
+
+            } else {
+                slavePerStartConfig(m_onconfJ);
+            }
+        }
     }//*/
 };
 #else

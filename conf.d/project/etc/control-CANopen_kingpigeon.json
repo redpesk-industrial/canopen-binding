@@ -28,12 +28,26 @@
         "info": "CANopen slave 2",
         "prefix": "slave2",
         "nodId": 2,
+        "onconf": [
+          {
+            "info": "Put Analog TX on a non displayed channel",
+            "register": 1573377,
+            "size" : 4,
+            "data": 2147484546
+          },
+          {
+            "info": "Turn off TPDO 01 event",
+            "register": 1572869,
+            "size" : 2,
+            "data": 0
+          }
+        ],
         "sensors": [
           {
             "uid": "DIN01",
             "type": "RPDO",
             "format" : "bool_din4",
-            "register" : 6291457
+            "register" : 6291456
           },
           {
             "uid": "DIN01_EVENT_TIMER",
