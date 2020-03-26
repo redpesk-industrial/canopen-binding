@@ -4,6 +4,7 @@
 #include "CANopenSlaveDriver.hpp" /*1*/
 #include "CANopenSensor.hpp" /*2*/
 #include "AglCANopen.hpp"
+#include "CANopenGlue.hpp"
 
 static void slaveDynRequest(afb_req_t request){
     json_object * queryJ = afb_req_json(request);
@@ -76,10 +77,9 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
     const char *action;
     json_object *dataJ = nullptr;
     json_object *responseJ = nullptr;
-    int idx;
-    uint16_t regId;
-    int subidx;
-    uint8_t subRegId;
+    json_object * regJ;
+    json_object * valJ;
+    int reg;
     double val;
     int size;
     int err;
@@ -100,10 +100,9 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
     }
 
     if (!strcasecmp(action, "WRITE")) {
-        err= wrap_json_unpack(dataJ, "{si si sF si!}",
-            "id", &idx,
-            "subid", &subidx,
-            "val", &val,
+        err= wrap_json_unpack(dataJ, "{so so si!}",
+            "reg", &regJ,
+            "val", &valJ,
             "size", &size
         );
 
@@ -117,22 +116,46 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
             return;
         }
 
-        regId = uint16_t(idx);
-        subRegId = uint8_t(subidx);
-        AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint32_t)val, regId, subRegId, m_uid);
+        try{
+            reg = get_data_int(regJ);
+        }catch(std::runtime_error& e){
+            afb_req_fail_f(
+                request,
+                "query-error",
+                "CANopenSlaveDriver::request: %s => %s register convertion error \nwhat() : %s",
+                m_uid, action, e.what()
+            );
+            return;
+        }
+        uint16_t idx = ((uint32_t)reg & 0x00ffff00)>>8;
+        uint8_t subIdx = (uint32_t)reg & 0x000000ff;
+
+        try{
+            val = get_data_double(valJ);
+        }catch(std::runtime_error& e){
+            afb_req_fail_f(
+                request,
+                "query-error",
+                "CANopenSlaveDriver::request: %s => %s val convertion error \nwhat() : %s",
+                m_uid, action, e.what()
+            );
+            return;
+        }
+
+        AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint32_t)val, idx, subIdx, m_uid);
         switch (size)
         {
         case 1:
-            AsyncWrite<uint8_t>(regId, subRegId, (uint8_t)val);
+            AsyncWrite<uint8_t>(idx, subIdx, (uint8_t)val);
             break;
         case 2:
-            AsyncWrite<uint16_t>(regId, subRegId, (uint16_t)val);
+            AsyncWrite<uint16_t>(idx, subIdx, (uint16_t)val);
             break;
         case 3:
-            AsyncWrite<uint32_t>(regId, subRegId, (uint32_t)val);
+            AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)val);
             break;
         case 4:
-            AsyncWrite<uint32_t>(regId, subRegId, (uint32_t)val);
+            AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)val);
             break;
         default:
             afb_req_fail_f(
@@ -145,11 +168,10 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
         }
 
     } else if (!strcasecmp (action, "READ")) {
-        err= wrap_json_unpack(dataJ, "{si si !}",
-            "id", &idx,
-            "subid", &subidx
+        err= wrap_json_unpack(dataJ, "{so !}",
+            "reg", &regJ
         );
-
+        
         if (err) {
             afb_req_fail_f(
                 request,
@@ -160,16 +182,27 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
             return;
         }
 
-        regId = uint16_t(idx);
-        subRegId = uint8_t(subidx);
+        try{
+            reg = get_data_int(regJ);
+        }catch(std::runtime_error& e){
+            afb_req_fail_f(
+                request,
+                "query-error",
+                "CANopenSlaveDriver::request: %s => %s register convertion error \nwhat() : %s",
+                m_uid, action, e.what()
+            );
+            return;
+        }
+        uint16_t idx = ((uint32_t)reg & 0x00ffff00)>>8;
+        uint8_t subIdx = (uint32_t)reg & 0x000000ff;
 
         afb_req_t current_req = request;
         afb_req_addref(current_req);
 
         // Use "Post" to avoid asynchronous conflicts
-        Post([this, request, regId, subRegId]() {
-            auto v = Wait(AsyncRead<uint32_t>(regId, subRegId));
-            AFB_REQ_DEBUG(request, "DEBUG : Async read of slave %s [0x%x]:[0x%x] returned 0x%x", m_uid, regId, subRegId, v);
+        Post([this, request, idx, subIdx]() {
+            auto v = Wait(AsyncRead<uint32_t>(idx, subIdx));
+            AFB_REQ_DEBUG(request, "DEBUG : Async read of slave %s [0x%x]:[0x%x] returned 0x%x", m_uid, idx, subIdx, v);
             afb_req_success(request, json_object_new_int64(v), NULL);
             afb_req_unref(request);
         });
@@ -213,23 +246,39 @@ void CANopenSlaveDriver::slavePerStartConfig(json_object * conf){
     int size;
     double data;
     int err;
+    json_object * dataJ;
+    json_object * regJ;
 
-    err = wrap_json_unpack(conf, "{s?s,si,si,sF}",
+    err = wrap_json_unpack(conf, "{s?s,so,si,so}",
         "info", &actionInfo,
-        "register", &reg,
+        "register", &regJ,
         "size", &size,
-        "data", &data);
+        "data", &dataJ);
     if (err) {
-        AFB_API_ERROR(m_api, "Fail to parse slave JSON : (%s)", json_object_to_json_string(conf));
+        AFB_ERROR("%s->slavePerStartConfig : Fail to parse slave JSON : (%s)", m_uid, json_object_to_json_string(conf));
         return;
     }
-    
+
+    if(strlen(actionInfo))
+        AFB_NOTICE("%s->slavePerStartConfig : %s", m_uid, actionInfo);
+    else AFB_NOTICE("%s->slavePerStartConfig", m_uid);
+
     // Get register and sub register from the parsed register
+    try{
+        reg = get_data_int(regJ);
+    }catch(std::runtime_error& e){
+        AFB_ERROR("%s->slavePerStartConfig : %s", m_uid, e.what());
+        return;
+    }
     uint16_t idx = ((uint32_t)reg & 0x00ffff00)>>8;
     uint8_t subIdx = (uint32_t)reg & 0x000000ff;
 
-    if(strlen(actionInfo))
-        AFB_NOTICE("%s : on config : %s", m_uid, actionInfo);
+    try{
+        data = get_data_double(dataJ);
+    }catch(std::runtime_error& e){
+        AFB_ERROR("%s->slavePerStartConfig : %s", m_uid, e.what());
+        return;
+    }
     try{
         switch (size)
         {
@@ -247,12 +296,13 @@ void CANopenSlaveDriver::slavePerStartConfig(json_object * conf){
             break;
         default:
             AFB_ERROR(
-                "slavePerStartConfig: invalid size %d. Available size (in byte) are 1, 2, 3 or 4",
+                "%s->slavePerStartConfig : invalid size %d. Available size (in byte) are 1, 2, 3 or 4",
+                m_uid,
                 size
             );
-            break;
+            return;
         }
     }catch(lely::canopen::SdoError& e){
-        AFB_ERROR("could not configure %s register [0x%x][0x%x] with value %x \nwhat() : %s", m_uid, idx, subIdx, (uint32_t)data, e.what());
+        AFB_ERROR("%s->slavePerStartConfig : could not configure register [0x%x][0x%x] with value 0X%x \nwhat() : %s", m_uid, idx, subIdx, (uint32_t)data, e.what());
     }
 }

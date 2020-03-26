@@ -17,7 +17,10 @@
 # Add target to project dependency list
 PROJECT_TARGET_ADD(CANopenEncoder)
 	# Define project Targets
-	add_library(${TARGET_NAME} SHARED CANopenEncoder.cpp)
+	add_library(${TARGET_NAME} SHARED
+					CANopenEncoder.cpp
+					CANopenGlue.cpp
+					)
 
 	SET_TARGET_PROPERTIES(${TARGET_NAME} PROPERTIES
 		LABELS "LIBRARY"

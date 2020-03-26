@@ -21,7 +21,7 @@
     "info": "CANopen Master",
     "uri" : "can0",
     "nodId": 1,
-    "dcf": "kp2-master.dcf",
+    "dcf": "kp1-master.dcf",
     "slaves": [
       {
         "uid": "CANopen-slave-2",
@@ -31,13 +31,13 @@
         "onconf": [
           {
             "info": "Put Analog TX on a non displayed channel",
-            "register": 1573377,
+            "register": "0x180201",
             "size" : 4,
-            "data": 2147484546
+            "data": "0x80000382"
           },
           {
-            "info": "Turn off TPDO 01 event",
-            "register": 1572869,
+            "info": "Turn off TPDO 01 sync",
+            "register": "0x180005",
             "size" : 2,
             "data": 0
           }
@@ -47,25 +47,25 @@
             "uid": "DIN01",
             "type": "RPDO",
             "format" : "bool_din4",
-            "register" : 6291456
+            "register" : "0x200200"
           },
           {
             "uid": "DIN01_EVENT_TIMER",
             "type": "SDO",
             "format" : "uint16",
-            "register" : 1572869
+            "register" : "0x180005"
           },
           {
             "uid": "DOUT01",
-            "type": "TPDO",
-            "format" : "uint16",
-            "register" : 6422528
+            "type": "SDO",
+            "format" : "uint8",
+            "register" : "0x620001"
           },
           {
             "uid": "AIN01_TPDO_MAPPING",
             "type": "SDO",
             "format" : "uint32",
-            "register" : 1573377
+            "register" : "0x180201"
           }
         ]
       }

@@ -6,6 +6,7 @@
 #include "CANopenSlaveDriver.hpp" /*1*/
 #include "CANopenSensor.hpp" /*2*/
 #include "CANopenEncoder.hpp"
+#include "CANopenGlue.hpp"
 
 #ifndef ERROR
     #define ERROR -1
@@ -21,11 +22,12 @@ static void sensorDynRequest(afb_req_t request){
 CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveDriver * slaveDriver)
 {
     int err = 0;
-    int sensorRegister;
+    int idx;
     const char *type=NULL;
     const char *format=NULL;
     const char *privilege=NULL;
     afb_auth_t *authent=NULL;
+    json_object * regJ;
     json_object *argsJ=NULL;
     char* sensorVerb;
 
@@ -36,10 +38,10 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     m_slave = slaveDriver;
     m_api = api;
 
-    err = wrap_json_unpack(sensorJ, "{ss,ss,si,s?s,s?s,s?s,s?o !}",
+    err = wrap_json_unpack(sensorJ, "{ss,ss,so,s?s,s?s,s?s,s?o !}",
                 "uid", &m_uid,
                 "type", &type,
-                "register", &sensorRegister,
+                "register", &regJ,
                 "format", &format,
                 "info", &m_info,
                 "privilege", &privilege,
@@ -50,8 +52,14 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     }
 
     // Get sensor register and sub register from the parsed register
-    m_register = ((uint32_t)sensorRegister & 0x00ffff00)>>8;
-    m_subRegister = (uint32_t)sensorRegister & 0x000000ff;
+    try{
+        idx = get_data_int(regJ);
+    }catch(std::runtime_error& e){
+        AFB_API_ERROR(api, "CANopenSensor: %s error at register convertion\n what() %s: ", m_uid, e.what());
+        return;
+    }
+    m_register = ((uint32_t)idx & 0x00ffff00)>>8;
+    m_subRegister = (uint32_t)idx & 0x000000ff;
 
     // create autentification for sensor
     if (privilege) {

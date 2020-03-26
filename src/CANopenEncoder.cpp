@@ -2,6 +2,7 @@
 #include "CANopenSlaveDriver.hpp" /*1*/
 #include "CANopenSensor.hpp" /*2*/
 #include "CANopenEncoder.hpp"
+#include "CANopenGlue.hpp"
 
 #ifndef ERROR
     #define ERROR -1
@@ -50,19 +51,19 @@ int CANopenEncoder::addEncoder(encodingTableT newEncodingTable){
 }
 
 int CANopenEncoder::coSDOwriteUint8(CANopenSensor* sensor, json_object* inputJ){
-    int val = json_object_get_int(inputJ);
+    int val = get_data_int(inputJ);
     sensor->slave()->AsyncWrite<uint8_t>(sensor->reg(), sensor->subReg(), (uint8_t)val);
     return 0;
 }
 
 int CANopenEncoder::coSDOwriteUint16(CANopenSensor* sensor, json_object* inputJ){
-    int val = json_object_get_int(inputJ);
+    int val = get_data_int(inputJ);
     sensor->slave()->AsyncWrite<uint16_t>(sensor->reg(), sensor->subReg(), (uint16_t)val);
     return 0;
 }
 
 int CANopenEncoder::coSDOwriteUint32(CANopenSensor* sensor, json_object* inputJ){
-    double val = (double)json_object_get_int64(inputJ);
+    double val = get_data_double(inputJ);
     sensor->slave()->AsyncWrite<uint32_t>(sensor->reg(), sensor->subReg(), (uint32_t)val);
     return 0;
 }
@@ -98,17 +99,17 @@ int CANopenEncoder::coSDOreadString(CANopenSensor* sensor, json_object** respons
 }
 
 int CANopenEncoder::coPDOwriteUint8(CANopenSensor* sensor, json_object* inputJ){
-    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint8_t)json_object_get_int(inputJ);
+    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint8_t)get_data_int(inputJ);
     return 0;
 }
 
 int CANopenEncoder::coPDOwriteUint16(CANopenSensor* sensor, json_object* inputJ){
-    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint16_t)json_object_get_int(inputJ);
+    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint16_t)get_data_int(inputJ);
     return 0;
 }
 
 int CANopenEncoder::coPDOwriteUint32(CANopenSensor* sensor, json_object* inputJ){
-    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint32_t)json_object_get_int64(inputJ);
+    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint32_t)get_data_double(inputJ);
     return 0;
 }
 
