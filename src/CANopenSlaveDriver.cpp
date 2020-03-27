@@ -297,12 +297,14 @@ void CANopenSlaveDriver::slavePerStartConfig(json_object * conf){
         default:
             AFB_ERROR(
                 "%s->slavePerStartConfig : invalid size %d. Available size (in byte) are 1, 2, 3 or 4",
-                m_uid,
-                size
+                m_uid, size
             );
             return;
         }
     }catch(lely::canopen::SdoError& e){
-        AFB_ERROR("%s->slavePerStartConfig : could not configure register [0x%x][0x%x] with value 0X%x \nwhat() : %s", m_uid, idx, subIdx, (uint32_t)data, e.what());
+        AFB_ERROR(
+            "%s->slavePerStartConfig : could not configure register [0x%x][0x%x] with value 0X%x \nwhat() : %s",
+            m_uid, idx, subIdx, (uint32_t)data, e.what()
+        );
     }
 }

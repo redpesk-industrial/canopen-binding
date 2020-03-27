@@ -52,7 +52,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
 
     // This function gets called every time a value is written to the local object dictionary of the master
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
-        
+
         int err;
         // check in the sensor event list
         for (auto sensor: m_sensorEventQueue){
@@ -77,18 +77,23 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
 
     //*// This function gets called during the boot-up process for the slave.
     void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override {
-        //onConfigActions();
-        if(m_onconfJ){
-            if (json_object_is_type(m_onconfJ, json_type_array)) {
-                int count = (int)json_object_array_length(m_onconfJ);
-                for (int idx = 0; idx < count; idx++) {
-                    json_object *conf = json_object_array_get_idx(m_onconfJ, idx);
-                    slavePerStartConfig(conf);
-                }
+        try{
+            if(m_onconfJ){
+                if (json_object_is_type(m_onconfJ, json_type_array)) {
+                    int count = (int)json_object_array_length(m_onconfJ);
+                    for (int idx = 0; idx < count; idx++) {
+                        json_object *conf = json_object_array_get_idx(m_onconfJ, idx);
+                        slavePerStartConfig(conf);
+                    }
 
-            } else {
-                slavePerStartConfig(m_onconfJ);
+                } else {
+                    slavePerStartConfig(m_onconfJ);
+                }
             }
+            // Report success (empty error code).
+            res({});
+        } catch (lely::canopen::SdoError& e) {
+            res(e.code());
         }
     }//*/
 };

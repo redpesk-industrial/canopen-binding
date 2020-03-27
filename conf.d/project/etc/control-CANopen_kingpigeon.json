@@ -47,7 +47,7 @@
             "uid": "DIN01",
             "type": "RPDO",
             "format" : "bool_din4",
-            "register" : "0x200200"
+            "register" : "0x620000"
           },
           {
             "uid": "DIN01_EVENT_TIMER",
@@ -57,9 +57,9 @@
           },
           {
             "uid": "DOUT01",
-            "type": "SDO",
-            "format" : "uint8",
-            "register" : "0x620001"
+            "type": "TPDO",
+            "format" : "uint16",
+            "register" : "0x600000"
           },
           {
             "uid": "AIN01_TPDO_MAPPING",

@@ -97,13 +97,13 @@ CompactSubObj=1
 
 [1016Value]
 NrOfEntries=1
-1=0x007F0400
+1=0x00000000
 
 [1017]
 ParameterName=Producer heartbeat time
 DataType=0x0006
 AccessType=rw
-DefaultValue=500
+DefaultValue=0
 
 [1018]
 SubNumber=5
@@ -120,7 +120,7 @@ DefaultValue=4
 ParameterName=Vendor-ID
 DataType=0x0007
 AccessType=ro
-DefaultValue=60000
+DefaultValue=0x00030191
 
 [1018sub2]
 ParameterName=Product code
@@ -209,7 +209,7 @@ NrOfEntries=1
 ParameterName=NMT startup
 DataType=0x0007
 AccessType=rw
-ParameterValue=0x00000001
+ParameterValue=0x00000003
 
 [1F81]
 ParameterName=NMT slave assignment
@@ -249,7 +249,7 @@ CompactSubObj=1
 
 [5A00Value]
 NrOfEntries=1
-1=0x20020010
+1=0x62000010
 
 [5C00]
 ParameterName=Remote RPDO number and node-ID
@@ -266,4 +266,4 @@ CompactSubObj=1
 
 [5E00Value]
 NrOfEntries=1
-1=0x20010010
+1=0x60000010
