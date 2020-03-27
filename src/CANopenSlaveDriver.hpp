@@ -70,9 +70,9 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
 
     //*// This function gets called when the boot-up process of the slave completes.
     void OnBoot(lely::canopen::NmtState nmtState, char es, const ::std::string&) noexcept override {
-        // if master cycle period is null or undefined set it to 10ms
+        // if master cycle period is null or undefined set it to 100ms
         int val = master[0x1006][0];
-        if(val <= 0) master[0x1006][0] = UINT32_C(1000000);
+        if(val <= 0) master[0x1006][0] = UINT32_C(100000);
     }//*/
 
     //*// This function gets called during the boot-up process for the slave.

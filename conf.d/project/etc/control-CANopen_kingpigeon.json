@@ -21,7 +21,7 @@
     "info": "CANopen Master",
     "uri" : "can0",
     "nodId": 1,
-    "dcf": "kp1-master.dcf",
+    "dcf": "kp2-master.dcf",
     "slaves": [
       {
         "uid": "CANopen-slave-2",
@@ -47,7 +47,7 @@
             "uid": "DIN01",
             "type": "RPDO",
             "format" : "bool_din4",
-            "register" : "0x620000"
+            "register" : "0x620001"
           },
           {
             "uid": "DIN01_EVENT_TIMER",
@@ -58,8 +58,8 @@
           {
             "uid": "DOUT01",
             "type": "TPDO",
-            "format" : "uint16",
-            "register" : "0x600000"
+            "format" : "uint8",
+            "register" : "0x600001"
           },
           {
             "uid": "AIN01_TPDO_MAPPING",

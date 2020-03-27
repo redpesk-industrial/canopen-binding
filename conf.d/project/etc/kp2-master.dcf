@@ -81,6 +81,7 @@ DefaultValue=0x40000080
 ParameterName=Communication cycle period
 DataType=0x0007
 AccessType=rw
+DefaultValue=100000
 
 [1014]
 ParameterName=COB-ID EMCY
@@ -97,7 +98,7 @@ CompactSubObj=1
 
 [1016Value]
 NrOfEntries=1
-1=0x007F0400
+1=0x00000000
 
 [1017]
 ParameterName=Producer heartbeat time
@@ -165,11 +166,12 @@ ParameterName=RPDO mapping parameter
 ObjectType=0x09
 DataType=0x0007
 AccessType=rw
-CompactSubObj=1
+CompactSubObj=2
 
 [1600Value]
-NrOfEntries=1
-1=0x20020010
+NrOfEntries=2
+1=0x20020108
+2=0x20020208
 
 [1800]
 SubNumber=3
@@ -199,17 +201,18 @@ ParameterName=TPDO mapping parameter
 ObjectType=0x09
 DataType=0x0007
 AccessType=rw
-CompactSubObj=1
+CompactSubObj=2
 
 [1A00Value]
-NrOfEntries=1
-1=0x20010010
+NrOfEntries=2
+1=0x20010108
+2=0x20010208
 
 [1F80]
 ParameterName=NMT startup
 DataType=0x0007
 AccessType=rw
-ParameterValue=0x00000001
+ParameterValue=0x00000003
 
 [1F81]
 ParameterName=NMT slave assignment
@@ -222,24 +225,21 @@ CompactSubObj=127
 NrOfEntries=1
 2=0x00000005
 
-[1F82]
-ParameterName=Request NMT
-ObjectType=0x08
-DataType=0x0005
-AccessType=rw
-CompactSubObj=127
-
 [2001]
 ParameterName=TPDO test
-DataType=0x0006
+ObjectType=0x09
+DataType=0x0005
 AccessType=rw
 PDOMapping=1
+CompactSubObj=2
 
 [2002]
 ParameterName=RPDO test
-DataType=0x0006
+ObjectType=0x09
+DataType=0x0005
 AccessType=rw
 PDOMapping=1
+CompactSubObj=2
 
 [5800]
 ParameterName=Remote TPDO number and node-ID
@@ -252,11 +252,12 @@ ParameterName=Remote TPDO mapping
 ObjectType=0x09
 DataType=0x0007
 AccessType=rw
-CompactSubObj=1
+CompactSubObj=2
 
 [5A00Value]
-NrOfEntries=1
-1=0x62000010
+NrOfEntries=2
+1=0x62000108
+2=0x62000208
 
 [5C00]
 ParameterName=Remote RPDO number and node-ID
@@ -269,8 +270,9 @@ ParameterName=Remote RPDO mapping
 ObjectType=0x09
 DataType=0x0007
 AccessType=rw
-CompactSubObj=1
+CompactSubObj=2
 
 [5E00Value]
-NrOfEntries=1
-1=0x60000010
+NrOfEntries=2
+1=0x60000108
+2=0x60000208

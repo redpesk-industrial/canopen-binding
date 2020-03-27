@@ -11,8 +11,8 @@ extern "C"{
     CTLP_CAPI_REGISTER("kingpigeon");
 
     static int kingpigeon_bool_din4(CANopenSensor* sensor, json_object** outputJ){
-        CANopenEncoder::coPDOreadUint16(sensor, outputJ);
-        uint16_t val = (uint16_t)json_object_get_int(*outputJ);
+        CANopenEncoder::coPDOreadUint8(sensor, outputJ);
+        uint8_t val = (uint8_t)json_object_get_int(*outputJ);
         *outputJ = json_object_new_array();
         json_object_array_add(*outputJ, json_object_new_boolean((json_bool)val & 0b00000001));
         json_object_array_add(*outputJ, json_object_new_boolean((json_bool)val & 0b00000010));
