@@ -6,6 +6,10 @@
 #include "AglCANopen.hpp"
 #include "CANopenGlue.hpp"
 
+#ifndef ERROR
+    #define ERROR -1
+#endif
+
 static void slaveDynRequest(afb_req_t request){
     json_object * queryJ = afb_req_json(request);
     CANopenSlaveDriver * slave = (CANopenSlaveDriver *) afb_req_get_vcbdata(request);
@@ -219,25 +223,30 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
     return;
 }
 
-void CANopenSlaveDriver::addSensorEvent(CANopenSensor * sensor){ 
-    
-    // Use "Post" to avoid asynchronous conflicts
-    Post([this, sensor]() {
+
+// IMPORTANT : use this funtion only int the driver exec
+int CANopenSlaveDriver::addSensorEvent(CANopenSensor * sensor){ 
+    try{
         m_sensorEventQueue.insert(m_sensorEventQueue.end(), sensor);
-    });
+    }catch(std::exception){
+        return ERROR;
+    }
+    return 0;
 }
 
-void CANopenSlaveDriver::delSensorEvent(CANopenSensor* sensor){
-    
-    // Use "Post" to avoid asynchronous conflicts
-    Post([this, sensor]() {
+// IMPORTANT : use this funtion only int the driver exec
+int CANopenSlaveDriver::delSensorEvent(CANopenSensor* sensor){
+    try{
         for(auto q = m_sensorEventQueue.begin() ; q != m_sensorEventQueue.end();){
             if(!strcasecmp((*q)->uid(), sensor->uid())){
                 q = m_sensorEventQueue.erase(q);
             }
             else q++;
         }
-    });
+    }catch(std::exception){
+        return ERROR;
+    }
+    return 0;
 }
 
 void CANopenSlaveDriver::slavePerStartConfig(json_object * conf){

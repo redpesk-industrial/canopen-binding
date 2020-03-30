@@ -152,31 +152,72 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
             afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: sensor '%s' is not readable", m_uid);  
             return;
         }
-        if (!m_event) {
-            m_event = afb_api_make_event(m_api, m_uid);
+        // Use "Post" to avoid asynchronous conflicts
+        afb_req_t current_req = request;
+        afb_req_addref(current_req);
+        m_slave->Post([this, request]() {
+            json_object *responseJ;
             if (!m_event) {
-                afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to create event slave=%s sensor=%s", m_slave->uid(), m_uid);  
-                return;
+                m_event = afb_api_make_event(m_api, m_uid);
+                if (!m_event) {
+                    afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to create event slave=%s sensor=%s", m_slave->uid(), m_uid);  
+                    return;
+                }
+                int err = m_slave->addSensorEvent(this);
+                if(err){
+                    afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to add event slave=%s sensor=%s to event list", m_slave->uid(), m_uid);  
+                    return;
+                }
+                err = afb_req_subscribe(request, m_event); 
+                if (err){
+                    afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to subscribe slave=%s sensor=%s", m_slave->uid(), m_uid);
+                    return;
+                }
+                char * answer;
+                asprintf(&answer,"Subscribe success on sensor %s/%s", m_slave->prefix(), m_uid);
+                responseJ = json_object_new_string(answer);
+            }else{
+                char * answer;
+                asprintf(&answer,"sensor %s/%s alrady subscribed", m_slave->prefix(), m_uid);
+                responseJ = json_object_new_string(answer);
             }
-        }
-        m_slave->addSensorEvent(this);
-        err = afb_req_subscribe(request, m_event); 
-        if (err){
-            afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to subscribe slave=%s sensor=%s", m_slave->uid(), m_uid);
-            return;
-        }
-        AFB_REQ_DEBUG(request, "Subscribe success on %s/%s register : [0x%x][0x%x]", m_slave->prefix(), m_uid, m_register, m_subRegister);
+            afb_req_success(request, responseJ, NULL);
+            afb_req_unref(request);
+        });
+        return;
     }
 
     else if (!strcasecmp (action, "UNSUBSCRIBE")) {
-        if (m_event) {
-            err = afb_req_unsubscribe(request, m_event);
-            if (err) {
-                afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to unsubscribe slave=%s sensor=%s", m_slave->uid(), m_uid); 
-                return;
+        // Use "Post" to avoid asynchronous conflicts
+        afb_req_t current_req = request;
+        afb_req_addref(current_req);
+        m_slave->Post([this, request]() {
+            json_object *responseJ;
+            if (m_event) {
+                int err = afb_req_unsubscribe(request, m_event);
+                if (err) {
+                    afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to unsubscribe slave=%s sensor=%s", m_slave->uid(), m_uid); 
+                    return;
+                }
+                err = m_slave->delSensorEvent(this);
+                if (err){
+                    afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: fail to remove slave=%s sensor=%s from the subscribed list", m_slave->uid(), m_uid); 
+                    return;
+                }
+                char * answer;
+                asprintf(&answer,"sensor %s/%s successfully unsubscribed", m_slave->prefix(), m_uid);
+                responseJ = json_object_new_string(answer);
+                m_event = nullptr;
             }
-            m_slave->delSensorEvent(this);
-        }
+            else{
+                char * answer;
+                asprintf(&answer,"sensor %s/%s is not in the subscribed list", m_slave->prefix(), m_uid);
+                responseJ = json_object_new_string(answer);
+            }
+            afb_req_success(request, responseJ, NULL);
+            afb_req_unref(request);
+        });
+        return;
     }
     else {
         afb_req_fail_f (request, "syntax-error", "CANopenSensor::request: action='%s' UNKNOWN rtu=%s sensor=%s query=%s", action, m_slave->uid(), m_uid, json_object_get_string(queryJ));

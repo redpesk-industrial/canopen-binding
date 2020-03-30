@@ -31,8 +31,8 @@ extern "C"{
     }
 
     std::map<std::string, CANopenEncodeCbS> kingpigeonRPDO{
-        //decignation     decoding CB              encoding CB
-        {"kp_bool_din4",    {kingpigeon_bool_din4,    nullptr     }},
+        //decignation    decoding CB              encoding CB
+        {"kp_bool_din4",{kingpigeon_bool_din4,    nullptr     }},
         {"kp_int_ain2", {kingpigeon_percent_ain8, nullptr     }}
     };
 

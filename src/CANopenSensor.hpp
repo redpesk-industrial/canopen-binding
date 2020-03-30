@@ -29,7 +29,7 @@ class CANopenSensor{
         uint16_t m_register;
         uint8_t m_subRegister;
         int m_type;
-        afb_event_t m_event;
+        afb_event_t m_event = nullptr;
         bool m_asyncSensor = false;
         CANopenEncodeCbS m_function;
 };

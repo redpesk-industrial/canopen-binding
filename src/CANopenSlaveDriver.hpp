@@ -28,8 +28,12 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     );
 
     void request (afb_req_t request, json_object * queryJ);
-    void addSensorEvent(CANopenSensor* sensor);
-    void delSensorEvent(CANopenSensor* sensor);
+
+    // IMPORTANT : use this funtion only int the driver exec
+    int addSensorEvent(CANopenSensor* sensor);
+    
+    // IMPORTANT : use this funtion only int the driver exec
+    int delSensorEvent(CANopenSensor* sensor);
 
     inline const char * uid() {return m_uid;}
     inline const char * info() {return m_info;}
@@ -52,18 +56,13 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
 
     // This function gets called every time a value is written to the local object dictionary of the master
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
-        
-        int err;
         // check in the sensor event list
         for (auto sensor: m_sensorEventQueue){
             // If the sensor match read it and push the event to afb
             if(idx == sensor->reg() && subidx == sensor->subReg()){
                 json_object * responseJ;
                 sensor->read(&responseJ);
-                err = afb_event_push (sensor->event(), responseJ);
-                if(err < 0){
-                    AFB_API_ERROR(m_api, "Could not push event from sensor %s", sensor->uid());
-                }
+                afb_event_push (sensor->event(), responseJ);
             }
         }
     }
