@@ -52,7 +52,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
 
     // This function gets called every time a value is written to the local object dictionary of the master
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
-
+        
         int err;
         // check in the sensor event list
         for (auto sensor: m_sensorEventQueue){

@@ -39,27 +39,32 @@ SupportedObjects=3
 3=0x1018
 
 [OptionalObjects]
-SupportedObjects=11
+SupportedObjects=13
 1=0x1005
 2=0x1006
 3=0x1014
 4=0x1016
 5=0x1017
 6=0x1400
-7=0x1600
-8=0x1800
-9=0x1A00
-10=0x1F80
-11=0x1F81
+7=0x1401
+8=0x1600
+9=0x1601
+10=0x1800
+11=0x1A00
+12=0x1F80
+13=0x1F81
 
 [ManufacturerObjects]
-SupportedObjects=6
+SupportedObjects=9
 1=0x2001
 2=0x2002
-3=0x5800
-4=0x5A00
-5=0x5C00
-6=0x5E00
+3=0x2003
+4=0x5800
+5=0x5801
+6=0x5A00
+7=0x5A01
+8=0x5C00
+9=0x5E00
 
 [1000]
 ParameterName=Device type
@@ -81,7 +86,7 @@ DefaultValue=0x40000080
 ParameterName=Communication cycle period
 DataType=0x0007
 AccessType=rw
-DefaultValue=100000
+DefaultValue=10000000
 
 [1014]
 ParameterName=COB-ID EMCY
@@ -161,6 +166,29 @@ DataType=0x0005
 AccessType=rw
 DefaultValue=255
 
+[1401]
+SubNumber=3
+ParameterName=RPDO communication parameter
+ObjectType=0x09
+
+[1401sub0]
+ParameterName=Highest sub-index supported
+DataType=0x0005
+AccessType=const
+DefaultValue=0x02
+
+[1401sub1]
+ParameterName=COB-ID used by RPDO
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x382
+
+[1401sub2]
+ParameterName=Transmission type
+DataType=0x0005
+AccessType=rw
+DefaultValue=255
+
 [1600]
 ParameterName=RPDO mapping parameter
 ObjectType=0x09
@@ -172,6 +200,18 @@ CompactSubObj=2
 NrOfEntries=2
 1=0x20020108
 2=0x20020208
+
+[1601]
+ParameterName=RPDO mapping parameter
+ObjectType=0x09
+DataType=0x0007
+AccessType=rw
+CompactSubObj=2
+
+[1601Value]
+NrOfEntries=2
+1=0x20030120
+2=0x20030220
 
 [1800]
 SubNumber=3
@@ -241,14 +281,28 @@ AccessType=rw
 PDOMapping=1
 CompactSubObj=2
 
+[2003]
+ParameterName=RPDO test
+ObjectType=0x09
+DataType=0x0007
+AccessType=rw
+PDOMapping=1
+CompactSubObj=2
+
 [5800]
-ParameterName=Remote TPDO number and node-ID
+ParameterName=Remote TPDO-01 number and node-ID
 DataType=0x0007
 AccessType=rw
 DefaultValue=0x00000102
 
+[5801]
+ParameterName=Remote TPDO-03 number and node-ID
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x00000302
+
 [5A00]
-ParameterName=Remote TPDO mapping
+ParameterName=Remote TPDO-01 mapping
 ObjectType=0x09
 DataType=0x0007
 AccessType=rw
@@ -258,6 +312,18 @@ CompactSubObj=2
 NrOfEntries=2
 1=0x62000108
 2=0x62000208
+
+[5A01]
+ParameterName=Remote TPDO-03 mapping
+ObjectType=0x09
+DataType=0x0007
+AccessType=rw
+CompactSubObj=2
+
+[5A01Value]
+NrOfEntries=2
+1=0x64010120
+2=0x64010220
 
 [5C00]
 ParameterName=Remote RPDO number and node-ID

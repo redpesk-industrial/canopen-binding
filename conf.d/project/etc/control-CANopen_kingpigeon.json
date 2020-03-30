@@ -30,10 +30,10 @@
         "nodId": 2,
         "onconf": [
           {
-            "info": "Put Analog TX on a non displayed channel",
-            "register": "0x180201",
-            "size" : 4,
-            "data": "0x80000382"
+            "info": "set analog input on onchange mode",
+            "register": "0x180205",
+            "size" : 2,
+            "data": 0
           },
           {
             "info": "Turn off TPDO 01 sync",
@@ -46,7 +46,7 @@
           {
             "uid": "DIN01",
             "type": "RPDO",
-            "format" : "bool_din4",
+            "format" : "kp_bool_din4",
             "register" : "0x620001"
           },
           {
@@ -62,10 +62,16 @@
             "register" : "0x600001"
           },
           {
-            "uid": "AIN01_TPDO_MAPPING",
-            "type": "SDO",
-            "format" : "uint32",
-            "register" : "0x180201"
+            "uid": "AIN01",
+            "type": "RPDO",
+            "format" : "kp_int_ain2",
+            "register" : "0x640101"
+          },
+          {
+            "uid": "AIN02",
+            "type": "RPDO",
+            "format" : "kp_int_ain2",
+            "register" : "0x640102"
           }
         ]
       }

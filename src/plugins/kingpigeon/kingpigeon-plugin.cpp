@@ -21,8 +21,19 @@ extern "C"{
         return 0;
     }
 
+    static int kingpigeon_percent_ain8(CANopenSensor* sensor, json_object** outputJ){
+        CANopenEncoder::coPDOreadUint32(sensor, outputJ);
+        uint32_t val = (uint32_t)json_object_get_int64(*outputJ);
+        *outputJ = json_object_new_array();
+        json_object_array_add(*outputJ, json_object_new_int(val &  0x0000FFFF));
+        json_object_array_add(*outputJ, json_object_new_int((val & 0xFFFF0000) >> 16));
+        return 0;
+    }
+
     std::map<std::string, CANopenEncodeCbS> kingpigeonRPDO{
-        {"bool_din4", {kingpigeon_bool_din4, nullptr}}
+        //decignation     decoding CB              encoding CB
+        {"kp_bool_din4",    {kingpigeon_bool_din4,    nullptr     }},
+        {"kp_int_ain2", {kingpigeon_percent_ain8, nullptr     }}
     };
 
     encodingTableT KingPigeonEncodingTable {
