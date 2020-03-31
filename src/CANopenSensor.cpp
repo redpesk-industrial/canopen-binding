@@ -82,7 +82,7 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     if(!strcasecmp(type, "SDO")) m_asyncSensor = true;
 
     // create the verb for the sensor
-    err = asprintf (&sensorVerb, "%s/%s", m_slave->prefix(), m_uid);
+    err = asprintf (&sensorVerb, "%s/%s", m_slave->uid(), m_uid);
     err = afb_api_add_verb(api, sensorVerb, m_info, sensorDynRequest, this, authent, 0, 0);
     if (err) {
         AFB_API_ERROR(api, "CANopenSensor : fail to register API verb=%s", sensorVerb);
@@ -174,11 +174,11 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
                     return;
                 }
                 char * answer;
-                asprintf(&answer,"Subscribe success on sensor %s/%s", m_slave->prefix(), m_uid);
+                asprintf(&answer,"Subscribe success on sensor %s/%s", m_slave->uid(), m_uid);
                 responseJ = json_object_new_string(answer);
             }else{
                 char * answer;
-                asprintf(&answer,"sensor %s/%s alrady subscribed", m_slave->prefix(), m_uid);
+                asprintf(&answer,"sensor %s/%s alrady subscribed", m_slave->uid(), m_uid);
                 responseJ = json_object_new_string(answer);
             }
             afb_req_success(request, responseJ, NULL);
@@ -205,13 +205,13 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
                     return;
                 }
                 char * answer;
-                asprintf(&answer,"sensor %s/%s successfully unsubscribed", m_slave->prefix(), m_uid);
+                asprintf(&answer,"sensor %s/%s successfully unsubscribed", m_slave->uid(), m_uid);
                 responseJ = json_object_new_string(answer);
                 m_event = nullptr;
             }
             else{
                 char * answer;
-                asprintf(&answer,"sensor %s/%s is not in the subscribed list", m_slave->prefix(), m_uid);
+                asprintf(&answer,"sensor %s/%s is not in the subscribed list", m_slave->uid(), m_uid);
                 responseJ = json_object_new_string(answer);
             }
             afb_req_success(request, responseJ, NULL);
@@ -238,4 +238,23 @@ int CANopenSensor::write(json_object *output){
     if(!m_function.writeCB) return ERROR;
     int err = m_function.writeCB(this, output);
     return err;
+}
+
+const char * CANopenSensor::info(){
+    char * formatedInfo;
+    bool first = true;
+    asprintf(&formatedInfo, "%s/%s [", m_slave->uid(), m_uid);
+    if(m_function.readCB){
+        asprintf(&formatedInfo, "%sREAD", formatedInfo);
+        first = false;
+    }
+    if(m_function.writeCB){
+        if(!first) asprintf(&formatedInfo, "%s|", formatedInfo);
+        asprintf(&formatedInfo, "%sWRITE",formatedInfo);
+        first = false;
+    }
+    if(!first) asprintf(&formatedInfo, "%s|", formatedInfo);
+    asprintf(&formatedInfo, "%sSUBSCRIBE|UNSUBSCRIBE] info: '%s'",formatedInfo, m_info);
+
+    return formatedInfo;
 }

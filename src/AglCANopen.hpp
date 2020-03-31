@@ -20,6 +20,8 @@ class AglCANopen{
     AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId = 1);
     inline bool chanIsOpen(){ return m_chan.is_open(); }
     inline bool isRuning(){ return m_isRuning; }
+    inline const char * info(){ return m_info; }
+    json_object * infoJ();
   
   private:
     lely::io::IoGuard m_IoGuard;

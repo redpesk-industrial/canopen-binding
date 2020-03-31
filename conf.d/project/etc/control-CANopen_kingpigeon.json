@@ -24,9 +24,8 @@
     "dcf": "kp2-master.dcf",
     "slaves": [
       {
-        "uid": "CANopen-slave-2",
+        "uid": "slave2",
         "info": "CANopen slave 2",
-        "prefix": "slave2",
         "nodId": 2,
         "onconf": [
           {

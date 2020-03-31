@@ -29,10 +29,9 @@ CANopenSlaveDriver::CANopenSlaveDriver(
     char* adminCmd;
     assert (slaveJ);
 
-    err = wrap_json_unpack(slaveJ, "{ss,s?s,ss,s?s,s?o,so}",
+    err = wrap_json_unpack(slaveJ, "{ss,s?s,s?s,s?o,so}",
             "uid", &m_uid,
             "info", &m_info,
-            "prefix", &m_prefix,
             "dcf", &m_dcf,
             "onconf", &m_onconfJ,
             "sensors", &sensorsJ);
@@ -41,15 +40,12 @@ CANopenSlaveDriver::CANopenSlaveDriver(
         return;
     }
 
-    // if not API prefix let's use RTU uid
-    if (!m_prefix) m_prefix= m_uid;
-
     // create an admin command for SDO row communication on the CANopen network
     afb_auth_t * authent = (afb_auth_t*) calloc(1, sizeof (afb_auth_t));
     authent->type = afb_auth_Permission;
     authent->text = "superadmin";
 
-    err=asprintf (&adminCmd, "%s/%s", m_prefix, "superadmin");
+    err=asprintf (&adminCmd, "%s/%s", m_uid, "superadmin");
     err= afb_api_add_verb(api, adminCmd, m_info, slaveDynRequest, this, authent, 0, 0);
     if (err) {
         AFB_API_ERROR(api, "CANopenSlaveDriver: fail to register API uid=%s verb=%s info=%s", m_uid, adminCmd, m_info);
@@ -57,7 +53,7 @@ CANopenSlaveDriver::CANopenSlaveDriver(
     }
 
     if (err) {
-        AFB_API_ERROR(api, "CANopenSlaveDriver: fail to register API verb=%s", m_prefix);
+        AFB_API_ERROR(api, "CANopenSlaveDriver: fail to register API verb=%s", m_uid);
         return;
     }
 
@@ -98,7 +94,7 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
             request,
             "query-error",
             "CANopenSlaveDriver::request: invalid 'json' rtu=%s query=%s",
-            m_prefix, json_object_get_string(queryJ)
+            m_uid, json_object_get_string(queryJ)
         );
         return;
     }
@@ -316,4 +312,21 @@ void CANopenSlaveDriver::slavePerStartConfig(json_object * conf){
             m_uid, idx, subIdx, (uint32_t)data, e.what()
         );
     }
+}
+
+const char * CANopenSlaveDriver::info(){
+    char *formatedInfo;
+    asprintf(&formatedInfo, "slave: '%s', nodId: %d, info: '%s'", m_uid, id(), m_info);
+    return formatedInfo;
+}
+
+json_object * CANopenSlaveDriver::infoJ(){
+    json_object * responseJ = json_object_new_object();
+    json_object_object_add(responseJ, "Slave_info", json_object_new_string(info()));
+    json_object * sensorsJ = json_object_new_array();
+    for(auto sensor : m_sensors){
+        json_object_array_add(sensorsJ, json_object_new_string(sensor->info()));
+    }
+    json_object_object_add(responseJ, "Sensors", sensorsJ);
+    return responseJ;
 }

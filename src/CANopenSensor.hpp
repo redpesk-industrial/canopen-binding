@@ -14,6 +14,7 @@ class CANopenSensor{
         void request (afb_req_t request, json_object * queryJ); // handle request coming from afb
         int read(json_object **inputJ);
         int write(json_object *inputJ);
+        const char * info();
         inline const char* uid(){return m_uid;}
         inline afb_event_t event(){return m_event;}
         inline uint16_t reg(){return m_register;}

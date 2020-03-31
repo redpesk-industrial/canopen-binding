@@ -117,6 +117,22 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/)
     if(err == 0) m_isRuning = true;
 }
 
+json_object * AglCANopen::infoJ(){
+    json_object * responseJ = json_object_new_object();
+    char * formatedInfo;
+    char isRuningS[7];
+    if(m_isRuning) strcpy(isRuningS, "true");
+    else strcpy(isRuningS, "false");
+    asprintf(&formatedInfo, "uid: '%s', uri: '%s', nodId: %d, isRuning: %s, info: '%s'", m_uid, m_uri, m_nodId, isRuningS, m_info);
+    json_object_object_add(responseJ, "Master_info", json_object_new_string(formatedInfo));
+    json_object * slavesJ = json_object_new_array();
+    for (auto slave: m_slaves){
+        json_object_array_add(slavesJ, slave->infoJ());
+    }
+    json_object_object_add(responseJ, "Slaves", slavesJ);
+    return responseJ;
+}
+
 // void AglCANopen::reset(){
 //     m_master->Reset();
 // }

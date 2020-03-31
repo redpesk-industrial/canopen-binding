@@ -35,16 +35,16 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     // IMPORTANT : use this funtion only int the driver exec
     int delSensorEvent(CANopenSensor* sensor);
 
+    json_object * infoJ();
+    const char * info();
+
     inline const char * uid() {return m_uid;}
-    inline const char * info() {return m_info;}
-    inline const char * prefix() {return m_prefix;}
 
     afb_req_t m_current_req;
 
   private:
     const char * m_uid;
     const char * m_info;
-    const char * m_prefix;
     const char * m_dcf;
     afb_api_t m_api;
     uint m_count;

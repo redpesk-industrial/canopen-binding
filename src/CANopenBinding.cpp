@@ -48,9 +48,15 @@ static void PingTest (afb_req_t request) {
     afb_req_success_f(request,json_object_new_string(response), NULL);
 }
 
+static void bindingInfo(afb_req_t request){
+    AglCANopen* CANopenMaster = (AglCANopen *)afb_req_get_vcbdata(request);
+    afb_req_success_f(request, CANopenMaster->infoJ(), NULL);
+}
+
 // Static verb not depending on CANopen json config file
 static afb_verb_t CtrlApiVerbs[] = {
     { .verb = "ping", .callback = PingTest, .auth = nullptr, .info = "CANopen API ping test", .vcbdata = nullptr, .session = 0, .glob = 0},
+    { .verb = "info", .callback = bindingInfo, .auth = nullptr, .info = "display info about the binding", .vcbdata = nullptr, .session = 0, .glob = 0},
     { .verb = nullptr, .callback = nullptr, .auth = nullptr, .info = nullptr, .vcbdata = nullptr, .session = 0, .glob = 0} /* marker for end of the array */
 };
 
