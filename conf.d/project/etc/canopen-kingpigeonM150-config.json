@@ -8,8 +8,8 @@
   },
   "plugins": [
     {
-      "uid": "Virtual-CANopen",
-      "info": "Plugin to handle user custom registry encoding/decoding",
+      "uid": "CANopen-binding-plugin",
+      "info": "Plugin to handle user custom encoding/decoding",
       "spath": "package/lib/:./lib/plugins:./var",
       "libs": [
         "kingpigeon.ctlso"
@@ -29,7 +29,7 @@
         "nodId": 2,
         "onconf": [
           {
-            "info": "set analog input on onchange mode",
+            "info": "Turn off analog input cyclic event",
             "register": "0x180205",
             "size" : 2,
             "data": 0
@@ -44,30 +44,35 @@
         "sensors": [
           {
             "uid": "DIN01",
+            "info": "digital input register",
             "type": "RPDO",
             "format" : "kp_bool_din4",
             "register" : "0x620001"
           },
           {
             "uid": "DIN01_EVENT_TIMER",
+            "info": "Register to set DIN01 cyclic event in ms (0 fo non)",
             "type": "SDO",
             "format" : "uint16",
             "register" : "0x180005"
           },
           {
             "uid": "DOUT01",
+            "info": "digital output register",
             "type": "TPDO",
             "format" : "uint8",
             "register" : "0x600001"
           },
           {
             "uid": "AIN01",
+            "info": "Analog input register 01, contains 2 analog input of 16bit itch",
             "type": "RPDO",
             "format" : "kp_int_ain2",
             "register" : "0x640101"
           },
           {
             "uid": "AIN02",
+            "info": "Analog input register 02, contains 2 analog input of 16bit itch",
             "type": "RPDO",
             "format" : "kp_int_ain2",
             "register" : "0x640102"

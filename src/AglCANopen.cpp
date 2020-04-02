@@ -70,7 +70,7 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/)
     
     // load and connect CANopen controleur
     try{
-        // On linux physical can the default TX queue length is 10. CanController sets
+        // On linux physical can, the default TX queue length is 10. CanController sets
         // it to 128 if it is too small, which requires the CAP_NET_ADMIN capability
         // (the reason for this is to ensure proper blocking and polling behavior, see
         // section 3.4 in https://rtime.felk.cvut.cz/can/socketcan-qdisc-final.pdf).

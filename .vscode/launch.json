@@ -10,11 +10,11 @@
       "request": "launch",
       "program": "/opt/AGL/bin/afb-daemon",
       "args": [
-        "--name=afb-CANopen_kingpigeon",
+        "--name=afb-kingpigeonM150-config",
         "--port=1234",
         "--ldpaths=.",
         "--workdir=.",
-        "--roothttp=.",
+        "--roothttp=./htdocs",
         "--token=",
         "--tracereq=all",
         "--traceapi=all",

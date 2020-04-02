@@ -146,7 +146,7 @@ int afbBindingEntry(afb_api_t api) {
     status=asprintf (&searchPath,"%s:%s/etc", envConfig, GetBindingDirPath(api));
     AFB_API_NOTICE(api, "Json config directory : %s", searchPath);
 
-    const char* prefix = "control";
+    const char* prefix = "canopen";
     const char* configPath = CtlConfigSearch(api, searchPath, prefix);
     if (!configPath) {
         AFB_API_ERROR(api, "afbBindingEntry: No %s-%s* config found in %s ", prefix, GetBinderName(), searchPath);
