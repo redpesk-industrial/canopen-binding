@@ -310,8 +310,8 @@ CompactSubObj=2
 
 [5A00Value]
 NrOfEntries=2
-1=0x62000108
-2=0x62000208
+1=0x60000108
+2=0x60000208
 
 [5A01]
 ParameterName=Remote TPDO-03 mapping
@@ -340,5 +340,5 @@ CompactSubObj=2
 
 [5E00Value]
 NrOfEntries=2
-1=0x60000108
-2=0x60000208
+1=0x62000108
+2=0x62000208

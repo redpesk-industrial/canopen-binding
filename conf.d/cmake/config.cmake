@@ -93,6 +93,7 @@ set(PACKAGE_MESSAGE "Install widget file using in the target : afm-util install 
 # Compilation options definition
 set(CONTROL_CONFIG_PATH "${CMAKE_SOURCE_DIR}/conf.d/project/etc:${CMAKE_BINARY_DIR}/package/etc:${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/etc" CACHE STRING "CONTROL_CONFIG_PATH")
 add_definitions(-DCONTROL_CONFIG_PATH="${CONTROL_CONFIG_PATH}")
+add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-std=c++17>)
 # Use CMake generator expressions to specify only for a specific language
 # Values are prefilled with default options that is currently used.
 # Either separate options with ";", or each options must be quoted separately

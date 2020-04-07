@@ -58,7 +58,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
         // check in the sensor event list
         for (auto sensor: m_sensorEventQueue){
-            // If the sensor match read it and push the event to afb
+            // If the sensor match, read it and push the event to afb
             if(idx == sensor->reg() && subidx == sensor->subReg()){
                 json_object * responseJ;
                 sensor->read(&responseJ);

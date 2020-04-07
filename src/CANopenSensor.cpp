@@ -24,7 +24,6 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     int err = 0;
     int idx;
     const char *type=NULL;
-    const char *format=NULL;
     const char *privilege=NULL;
     afb_auth_t *authent=NULL;
     json_object * regJ;
@@ -38,16 +37,17 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     m_slave = slaveDriver;
     m_api = api;
 
-    err = wrap_json_unpack(sensorJ, "{ss,ss,so,s?s,s?s,s?s,s?o !}",
+    err = wrap_json_unpack(sensorJ, "{ss,ss,so,ss,si,s?s,s?s,s?o !}",
                 "uid", &m_uid,
                 "type", &type,
                 "register", &regJ,
-                "format", &format,
+                "format", &m_format,
+                "size", &m_size,
                 "info", &m_info,
                 "privilege", &privilege,
                 "args", &argsJ);
     if (err) {
-        AFB_API_ERROR(api, "CANopenSensor: Fail to parse sensor: %s", json_object_to_json_string(sensorJ));
+        AFB_API_ERROR(m_api, "CANopenSensor: Fail to parse sensor: %s", json_object_to_json_string(sensorJ));
         return;
     }
 
@@ -55,7 +55,7 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     try{
         idx = get_data_int(regJ);
     }catch(std::runtime_error& e){
-        AFB_API_ERROR(api, "CANopenSensor: %s error at register convertion\n what() %s: ", m_uid, e.what());
+        AFB_API_ERROR(m_api, "CANopenSensor: %s error at register convertion\n what() %s: ", m_uid, e.what());
         return;
     }
     m_register = ((uint32_t)idx & 0x00ffff00)>>8;
@@ -68,19 +68,43 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
        authent->text = privilege;
     }
 
-
-    // check for an avalable sensor type
+    // load Encoder
     CtlConfigT* ctrlConfig = (CtlConfigT*)afb_api_get_userdata(m_api);
     CANopenEncoder* coEncoder = (CANopenEncoder*)ctrlConfig->external;
+
+    // Get the apropriet read/write callbacks
     try{
-        m_function = coEncoder->getfunctionCB(type, format);
+        m_function = coEncoder->getfunctionCB(type, m_size);
     }catch(std::out_of_range&){
-        AFB_API_ERROR(m_api, "CANopenSensor: could not find sensor type %s format %s", type, format);
+        AFB_API_ERROR(m_api, "CANopenSensor: could not find sensor type %s size %d", type, m_size);
         return;
     }
 
+    // Get the encode formater
+    if (m_function.writeCB){
+        try{
+            m_encode = coEncoder->getEncodeFormateurCB(m_format);
+        }catch(std::out_of_range&){
+            AFB_API_ERROR(m_api, "CANopenSensor: could not find sensor encode formater %s", m_format);
+            return;
+        }
+    }
+
+    // Get the decode Formater
+    if (m_function.readCB){
+        try{
+            m_decode = coEncoder->getDecodeFormateurCB(m_format);
+        }catch(std::out_of_range&){
+            AFB_API_ERROR(m_api, "CANopenSensor: could not find sensor decode formater %s", m_format);
+            return;
+        }
+    }
+
+    // if sensor uses SDO communication then it is asynchronus
     if(!strcasecmp(type, "SDO")) m_asyncSensor = true;
 
+    m_currentVal.tDouble = 0;
+    
     // create the verb for the sensor
     err = asprintf (&sensorVerb, "%s/%s", m_slave->uid(), m_uid);
     err = afb_api_add_verb(api, sensorVerb, m_info, sensorDynRequest, this, authent, 0, 0);
@@ -109,18 +133,18 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
     }
 
     if (!strcasecmp (action, "WRITE")) {
-        if(!m_function.writeCB){
+        if(!m_function.writeCB || !m_encode){
             afb_req_fail_f (request, "Write-error", "CANopenSensor::request: No write function available for %s : %s", m_slave->uid(), m_uid); 
             return;
         }
-        err = m_function.writeCB(this, dataJ);
+        err = write(dataJ);
         if(err){
             afb_req_fail_f (request, "Write-error", "CANopenSensor::request: Fail to write on sensor %s : %s", m_slave->uid(), m_uid); 
             return;
         }
     }
     else if (!strcasecmp (action, "READ")) {
-        if(!m_function.readCB){
+        if(!m_function.readCB || !m_decode){
             afb_req_fail_f (request, "read-error", "CANopenSensor::request: No read function available for %s : %s", m_slave->uid(), m_uid); 
             return;
         }
@@ -129,7 +153,7 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
             afb_req_addref(current_req);
             m_slave->Post([this, request]() {
                 json_object *responseJ;
-                int err = m_function.readCB(this, &responseJ);
+                int err = read(&responseJ);
                 if(err){
                     afb_req_fail_f (request, "read-error", "CANopenSensor::request: Fail to read sensor %s : %s", m_slave->uid(), m_uid); 
                     return;
@@ -140,7 +164,7 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
             return;
         }
         else{
-            int err = m_function.readCB(this, &responseJ);
+            int err = read(&responseJ);
             if(err){
                 afb_req_fail_f (request, "read-error", "CANopenSensor::request: Fail to read sensor %s : %s", m_slave->uid(), m_uid); 
                 return;
@@ -148,7 +172,7 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
         }
     }
     else if (!strcasecmp (action, "SUBSCRIBE")) {
-        if(!m_function.readCB){
+        if(!m_function.readCB || !m_decode){
             afb_req_fail_f (request, "subscribe-error","CANopenSensor::request: sensor '%s' is not readable", m_uid);  
             return;
         }
@@ -228,16 +252,18 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
     return;
 }
 
-int CANopenSensor::read(json_object **responseJ){
-    if(!m_function.readCB) return ERROR;
-    int err = m_function.readCB(this, responseJ);
-    return err;
+int CANopenSensor::read(json_object ** responseJ){
+    if(!m_function.readCB || !m_decode) return ERROR;
+    m_currentVal = m_function.readCB(this);
+    *responseJ = m_decode(m_currentVal, this);
+    return 0;
 }
 
 int CANopenSensor::write(json_object *output){
-    if(!m_function.writeCB) return ERROR;
-    int err = m_function.writeCB(this, output);
-    return err;
+    if(!m_function.writeCB || !m_encode) return ERROR;
+    m_currentVal = m_encode(output, this);
+    m_function.writeCB(this, m_currentVal);
+    return 0;
 }
 
 const char * CANopenSensor::info(){

@@ -7,46 +7,91 @@
 
 class CANopenSensor;
 
-struct CANopenEncodeCbS {
-    int (*readCB)(CANopenSensor* sensor, json_object **inputJ);
-    int (*writeCB) (CANopenSensor* sensor, json_object *outputJ);
+// Container for multiple type variable
+union COdataType {
+    int error;
+    int32_t tInt;
+    int64_t tDouble;
+    const char * tString;
 };
 
-typedef std::map<std::string, std::map<std::string, CANopenEncodeCbS>> encodingTableT;
+// Struct containing Read and Write functions callbacks
+struct CANopenEncodeCbS {
+    COdataType (*readCB)(CANopenSensor* sensor);
+    int (*writeCB) (CANopenSensor* sensor, COdataType data);
+};
+
+// type definition for encode callback
+typedef COdataType (*coEncodeCB)(json_object * dataJ, CANopenSensor* sensor);
+
+// type definition for decode callback
+typedef json_object * (*coDecodeCB)(COdataType data, CANopenSensor* sensor); 
 
 class CANopenEncoder
 {
 public:
-    CANopenEncodeCbS getfunctionCB(std::string type, std::string format);
+    // Return singleton instance of configuration object.
     static CANopenEncoder& instance();
-    int addEncoder(encodingTableT newEncodingTable);
 
-    // available SDO encoding functions
-    static int coSDOwriteUint8 (CANopenSensor* sensor, json_object* inputJ);
-    static int coSDOwriteUint16(CANopenSensor* sensor, json_object* inputJ);
-    static int coSDOwriteUint32(CANopenSensor* sensor, json_object* inputJ);
-    static int coSDOwriteString(CANopenSensor* sensor, json_object* inputJ);
-    // available SDO decoding functions
-    static int coSDOreadUint8 (CANopenSensor* sensor, json_object** outputJ);
-    static int coSDOreadUint16(CANopenSensor* sensor, json_object** outputJ);
-    static int coSDOreadUint32(CANopenSensor* sensor, json_object** outputJ);
-    static int coSDOreadString(CANopenSensor* sensor, json_object** outputJ);
-    // available PDO encoding functions
-    static int coPDOwriteUint8 (CANopenSensor* sensor, json_object* inputJ);
-    static int coPDOwriteUint16(CANopenSensor* sensor, json_object* inputJ);
-    static int coPDOwriteUint32(CANopenSensor* sensor, json_object* inputJ);
-    // available PDO decoding functions
-    static int coPDOreadUint8 (CANopenSensor* sensor, json_object** outputJ);
-    static int coPDOreadUint16(CANopenSensor* sensor, json_object** outputJ);
-    static int coPDOreadUint32(CANopenSensor* sensor, json_object** outputJ);
+    // return the appropriate read and write function callback according to sensor size and type
+    CANopenEncodeCbS getfunctionCB(std::string type, int size);
+
+    // return encode/decode formater callback based on it's uid
+    coEncodeCB getEncodeFormateurCB(std::string encode);
+    coDecodeCB getDecodeFormateurCB(std::string decode);
+
+    // add an encoder formater to the list of availables encoders
+    int addEncodeFormateur(std::string uid, coEncodeCB encodeCB);
+    int addEncodeFormateur(std::map<std::string, coEncodeCB> newEncodeFormaterTable);
+    
+    // add an decoder formater to the list of availables encoders
+    int addDecodeFormateur(std::string uid, coDecodeCB decodeCB);
+    int addDecodeFormateur(std::map<std::string, coDecodeCB> newDecodeFormaterTable);
+
+    // Built in Encoding Formaters
+    static COdataType encodeInt(json_object * dataJ, CANopenSensor* sensor = nullptr);
+    static COdataType encodeDouble(json_object * dataJ, CANopenSensor* sensor = nullptr);
+    static COdataType encodeString(json_object * dataJ, CANopenSensor* sensor = nullptr);
+
+    // Built in Decoding Formaters
+    static json_object * decodeInt(COdataType data, CANopenSensor* sensor = nullptr);
+    static json_object * decodeUint(COdataType data, CANopenSensor* sensor = nullptr);
+    static json_object * decodeDouble(COdataType data, CANopenSensor* sensor = nullptr);
+    static json_object * decodeString(COdataType data, CANopenSensor* sensor = nullptr);
 
 private:
     CANopenEncoder(); ///< Private constructor for singleton implementation
 
-    static std::map<std::string, CANopenEncodeCbS> SDOfunctionCBs;
-    static std::map<std::string, CANopenEncodeCbS> RPDOfunctionCBs;
-    static std::map<std::string, CANopenEncodeCbS> TPDOfunctionCBs;
-    static encodingTableT encodingTable;
+    // SDO encoding functions
+    static int coSDOwrite8bits (CANopenSensor* sensor, COdataType data);
+    static int coSDOwrite16bits(CANopenSensor* sensor, COdataType data);
+    static int coSDOwrite32bits(CANopenSensor* sensor, COdataType data);
+    static int coSDOwrite64bits(CANopenSensor* sensor, COdataType data);
+    static int coSDOwriteString(CANopenSensor* sensor, COdataType data);
+    // SDO decoding functions
+    static COdataType coSDOread8bits (CANopenSensor* sensor);
+    static COdataType coSDOread32bits(CANopenSensor* sensor);
+    static COdataType coSDOread64bits(CANopenSensor* sensor);
+    static COdataType coSDOreadString(CANopenSensor* sensor);
+    static COdataType coSDOread16bits(CANopenSensor* sensor);
+    // PDO encoding functions
+    static int coPDOwrite8bits (CANopenSensor* sensor, COdataType data);
+    static int coPDOwrite16bits(CANopenSensor* sensor, COdataType data);
+    static int coPDOwrite32bits(CANopenSensor* sensor, COdataType data);
+    // PDO decoding functions
+    static COdataType coPDOread16bits(CANopenSensor* sensor);
+    static COdataType coPDOread32bits(CANopenSensor* sensor);
+    static COdataType coPDOread8bits (CANopenSensor* sensor);
+
+    // read/write functions tables
+    static const std::map<int, CANopenEncodeCbS> SDOfunctionCBs;
+    static const std::map<int, CANopenEncodeCbS> RPDOfunctionCBs;
+    static const std::map<int, CANopenEncodeCbS> TPDOfunctionCBs;
+    static const std::map<std::string, std::map<int, CANopenEncodeCbS>> encodingTable;
+    
+    // formaters Tables
+    static std::map<std::string, coEncodeCB> coEncodeFormateurTable;
+    static std::map<std::string, coDecodeCB> coDecodeFormateurTable;
 };
 
 #endif //_CANOPENENCODER_INCLUDE_

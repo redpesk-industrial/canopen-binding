@@ -35,9 +35,26 @@
 		<button onclick="callbinder('canopen','slave2/DIN01_EVENT_TIMER' ,{'action':'write', 'data':0});">set DIN01 cyclic event to non</button></li>
 	</div><br>
 	<div>
-		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':1});">set DOUT01 to 1</button></li>
-		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':0});">set DOUT01 to 0</button></li>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':0xf});">set DOUT01 to 1111</button></li>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':0});">set DOUT01 to 0000</button></li>
+	</div>
+	<div>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':{'val': true, 'mask':1}});">set DOUT01 to 1xxx</button></li>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':{'val': false, 'mask':1}});">set DOUT01 to 0xxx</button></li>
+	</div>
+	<div>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':{'val': true, 'mask':2}});">set DOUT01 to x1xx</button></li>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':{'val': false, 'mask':2}});">set DOUT01 to x0xx</button></li>
+	</div>
+	<div>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':{'val': true, 'mask':[false,false,true,false]}});">set DOUT01 to xx1x</button></li>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':{'val': false, 'mask':[false,false,true,false]}});">set DOUT01 to xx0x</button></li>
+	</div>
+	<div>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':{'val': true, 'mask':[false,false,false,true]}});">set DOUT01 to xxx1</button></li>
+		<button onclick="callbinder('canopen','slave2/DOUT01' ,{'action':'write', 'data':{'val': false, 'mask':[false,false,false,true]}});">set DOUT01 to xxx0</button></li>
 	</div><br>
+
 	<div>
 		<button onclick="callbinder('canopen','slave2/AIN01' ,{'action':'read'});">Read AIN01 Status</button></li>
 		<button onclick="callbinder('canopen','slave2/AIN01' ,{'action':'subscribe'});">Subscribe to AIN01</button></li>

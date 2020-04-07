@@ -17,142 +17,249 @@ CANopenEncoder& CANopenEncoder::instance()
 	return encoder;
 }
 
-CANopenEncodeCbS CANopenEncoder::getfunctionCB(std::string type, std::string format){
+CANopenEncodeCbS CANopenEncoder::getfunctionCB(std::string type, int size){
     CANopenEncodeCbS fn;
 
     try{
-        fn = encodingTable.at(type).at(format);
+        fn = encodingTable.at(type).at(size);
     } catch(std::out_of_range& e){
         throw e;
     }
     return fn;
 }
 
-int CANopenEncoder::addEncoder(encodingTableT newEncodingTable){
-    for(auto typeMap : newEncodingTable){
-        try{
-            // checking for type
-            encodingTable.at(typeMap.first);
-            for(auto functionMap : typeMap.second){
-                try{
-                    // Checking for function
-                    encodingTable.at(typeMap.first).at(functionMap.first);
-                }catch(std::out_of_range&){
-                    // If function does not exist add it
-                    encodingTable.at(typeMap.first).insert(functionMap);
-                }
-            }
-        }catch(std::out_of_range&){
-            // if type does not exist add it
-            encodingTable.insert(typeMap);
-        }
+coEncodeCB CANopenEncoder::getEncodeFormateurCB(std::string format){
+    coEncodeCB ef;
+    try{
+        ef = coEncodeFormateurTable.at(format);
+    } catch(std::out_of_range& e){
+        throw e;
+    }
+    return ef;
+}
+
+coDecodeCB CANopenEncoder::getDecodeFormateurCB(std::string format){
+    coDecodeCB df;
+    try{
+        df = coDecodeFormateurTable.at(format);
+    } catch(std::out_of_range& e){
+        throw e;
+    }
+    return df;
+}
+
+// add an encoder formater to the list of availables encoders
+int CANopenEncoder::addEncodeFormateur(std::string uid, coEncodeCB encodeCB){
+    auto [it, result] = coEncodeFormateurTable.emplace(std::make_pair(uid, encodeCB));
+    if(!result){
+        throw(std::runtime_error(std::string("entree " + it->first + " could not be added because it alredy exist\n")));
+        return ERROR;
     }
     return 0;
 }
 
-int CANopenEncoder::coSDOwriteUint8(CANopenSensor* sensor, json_object* inputJ){
-    int val = get_data_int(inputJ);
-    sensor->slave()->AsyncWrite<uint8_t>(sensor->reg(), sensor->subReg(), (uint8_t)val);
+// add an antier list of encoder formater to the list of availables encoders
+int CANopenEncoder::addEncodeFormateur(std::map<std::string, coEncodeCB> newEncodeFormaterTable){
+    int err = 0;
+    std::string errWhat;
+    for(auto & newEncoder : newEncodeFormaterTable){
+        try{
+            err += addEncodeFormateur(newEncoder.first, newEncoder.second);
+        }catch(std::runtime_error& e){
+            errWhat += e.what();
+        }
+    }
+    if(err){
+        throw(std::runtime_error(errWhat));
+        return err;
+    }
+    return 0;
+ }
+
+// add an decoder formater to the list of availables decoders
+int CANopenEncoder::addDecodeFormateur(std::string uid, coDecodeCB decodeCB){
+    auto[it, result] = coDecodeFormateurTable.emplace(std::make_pair(uid, decodeCB));
+    std::cout << "CANopenEncoder DEBUG : entree '" << uid << "' added at coDecodeFormateurTable : '" << it->first << "''" << it->second << "' resutl => " << result << " table size : " << coDecodeFormateurTable.size() << std::endl;
+    if(!result) return ERROR;
     return 0;
 }
 
-int CANopenEncoder::coSDOwriteUint16(CANopenSensor* sensor, json_object* inputJ){
-    int val = get_data_int(inputJ);
-    sensor->slave()->AsyncWrite<uint16_t>(sensor->reg(), sensor->subReg(), (uint16_t)val);
+// add an antier list of decoder formater to the list of availables decoders
+int CANopenEncoder::addDecodeFormateur(std::map<std::string, coDecodeCB> newDecodeFormaterTable){
+    int err = 0;
+    std::string errWhat;
+    for(auto & newDecoder : newDecodeFormaterTable){
+        try{
+            err += addDecodeFormateur(newDecoder.first, newDecoder.second);
+        }catch(std::runtime_error& e){
+            errWhat += e.what();
+        }
+    }
+    if(err){
+        throw(std::runtime_error(errWhat));
+        return err;
+    }
     return 0;
 }
 
-int CANopenEncoder::coSDOwriteUint32(CANopenSensor* sensor, json_object* inputJ){
-    double val = get_data_double(inputJ);
-    sensor->slave()->AsyncWrite<uint32_t>(sensor->reg(), sensor->subReg(), (uint32_t)val);
+COdataType CANopenEncoder::encodeInt(json_object * dataJ, CANopenSensor* sensor){
+    COdataType data;
+    data.tInt = get_data_int(dataJ);
+    return data;
+}
+
+COdataType CANopenEncoder::encodeDouble(json_object * dataJ, CANopenSensor* sensor){
+    COdataType data;
+    data.tDouble = (int64_t)get_data_double(dataJ);
+    return data;
+}
+
+COdataType CANopenEncoder::encodeString(json_object * dataJ, CANopenSensor* sensor){
+    COdataType data;
+    data.tString = json_object_get_string(dataJ);
+    return data;
+}
+
+json_object * CANopenEncoder::decodeInt(COdataType data, CANopenSensor* sensor){
+    return json_object_new_int(data.tInt);
+}
+
+json_object * CANopenEncoder::decodeUint(COdataType data, CANopenSensor* sensor){
+    return json_object_new_int64(data.tInt);
+}
+
+json_object * CANopenEncoder::decodeDouble(COdataType data, CANopenSensor* sensor){
+    return json_object_new_double((double)data.tDouble);
+}
+
+json_object * CANopenEncoder::decodeString(COdataType data, CANopenSensor* sensor){
+    return json_object_new_string(data.tString);
+}
+
+int CANopenEncoder::coSDOwrite8bits(CANopenSensor* sensor, COdataType data){
+    sensor->slave()->AsyncWrite<uint8_t>(sensor->reg(), sensor->subReg(), (uint8_t)data.tInt);
     return 0;
 }
 
-int CANopenEncoder::coSDOwriteString(CANopenSensor* sensor, json_object* inputJ){
-    auto val = json_object_get_string(inputJ);
-    sensor->slave()->AsyncWrite<::std::string>(sensor->reg(), sensor->subReg(), val);
+int CANopenEncoder::coSDOwrite16bits(CANopenSensor* sensor, COdataType data){
+    sensor->slave()->AsyncWrite<uint16_t>(sensor->reg(), sensor->subReg(), (uint16_t)data.tInt);
     return 0;
 }
 
-int CANopenEncoder::coSDOreadUint8(CANopenSensor* sensor, json_object** responseJ){
-    int val = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint8_t>(sensor->reg(), sensor->subReg()));
-    *responseJ = json_object_new_int(val);
+int CANopenEncoder::coSDOwrite32bits(CANopenSensor* sensor, COdataType data){
+    sensor->slave()->AsyncWrite<uint32_t>(sensor->reg(), sensor->subReg(), (uint32_t)data.tInt);
     return 0;
 }
 
-int CANopenEncoder::coSDOreadUint16(CANopenSensor* sensor, json_object** responseJ){
-    int val = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint16_t>(sensor->reg(), sensor->subReg()));
-    *responseJ = json_object_new_int(val);
+int CANopenEncoder::coSDOwrite64bits(CANopenSensor* sensor, COdataType data){
+    sensor->slave()->AsyncWrite<uint64_t>(sensor->reg(), sensor->subReg(), (uint64_t)data.tDouble);
     return 0;
 }
 
-int CANopenEncoder::coSDOreadUint32(CANopenSensor* sensor, json_object** responseJ){
-    int64_t val = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint32_t>(sensor->reg(), sensor->subReg()));
-    *responseJ = json_object_new_int64(val);
+int CANopenEncoder::coSDOwriteString(CANopenSensor* sensor, COdataType data){
+    sensor->slave()->AsyncWrite<::std::string>(sensor->reg(), sensor->subReg(), data.tString);
     return 0;
 }
 
-int CANopenEncoder::coSDOreadString(CANopenSensor* sensor, json_object** responseJ){
-    auto val = sensor->slave()->Wait(sensor->slave()->AsyncRead<::std::string>(sensor->reg(), sensor->subReg()));
-    *responseJ = json_object_new_string(val.c_str());
+COdataType CANopenEncoder::coSDOread8bits(CANopenSensor* sensor){
+    COdataType val;
+    val.tInt = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint8_t>(sensor->reg(), sensor->subReg()));
+    return val;
+}
+
+COdataType CANopenEncoder::coSDOread16bits(CANopenSensor* sensor){
+    COdataType val;
+    val.tInt = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint16_t>(sensor->reg(), sensor->subReg()));
+    return val;
+}
+
+COdataType CANopenEncoder::coSDOread32bits(CANopenSensor* sensor){
+    COdataType val;
+    val.tInt = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint32_t>(sensor->reg(), sensor->subReg()));
+    return val;
+}
+
+COdataType CANopenEncoder::coSDOread64bits(CANopenSensor* sensor){
+    COdataType val;
+    val.tDouble = sensor->slave()->Wait(sensor->slave()->AsyncRead<uint64_t>(sensor->reg(), sensor->subReg()));
+    return val;
+}
+
+COdataType CANopenEncoder::coSDOreadString(CANopenSensor* sensor){
+    COdataType val;
+    val.tString = sensor->slave()->Wait(sensor->slave()->AsyncRead<::std::string>(sensor->reg(), sensor->subReg())).c_str();
+    return val;
+}
+
+int CANopenEncoder::coPDOwrite8bits(CANopenSensor* sensor, COdataType data){
+    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint8_t)data.tInt;
     return 0;
 }
 
-int CANopenEncoder::coPDOwriteUint8(CANopenSensor* sensor, json_object* inputJ){
-    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint8_t)get_data_int(inputJ);
+int CANopenEncoder::coPDOwrite16bits(CANopenSensor* sensor, COdataType data){
+    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint16_t)data.tInt;
     return 0;
 }
 
-int CANopenEncoder::coPDOwriteUint16(CANopenSensor* sensor, json_object* inputJ){
-    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint16_t)get_data_int(inputJ);
+int CANopenEncoder::coPDOwrite32bits(CANopenSensor* sensor, COdataType data){
+    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint32_t)data.tInt;
     return 0;
 }
 
-int CANopenEncoder::coPDOwriteUint32(CANopenSensor* sensor, json_object* inputJ){
-    sensor->slave()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint32_t)get_data_double(inputJ);
-    return 0;
+COdataType CANopenEncoder::coPDOread8bits(CANopenSensor* sensor){
+    COdataType val;
+    val.tInt = (uint8_t)sensor->slave()->rpdo_mapped[sensor->reg()][sensor->subReg()];
+    return val;
 }
 
-int CANopenEncoder::coPDOreadUint8(CANopenSensor* sensor, json_object** outputJ){
-    uint8_t val = sensor->slave()->rpdo_mapped[sensor->reg()][sensor->subReg()];
-    *outputJ = json_object_new_int(val);
-    return 0;
+COdataType CANopenEncoder::coPDOread16bits(CANopenSensor* sensor){
+    COdataType val;
+    val.tInt = (uint16_t)sensor->slave()->rpdo_mapped[sensor->reg()][sensor->subReg()];
+    return val;
 }
 
-int CANopenEncoder::coPDOreadUint16(CANopenSensor* sensor, json_object** outputJ){
-    uint16_t val = sensor->slave()->rpdo_mapped[sensor->reg()][sensor->subReg()];
-    *outputJ = json_object_new_int(val);
-    return 0;
-}
-
-int CANopenEncoder::coPDOreadUint32(CANopenSensor* sensor, json_object** outputJ){
-    uint32_t val = sensor->slave()->rpdo_mapped[sensor->reg()][sensor->subReg()];
-    *outputJ = json_object_new_int64(val);
-    return 0;
+COdataType CANopenEncoder::coPDOread32bits(CANopenSensor* sensor){
+    COdataType val;
+    val.tInt = (uint32_t)sensor->slave()->rpdo_mapped[sensor->reg()][sensor->subReg()];
+    return val;
 }
 
 
-std::map<std::string, CANopenEncodeCbS> CANopenEncoder::SDOfunctionCBs = {
-    {"uint8", {coSDOreadUint8, coSDOwriteUint8}},
-    {"uint16",{coSDOreadUint16, coSDOwriteUint16}},
-    {"uint32",{coSDOreadUint32, coSDOwriteUint32}},
-    {"string",{coSDOreadString, coSDOwriteString}}
+const std::map<int, CANopenEncodeCbS> CANopenEncoder::SDOfunctionCBs {
+    {1,{coSDOread8bits , coSDOwrite8bits}},
+    {2,{coSDOread16bits, coSDOwrite16bits}},
+    {4,{coSDOread32bits, coSDOwrite32bits}},
+    {5,{coSDOreadString, coSDOwriteString}}
 };
 
-std::map<std::string, CANopenEncodeCbS> CANopenEncoder::RPDOfunctionCBs {
-    {"uint8", {coPDOreadUint8, nullptr}},
-    {"uint16",{coPDOreadUint16, nullptr}},
-    {"uint32",{coPDOreadUint32, nullptr}}
+const std::map<int, CANopenEncodeCbS> CANopenEncoder::RPDOfunctionCBs {
+    {1, {coPDOread8bits , nullptr}},
+    {2, {coPDOread16bits, nullptr}},
+    {4, {coPDOread32bits, nullptr}}
 };
 
-std::map<std::string, CANopenEncodeCbS> CANopenEncoder::TPDOfunctionCBs {
-    {"uint8", {nullptr, coPDOwriteUint8}},
-    {"uint16",{nullptr, coPDOwriteUint16}},
-    {"uint32",{nullptr, coPDOwriteUint32}}
+const std::map<int, CANopenEncodeCbS> CANopenEncoder::TPDOfunctionCBs {
+    {1,{nullptr, coPDOwrite8bits }},
+    {2,{nullptr, coPDOwrite16bits}},
+    {4,{nullptr, coPDOwrite32bits}}
 };
 
-encodingTableT CANopenEncoder::encodingTable{
-    {"SDO", SDOfunctionCBs},
+const std::map<std::string, std::map<int, CANopenEncodeCbS>> CANopenEncoder::encodingTable {
+    {"SDO" , SDOfunctionCBs },
     {"TPDO", TPDOfunctionCBs},
     {"RPDO", RPDOfunctionCBs}
+};
+
+std::map<std::string, coEncodeCB> CANopenEncoder::coEncodeFormateurTable {
+    {"int"   , encodeInt   },
+    {"uint"  , encodeInt   },
+    {"double", encodeDouble},
+    {"string", encodeString}
+};
+
+std::map<std::string, coDecodeCB> CANopenEncoder::coDecodeFormateurTable {
+    {"int"   , decodeInt   },
+    {"uint"  , decodeUint  },
+    {"double", decodeDouble},
+    {"string", decodeString}
 };

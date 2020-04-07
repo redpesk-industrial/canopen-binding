@@ -5,6 +5,7 @@ body.page-content {
 	background: url("assets/background_iot_bzh_light.jpg") 0 0 no-repeat;
 	background-size: cover;
 	background-position: center;
+	background-attachment: fixed;
 }
 
 img {

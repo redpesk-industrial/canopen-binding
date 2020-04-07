@@ -46,35 +46,40 @@
             "uid": "DIN01",
             "info": "digital input register",
             "type": "RPDO",
-            "format" : "kp_bool_din4",
-            "register" : "0x620001"
+            "format" : "kp_4-boolArray",
+            "size" : 1,
+            "register" : "0x600001"
           },
           {
             "uid": "DIN01_EVENT_TIMER",
             "info": "Register to set DIN01 cyclic event in ms (0 fo non)",
             "type": "SDO",
-            "format" : "uint16",
+            "format" : "uint",
+            "size" : 2,
             "register" : "0x180005"
           },
           {
             "uid": "DOUT01",
             "info": "digital output register",
             "type": "TPDO",
-            "format" : "uint8",
-            "register" : "0x600001"
+            "format" : "kp_4-boolArray",
+            "size" : 1,
+            "register" : "0x620001"
           },
           {
             "uid": "AIN01",
             "info": "Analog input register 01, contains 2 analog input of 16bit itch",
             "type": "RPDO",
-            "format" : "kp_int_ain2",
+            "format" : "kp_2-intArray",
+            "size" : 4,
             "register" : "0x640101"
           },
           {
             "uid": "AIN02",
             "info": "Analog input register 02, contains 2 analog input of 16bit itch",
             "type": "RPDO",
-            "format" : "kp_int_ain2",
+            "format" : "kp_2-intArray",
+            "size" : 4,
             "register" : "0x640102"
           }
         ]
