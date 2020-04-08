@@ -33,6 +33,8 @@ class CANopenSensor{
         inline int size(){return m_size;}
         inline CANopenSlaveDriver* slave(){return m_slave;}
         inline COdataType currentVal(){return m_currentVal;}
+        inline void * getData(){return m_data;}
+        inline void setData(void * data){m_data = data;}
         
     private:
         const char * m_uid;
@@ -61,6 +63,10 @@ class CANopenSensor{
 
         // store curent state value
         COdataType m_currentVal;
+
+        // available for othe information storing
+        void * m_data;
+
 };
 
 #endif /* _CANOPENSENSOR_INCLUDE_ */

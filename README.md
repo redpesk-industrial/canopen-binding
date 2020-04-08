@@ -23,7 +23,7 @@ source /etc/profile.d/agl-app-framework-binder.sh
 
 ### CANopen lib dependencies
 
-* Install fd_loop brach of lely-core CANopen library : [(see doc)](https://gitlab.com/lely_industries/lely-core/-/tree/fd_loop)
+* Compile and Install fd_loop brach of lely-core CANopen library : [(see doc)](https://gitlab.com/lely_industries/lely-core/-/tree/fd_loop)
 
 ## CANopen Binding build
 
@@ -61,7 +61,7 @@ Be sure to be in the build directory and run :
 afb-daemon --name=afb-kingpigeonM150-config --port=1234  --ldpaths=src --workdir=. --roothttp=../htdocs --token= --verbose
 ```
 
-open binding UI with browser at localhost:1234
+open binding UI with browser at <http://localhost:1234/>
 
 or use `afb-client-demo --human 'ws://localhost:1234/api?token='` to communicate directly with the websocket.
 
@@ -76,18 +76,16 @@ export CONTROL_CONFIG_PATH="$HOME/my-agl-config"
 afb-daemon --name=afb-myconfig --port=1234  --ldpaths=src --workdir=. --roothttp=../htdocs --token= --verbose
 ```
 
-```md
-## CANopen binding support a set of default encoder for values store within multiple registries
+## CANopen binding support a set of default encoder
 
-    * int16, bool => 1 register 
-    * int32 => 2 registers
-    * int64 => 4 registers
-    * float, floatabcd, floatdabc, ...
+* int
+* uint
+* double
+* string _--not tested yet_
 
-Nevertheless user may also add its own encoding/decoding format to handle device specific representation (ex: device info string),or custom application encoding (ex: float to uint16 for an analog output). Custom encoder/decoder are store within user plugin (see sample at src/plugins/kingpigeon).
-```
+Nevertheless user may also add its own encoding/decoding format to handle device specific representation (ex: device info string),or custom application encoding (ex: float to uint16 for an analog output or bool array for digital input/output). Custom encoder/decoder are store within user plugin (see sample at src/plugins/kingpigeon).
 
-## API usage:
+## API usage
 
 CANopen binding create one api/verb by sensor. By default each sensor api/verb is prefixed by the RTU uid. With following config mak
 
@@ -118,20 +116,24 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
             "info": "digital input register", // optional
             "type": "RPDO", // type of communication used
             "format" : "kp_bool_din4", // encoding/decoding format
+            "size" : 1, //size of the sensor in bytes
             "register" : "0x620001" // sensor located at index 0x6200 sub-index 01
           },
           {
             "uid": "DIN01_EVENT_TIMER",
             "info": "Register to set DIN01 cyclic event in ms (0 fo non)",
             "type": "SDO",
-            "format" : "uint16",
-            "register" : "0x180005"
+            "format" : "uint",
+            "size" : 2,
+            "register" : "0x180005",
+            "privilege" : "admin" // optional : access to a sensor can require privileges
           },
           {
             "uid": "DOUT01",
             "info": "digital output register",
             "type": "TPDO",
-            "format" : "uint8",
+            "format" : "uint",
+            "size" : 1,
             "register" : "0x600001"
           },
     ...
@@ -160,26 +162,40 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
 
 ### Format Converter
 
-The AGL Modbus support both builtin format converter and optional custom converter provided by user through plugins.
+The AGL CANopen support both builtin format converter and optional custom converter provided by user through plugins.
 
-* Standard converter include the traditional INT16, UINT16, INT32, UINT32, FLOATABCD, ... Depending on the format one or more register is read
+* Standard converter include the traditional int, uint, double ...
 * Custom converter are provided through optional plugins. Custom converter should declare a static structure and register it at plugin loadtime(CTLP_ONLOAD).
   * uid is the formatter name as declare inside JSON config file.
   * decode/encore callback are respectively called for read/write action
-  * init callback is call at format registration time and might be used to process a special value for a given sensor (e.g; deviation for a wind sensor). Each sensor attaches a void* context. Developer may declare a private context for each sensor (e.g. to store a previous value, a min/max, ...). The init callback receive sensor source to store context and optionally the ARGS json object when present within sensor json config.
-
-* WARNING: do not confuse format count and nbreg. NBreg is the number of 16bits registers use for a given formatter (e.g. 4 for a 64bits float). Count is the number of value you want to read in one operation (e.g. you may want to read all your digital input in one operation and receive them as an array of boolean)
+  * Each sensor stor it's last known value and is accessible with te member function `currentVal()`
+  * Each sensor also attaches a void* context accessible with member function `getData()` and `setData()`. Developer may declare a private context for each sensor.
 
 ```c++
 // Sample of custom formatter (king-pigeon-encore.c)
 // -------------------------------------------------
-std::map<std::string, CANopenEncodeCbS> kingpigeonRPDO{
-        //designation     decoding CB              encoding CB
-        {"kp_bool_din4", {kingpigeon_bool_din4   , nullptr     }},
-        {"kp_int_ain2" , {kingpigeon_percent_ain8, nullptr     }}
-    };
 
-    encodingTableT KingPigeonEncodingTable {
-        {"RPDO",{kingpigeonRPDO}}
-    };
+std::map<std::string, coDecodeCB> kingpigeonDecodeFormatersTable{
+  //uid              decoding CB
+  {"kp_4-boolArray", kingpigeon_4_bool_array_decode},
+  {"kp_2-intArray" , kingpigeon_2_int_array_decode }
+};
+
+CTLP_ONLOAD(plugin, coEncoderHandle) {
+  if(!coEncoderHandle) return -1;
+  // get the loaded CANopen Encoder
+  CANopenEncoder* coEncoder = (CANopenEncoder*)coEncoderHandle;
+
+  int err;
+  
+  // add a all list of decode formaters
+  err = coEncoder->addDecodeFormateur(kingpigeonDecodeFormatersTable);
+  if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add %d entree to decode formater table", err);
+  
+  // add a single encoder
+  err = coEncoder->addEncodeFormateur("kp_4-boolArray",kingpigeon_bool_array_encode);
+  if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add 'kp_4-boolArray' entree to encode formater table");
+  
+  return 0;
+}
 ```

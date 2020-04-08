@@ -106,21 +106,21 @@ extern "C"{
     }
 
     std::map<std::string, coDecodeCB> kingpigeonDecodeFormatersTable{
-        //designation     decoding CB
+        //uid              decoding CB
         {"kp_4-boolArray", kingpigeon_4_bool_array_decode},
         {"kp_2-intArray" , kingpigeon_2_int_array_decode }
     };
 
     CTLP_ONLOAD(plugin, coEncoderHandle) {
         if(!coEncoderHandle) return -1;
-
+        // get the loaded CANopen Encoder
         CANopenEncoder* coEncoder = (CANopenEncoder*)coEncoderHandle;
 
         int err;
-
+        // add a all list of decode formaters
         err = coEncoder->addDecodeFormateur(kingpigeonDecodeFormatersTable);
         if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add %d entree to decode formater table", err);
-        
+        // add a single encoder
         err = coEncoder->addEncodeFormateur("kp_4-boolArray",kingpigeon_bool_array_encode);
         if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add 'kp_4-boolArray' entree to encode formater table");
         
