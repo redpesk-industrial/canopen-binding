@@ -1,7 +1,6 @@
 # CANopen Binding
 
-CANopen binding support
-TCP Modbus with format conversion for multi-register type as int32, Float, ...
+This binding allows the control of a CANopen field network from an AGL type system. It handle different formats natively (int, float, string...) but can also handle custom formatting using plugins. It is based on the opensource industrial c++ library Lely.
 
 ## Dependencies
 
