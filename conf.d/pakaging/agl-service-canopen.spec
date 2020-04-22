@@ -2,7 +2,7 @@
 
 Name: agl-service-canopen
 Version: 0.1
-Release: 0%{?dist}
+Release: 1%{?dist}
 Summary: agl-service-canopen summary
 
 License: No license to be set
@@ -18,10 +18,11 @@ BuildRequires: pkgconfig(afb-daemon)
 BuildRequires: pkgconfig(appcontroller)
 BuildRequires: pkgconfig(libmicrohttpd) >= 0.9.55
 BuildRequires: pkgconfig(afb-helpers)
-BuildRequires: pkgconfig(liblely-coapp)
+BuildRequires: pkgconfig(liblely-coapp2)
 
 Requires: agl-app-framework-main
 Requires: agl-app-framework-binder
+Requires: liblely-coapp2
 
 %description
 agl-service-canopen is a binding that allows the control of a CANopen field network from an AGL type system.
