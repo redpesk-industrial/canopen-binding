@@ -2,7 +2,7 @@
 
 Name: agl-service-canopen
 Version: 0.1
-Release: 1%{?dist}
+Release: 11%{?dist}
 Summary: agl-service-canopen summary
 
 License: No license to be set
@@ -18,11 +18,8 @@ BuildRequires: pkgconfig(afb-daemon)
 BuildRequires: pkgconfig(appcontroller)
 BuildRequires: pkgconfig(libmicrohttpd) >= 0.9.55
 BuildRequires: pkgconfig(afb-helpers)
-BuildRequires: pkgconfig(liblely-coapp2)
-
-Requires: agl-app-framework-main
-Requires: agl-app-framework-binder
-Requires: liblely-coapp2
+BuildRequires: pkgconfig(liblely-coapp)
+BuildRequires: pkgconfig(lua) >= 5.3
 
 %description
 agl-service-canopen is a binding that allows the control of a CANopen field network from an AGL type system.
@@ -30,6 +27,9 @@ It handle different formats natively (int, float, string...) but can also handle
 It is based on the opensource industrial c++ library Lely.
 
 %define wgtname %{name}
+
+%define afm_widget_requires \
+Requires: liblely-coapp2
 
 %afm_package_widget
 %afm_package_widget_test
