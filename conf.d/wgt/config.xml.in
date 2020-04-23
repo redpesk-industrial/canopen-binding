@@ -7,7 +7,7 @@
   <author>@PROJECT_AUTHOR@ &lt;@PROJECT_AUTHOR_MAIL@&gt;</author>
   <license>@PROJECT_LICENSE@</license>
   <feature name="urn:AGL:widget:provided-api">
-     <param name="modbus" value="ws" />
+     <param name="canopen" value="ws" />
   </feature>
 
   	<feature name="urn:AGL:widget:required-permission">
