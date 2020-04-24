@@ -73,7 +73,7 @@ set (PKG_REQUIRED_LIST
 	afb-daemon
 	appcontroller
 	afb-helpers
-	#lua
+	lua
 	liblely-coapp
 )
 
