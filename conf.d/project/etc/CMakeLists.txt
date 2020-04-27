@@ -21,7 +21,7 @@
 ##################################################
 PROJECT_TARGET_ADD(CANopen-config)
 
-	file(GLOB CONF_FILES "*.json")
+	file(GLOB CONF_FILES "*.json" "*.dcf")
 
 	add_input_files("${CONF_FILES}")
 
