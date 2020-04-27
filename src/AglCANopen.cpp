@@ -16,13 +16,21 @@ const char * fullPathToDCF(afb_api_t api, const char *dcfFile){
 
     int err = 0;
 
-    char *fullpath = nullptr;
-    char *filename = nullptr;
+    char * fullpath = nullptr;
+    char * filename = nullptr;
+    char * searchPath = nullptr;
 
-    json_object * pathToDCF = ScanForConfig (CONTROL_CONFIG_PATH, CTL_SCAN_RECURSIVE, dcfFile, "");
+    const char * envConfig = getenv("CONTROL_CONFIG_PATH");
+    if (!envConfig) envConfig = CONTROL_CONFIG_PATH;
+
+    asprintf (&searchPath,"%s:%s/etc", envConfig, GetBindingDirPath(api));
+
+    AFB_API_DEBUG(api, "searching DCF file '%s' in config path : %s", dcfFile, searchPath);
+
+    json_object * pathToDCF = ScanForConfig (envConfig, CTL_SCAN_RECURSIVE, dcfFile, "");
 
     if(!pathToDCF){
-        AFB_API_ERROR(api, "CANopenLoadOne: fail to find dcf file '%s'", dcfFile);
+        AFB_API_ERROR(api, "CANopenLoadOne: fail to find dcf file '%s' in path %s", dcfFile , envConfig);
         return nullptr;
     }
     err = wrap_json_unpack(pathToDCF, "[{ss, ss}]",
@@ -67,6 +75,7 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/)
         AFB_API_ERROR(api, "CANopenLoadOne: fail to find =%s", m_dcf);
         return;
     }
+    AFB_API_NOTICE(api, "found DCF file at %s", m_dcf);
     
     // load and connect CANopen controleur
     try{

@@ -10,7 +10,7 @@
       "request": "launch",
       "program": "/opt/AGL/bin/afb-daemon",
       "args": [
-        "--name=afb-kingpigeonM150-config",
+        "--name=afbd-agl-service-canopen",
         "--port=1234",
         "--ldpaths=.",
         "--workdir=.",

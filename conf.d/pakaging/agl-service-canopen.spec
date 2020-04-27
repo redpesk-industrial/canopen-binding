@@ -2,7 +2,7 @@
 
 Name: agl-service-canopen
 Version: 0.1
-Release: 12%{?dist}
+Release: 13%{?dist}
 Summary: agl-service-canopen summary
 
 License: No license to be set
