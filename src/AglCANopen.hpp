@@ -36,7 +36,7 @@ class AglCANopen{
     const char * m_uid = nullptr;
     const char * m_info = nullptr;
     const char * m_uri = nullptr;
-    const char * m_dcf = nullptr;
+    char * m_dcf = nullptr;
     uint8_t m_nodId;
     // A vector referensing every slaves handle by the master
     std::vector<std::shared_ptr<CANopenSlaveDriver>> m_slaves;

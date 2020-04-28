@@ -12,36 +12,52 @@ static int aglCANopenHandler(sd_event_source*, int, uint32_t, void* userdata) {
     return 0;
 }
 
-const char * fullPathToDCF(afb_api_t api, const char *dcfFile){
-
-    int err = 0;
-
-    char * fullpath = nullptr;
-    char * filename = nullptr;
-    char * searchPath = nullptr;
-
-    const char * envConfig = getenv("CONTROL_CONFIG_PATH");
-    if (!envConfig) envConfig = CONTROL_CONFIG_PATH;
-
-    asprintf (&searchPath,"%s:%s/etc", envConfig, GetBindingDirPath(api));
-
-    AFB_API_DEBUG(api, "searching DCF file '%s' in config path : %s", dcfFile, searchPath);
-
-    json_object * pathToDCF = ScanForConfig (envConfig, CTL_SCAN_RECURSIVE, dcfFile, "");
-
-    if(!pathToDCF){
-        AFB_API_ERROR(api, "CANopenLoadOne: fail to find dcf file '%s' in path %s", dcfFile , envConfig);
-        return nullptr;
+char * fullPathToDCF(afb_api_t api, char * dcfFile) {
+    // We load 1st file others are just warnings
+    size_t p_length;
+    char * filepath = NULL;
+    const char * filename;
+    char * fullpath;
+    const char * envConfig;
+    
+    envConfig = getenv("CONTROL_CONFIG_PATH");
+    if (!envConfig){
+        AFB_API_NOTICE(api, "Using default environnement config path : %s", CONTROL_CONFIG_PATH);
+        envConfig = CONTROL_CONFIG_PATH;
     }
-    err = wrap_json_unpack(pathToDCF, "[{ss, ss}]",
-                            "fullpath", &fullpath,
-                            "filename", &filename);
-    if (err) {
-        AFB_API_ERROR(api, "Fail to parse pathToDCF JSON : (%s)", json_object_to_json_string(pathToDCF));
-        return nullptr;
+    else AFB_API_NOTICE(api, "Found environnement config path : %s", envConfig);
+
+    asprintf (&fullpath,"%s:%s/etc", envConfig, GetBindingDirPath(api));
+    AFB_API_NOTICE(api, "DCF config directory : %s", fullpath);
+    
+    json_object* responseJ = ScanForConfig(fullpath, CTL_SCAN_RECURSIVE, dcfFile,"");
+    
+    for (int index = 0; index < json_object_array_length(responseJ); index++) {
+        json_object *entryJ = json_object_array_get_idx(responseJ, index);
+
+        int err = wrap_json_unpack(entryJ, "{s:s, s:s !}",
+                                    "fullpath", &fullpath,
+                                    "filename", &filename
+                                );
+        if (err) {
+            AFB_API_ERROR(api, "Invalid DCF entry= %s", json_object_get_string(entryJ));
+        }
+
+        if (index == 0) {
+            p_length = strlen(fullpath) + 1 + strlen(filename);
+            filepath = (char*) malloc(p_length + 1);
+
+            strncpy(filepath, fullpath, p_length);
+            strncat(filepath, "/", p_length - strlen(filepath));
+            strncat(filepath, filename, p_length - strlen(filepath));
+        }
+        else {
+            AFB_API_WARNING(api, "DCF file found but not used : %s/%s", fullpath, filename);
+        }
     }
-    asprintf(&fullpath,"%s/%s",fullpath, dcfFile);
-    return fullpath;
+
+    json_object_put(responseJ);
+    return filepath;
 }
 
 AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/)
@@ -71,10 +87,7 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/)
 
     // Find the path of the master description file
     m_dcf = fullPathToDCF(api, m_dcf);
-    if (!strlen(m_dcf)){
-        AFB_API_ERROR(api, "CANopenLoadOne: fail to find =%s", m_dcf);
-        return;
-    }
+    if (!m_dcf) return;
     AFB_API_NOTICE(api, "found DCF file at %s", m_dcf);
     
     // load and connect CANopen controleur

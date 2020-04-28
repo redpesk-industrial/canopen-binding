@@ -140,8 +140,13 @@ int afbBindingEntry(afb_api_t api) {
 
     AFB_API_NOTICE(api, "Controller in afbBindingEntry");
 
-    envConfig= getenv("CONTROL_CONFIG_PATH");
-    if (!envConfig) envConfig = CONTROL_CONFIG_PATH;
+    envConfig = getenv("CONTROL_CONFIG_PATH");
+    if (!envConfig){
+        AFB_API_NOTICE(api, "Using default environnement config path : %s", CONTROL_CONFIG_PATH);
+        envConfig = CONTROL_CONFIG_PATH;
+    }
+    else AFB_API_NOTICE(api, "Found environnement config path : %s", envConfig);
+
 
     status=asprintf (&searchPath,"%s:%s/etc", envConfig, GetBindingDirPath(api));
     AFB_API_NOTICE(api, "Json config directory : %s", searchPath);
