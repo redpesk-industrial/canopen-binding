@@ -1,0 +1,21 @@
+type: books
+books:
+-
+    id: rp-service-canopen
+    title: CANopen
+    description: RP Service CANopen documentation
+    keywords:
+    author: "IotBzh"
+    version: master
+    chapters:
+    - url: canopen_binding_doc.md
+      name: CANopen service
+    - url: 1-architecture_presentation.md
+      name: Architecture presentation
+    - url: 2-installation_guide.md
+      name: Installation Guide
+    - url: 3-running_and_testing.md
+      name: Running and Testing
+    - url: 4-configuration.md
+      name: Configuration
+    

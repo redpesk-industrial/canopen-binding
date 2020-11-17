@@ -2,7 +2,7 @@
 
 Name: agl-service-canopen
 Version: 0.1
-Release: 14%{?dist}
+Release: 15%{?dist}
 Summary: agl-service-canopen summary
 
 License: No license to be set
@@ -33,6 +33,8 @@ Requires: liblely-coapp2
 
 %afm_package_widget
 %afm_package_widget_test
+%afm_package_widget_redtest
+
 
 %prep
 %autosetup -p 1
@@ -46,6 +48,8 @@ Requires: liblely-coapp2
 %install
 %afm_install_widget
 %afm_install_widgettest
+%afm_install_widgetredtest
+
 
 %check
 
