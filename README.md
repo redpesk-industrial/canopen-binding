@@ -12,8 +12,8 @@ This binding allows the control of a CANopen field network from an AGL type syst
 
 ### AGL dependencies
 
-* Declare AGL repository: [(see doc)](https://docs.automotivelinux.org/docs/en/guppy/devguides/reference/2-download-packages.html#install-the-repository)
-* Install AGL controller: [(see doc)](https://docs.automotivelinux.org/docs/en/guppy/devguides/reference/ctrler/controller.html)
+* AGL microservices build tools: [(see doc)](https://docs.iot.bzh/docs/en/master/devguides/reference/2-download-packages.html)
+* Install AGL controller: [(see doc)](https://docs.iot.bzh/docs/en/guppy/devguides/reference/ctrler/controller.html)
 
 ```bash
 # if you did not logout, don't forget to source AGL environnement
@@ -22,7 +22,7 @@ source /etc/profile.d/agl-app-framework-binder.sh
 
 ### CANopen lib dependencies
 
-* Compile and Install fd_loop brach of lely-core CANopen library : [(see doc)](https://gitlab.com/lely_industries/lely-core/-/tree/fd_loop)
+* Compile and Install fd_loop brach of lely-core CANopen library : [(see doc)](http://git.ovh.iot/redpesk/redpesk-industrial/liblely)
 
 ## CANopen Binding build
 
