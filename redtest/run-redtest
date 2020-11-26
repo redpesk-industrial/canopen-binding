@@ -1,9 +1,9 @@
 #!/bin/bash
 
-PACKAGE_REDTEST_NAME="agl-service-canopen-widget-redtest"
-WIDGET_NAME="agl-service-canopen"
-WIDGET_TEST_NAME="agl-service-canopen-test"
-WIDGET_DIR_INSTALLED="/usr/AGL"
+PACKAGE_REDTEST_NAME="canopen-binding-redtest"
+WIDGET_NAME="canopen-binding"
+WIDGET_TEST_NAME="canopen-binding-test"
+WIDGET_DIR_INSTALLED="/usr/RP"
 AFB_TEST_BINDER="afbtest"
 
 # Get the name of the test binder

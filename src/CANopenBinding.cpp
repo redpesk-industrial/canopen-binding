@@ -17,7 +17,7 @@
 * limitations under the License.
 */
 
-#include "AglCANopen.hpp"
+#include "CANopenMaster.hpp"
 #include "CANopenEncoder.hpp"
 
 #include <ctl-config.h>
@@ -49,8 +49,8 @@ static void PingTest (afb_req_t request) {
 }
 
 static void bindingInfo(afb_req_t request){
-    AglCANopen* CANopenMaster = (AglCANopen *)afb_req_get_vcbdata(request);
-    afb_req_success_f(request, CANopenMaster->infoJ(), NULL);
+    CANopenMaster* CO_Master = (CANopenMaster *)afb_req_get_vcbdata(request);
+    afb_req_success_f(request, CO_Master->infoJ(), NULL);
 }
 
 // Static verb not depending on CANopen json config file
@@ -73,7 +73,7 @@ static int CtrlLoadStaticVerbs (afb_api_t api, afb_verb_t *verbs, void *vcbdata)
 
 static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ) {
     int err;
-    AglCANopen *CANopenMaster;
+    CANopenMaster *CO_Master;
 
     // everything is done during initial config call
     if (!rtusJ) return 0;
@@ -85,11 +85,11 @@ static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ
     }
 
     // Load CANopen network configuration and start
-    CANopenMaster = new AglCANopen(api, rtusJ);
-    if (!CANopenMaster->isRuning()) return ERROR;
+    CO_Master = new CANopenMaster(api, rtusJ);
+    if (!CO_Master->isRuning()) return ERROR;
 
     // add static controls verbs
-    err = CtrlLoadStaticVerbs (api, CtrlApiVerbs, (void*) CANopenMaster);
+    err = CtrlLoadStaticVerbs (api, CtrlApiVerbs, (void*) CO_Master);
     if (err) {
         AFB_API_ERROR(api, "CtrlLoadOneApi fail to Registry static API verbs");
         return ERROR;

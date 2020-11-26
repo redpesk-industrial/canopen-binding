@@ -1,9 +1,9 @@
 %define debug_package %{nil}
 
-Name: agl-service-canopen
+Name: canopen-binding
 Version: 0.1
 Release: 15%{?dist}
-Summary: agl-service-canopen summary
+Summary: canopen-binding summary
 
 License: No license to be set
 URL: http://git.ovh.iot/jgautier/agl-service-canopen.git

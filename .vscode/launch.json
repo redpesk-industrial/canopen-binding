@@ -8,9 +8,9 @@
       "name": "Kingpigeon - gcc build and debug active file",
       "type": "cppdbg",
       "request": "launch",
-      "program": "/opt/AGL/bin/afb-daemon",
+      "program": "/opt/RP/bin/afb-daemon",
       "args": [
-        "--name=agl-kingpigeonM150-config",
+        "--name=redpesk-kingpigeonM150-config",
         "--port=1234",
         "--ldpaths=.",
         "--workdir=.",

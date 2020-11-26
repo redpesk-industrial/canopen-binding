@@ -1,12 +1,36 @@
-//to pass lely loop event fd to agl
+/*
+ Copyright (C) 2015-2020 IoT.bzh Company
+
+ Author: Johann Gautier <johann.gautier@iot.bzh>
+
+ $RP_BEGIN_LICENSE$
+ Commercial License Usage
+  Licensees holding valid commercial IoT.bzh licenses may use this file in
+  accordance with the commercial license agreement provided with the
+  Software or, alternatively, in accordance with the terms contained in
+  a written agreement between you and The IoT.bzh Company. For licensing terms
+  and conditions see https://www.iot.bzh/terms-conditions. For further
+  information use the contact form at https://www.iot.bzh/contact.
+
+ GNU General Public License Usage
+  Alternatively, this file may be used under the terms of the GNU General
+  Public license version 3. This license is as published by the Free Software
+  Foundation and appearing in the file LICENSE.GPLv3 included in the packaging
+  of this file. Please review the following information to ensure the GNU
+  General Public License requirements will be met
+  https://www.gnu.org/licenses/gpl-3.0.html.
+ $RP_END_LICENSE$
+*/
+
+//to pass lely loop event fd to Redpesk
 #include <systemd/sd-event.h>
 
 #include <string.h>
 
-#include "AglCANopen.hpp"
+#include "CANopenMaster.hpp"
 #include "CANopenSlaveDriver.hpp"
 
-static int aglCANopenHandler(sd_event_source*, int, uint32_t, void* userdata) {
+static int ServiceCANopenMasterHandler(sd_event_source*, int, uint32_t, void* userdata) {
     lely::ev::Poll poll(static_cast<ev_poll_t*>(userdata));
     poll.wait(0);
     return 0;
@@ -60,7 +84,7 @@ char * fullPathToDCF(afb_api_t api, char * dcfFile) {
     return filepath;
 }
 
-AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/)
+CANopenMaster::CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/)
     : m_poll{m_ctx}
     , m_loop{m_poll}
     , m_exec {m_loop.get_executor()}
@@ -135,11 +159,11 @@ AglCANopen::AglCANopen(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/)
     // Add lely fd to AFB demon event loop
     struct sd_event_source* event_source = nullptr;
     auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(m_poll.get_poll())));
-    err = sd_event_add_io(afb_daemon_get_event_loop(), &event_source, m_poll.get_fd(), EPOLLIN, aglCANopenHandler, userdata);
+    err = sd_event_add_io(afb_daemon_get_event_loop(), &event_source, m_poll.get_fd(), EPOLLIN, ServiceCANopenMasterHandler, userdata);
     if(err == 0) m_isRuning = true;
 }
 
-json_object * AglCANopen::infoJ(){
+json_object * CANopenMaster::infoJ(){
     json_object * responseJ = json_object_new_object();
     char * formatedInfo;
     char isRuningS[7];
@@ -155,6 +179,6 @@ json_object * AglCANopen::infoJ(){
     return responseJ;
 }
 
-// void AglCANopen::reset(){
+// void CANopenMaster::reset(){
 //     m_master->Reset();
 // }

@@ -35,7 +35,7 @@ PROJECT_TARGET_ADD(CANopen)
 
 	# Define project Targets
 	add_library(${TARGET_NAME} MODULE
-					AglCANopen.cpp
+					CANopenMaster.cpp
 					CANopenBinding.cpp
 					CANopenSensor.cpp
 					CANopenSlaveDriver.cpp

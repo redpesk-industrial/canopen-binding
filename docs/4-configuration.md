@@ -103,7 +103,7 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
 
 ### Format Converter
 
-The AGL CANopen support both builtin format converter and optional custom converter provided by user through plugins.
+The CANopen binding support both builtin format converter and optional custom converter provided by user through plugins.
 
 * Standard converter include the traditional int, uint, double ...
 * Custom converter are provided through optional plugins. Custom converter should declare a static structure and register it at plugin loadtime(CTLP_ONLOAD).

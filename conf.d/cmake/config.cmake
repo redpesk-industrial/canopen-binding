@@ -18,10 +18,10 @@
 
 # Project Info
 # ------------------
-set(PROJECT_NAME agl-service-CANopen)
+set(PROJECT_NAME canopen-binding)
 set(PROJECT_VERSION "1.0")
-set(PROJECT_PRETTY_NAME "CANopen binding for AGL")
-set(PROJECT_DESCRIPTION "Provide an AGL CANopen Binding")
+set(PROJECT_PRETTY_NAME "CANopen binding")
+set(PROJECT_DESCRIPTION "Provide a Redpesk CANopen Binding")
 set(PROJECT_URL "https://github.com/iotbzh/CANopen-service")
 set(PROJECT_ICON "icon.png")
 set(PROJECT_AUTHOR "Iot-Team")
@@ -124,16 +124,16 @@ set(WIDGET_CONFIG_TEMPLATE ${CMAKE_SOURCE_DIR}/conf.d/wgt/config.xml.in CACHE PA
 #- text/html : HTML application,
 #	content.src designates the home page of the application
 #
-#- application/vnd.agl.native : AGL compatible native,
+#- application/vnd.RP.native : Redpesk compatible native,
 #	content.src designates the relative path of the binary.
 #
-# - application/vnd.agl.service: AGL service, content.src is not used.
+# - application/vnd.RP.service: Redpesk service, content.src is not used.
 #
 #- ***application/x-executable***: Native application,
 #	content.src designates the relative path of the binary.
 #	For such application, only security setup is made.
 #
-set(WIDGET_TYPE application/vnd.agl.service)
+set(WIDGET_TYPE application/vnd.RP.service)
 
 # Mandatory Widget entry point file of the main unit
 # --------------------------------------------------------------

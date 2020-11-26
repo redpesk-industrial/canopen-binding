@@ -3,7 +3,7 @@
 // if 2 before 1 => conflict with 'is_error' betwin a lely function and a json define named identically
 #include "CANopenSlaveDriver.hpp" /*1*/
 #include "CANopenSensor.hpp" /*2*/
-#include "AglCANopen.hpp"
+#include "CANopenMaster.hpp"
 #include "CANopenGlue.hpp"
 
 #ifndef ERROR
