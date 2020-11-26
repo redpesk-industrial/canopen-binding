@@ -165,6 +165,8 @@ int afbBindingEntry(afb_api_t api) {
         return status;
     }
 
+    AFB_API_NOTICE(api, "api will be using config : %s", configPath);
+
     // load config file and create API
     CtlConfigT* ctrlConfig = CtlLoadMetaData(api, configPath);
     if (!ctrlConfig) {
