@@ -45,8 +45,9 @@ class CANopenSensor{
         // Handle Write request
         int write(json_object *inputJ);
         
-        // return information about the slave 
+        // return information about the sensor
         const char * info();
+        json_object * infoJ();
 
         inline coEncodeCB encoder(){return m_encode;}
         inline coDecodeCB decoder(){return m_decode;}
@@ -69,6 +70,7 @@ class CANopenSensor{
         afb_api_t m_api;
         uint16_t m_register;
         uint8_t m_subRegister;
+        json_object * m_sample;
 
         // number of Bytes contained by the sensor register
         // 1 = 8bits 2 = 16bits 4 = 32bits 5 = string 

@@ -33,6 +33,7 @@
 #endif
 
 static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ);
+static void bindingInfo(afb_req_t request);
 
 // Config Section definition (note: controls section index should match handle
 // retrieval in HalConfigExec)
@@ -53,17 +54,63 @@ static void PingTest (afb_req_t request) {
     afb_req_success_f(request,json_object_new_string(response), NULL);
 }
 
-static void bindingInfo(afb_req_t request){
-    CANopenMaster* CO_Master = (CANopenMaster *)afb_req_get_vcbdata(request);
-    afb_req_success_f(request, CO_Master->infoJ(), NULL);
-}
-
 // Static verb not depending on CANopen json config file
 static afb_verb_t CtrlApiVerbs[] = {
     { .verb = "ping", .callback = PingTest, .auth = nullptr, .info = "CANopen API ping test", .vcbdata = nullptr, .session = 0, .glob = 0},
     { .verb = "info", .callback = bindingInfo, .auth = nullptr, .info = "display info about the binding", .vcbdata = nullptr, .session = 0, .glob = 0},
     { .verb = nullptr, .callback = nullptr, .auth = nullptr, .info = nullptr, .vcbdata = nullptr, .session = 0, .glob = 0} /* marker for end of the array */
 };
+
+static void bindingInfo(afb_req_t request){
+    
+    json_object *response, *global_info, *admin_info, *static_verbs_info, *verb_info, *groups;
+    int err, i;
+    
+    CANopenMaster* CO_Master = (CANopenMaster *)afb_req_get_vcbdata(request);
+    CtlConfigT* ctlConfig = (CtlConfigT*)afb_api_get_userdata(afb_req_get_api(request));
+    
+    err = wrap_json_pack(&global_info, "{ss ss* ss* ss* sO}",
+                            "uid", ctlConfig->uid,
+                            "info",ctlConfig->info,
+                            "version", ctlConfig->version,
+                            "author", ctlConfig->author,
+                            "status", CO_Master->statusJ()
+                        );
+    if (err) global_info = json_object_new_string("global info ERROR !");
+
+    static_verbs_info = json_object_new_array();
+    for (i=0; CtrlApiVerbs[i].verb; i++){
+        err = wrap_json_pack(&verb_info, "{ss ss* ss*}",
+                            "uid", CtrlApiVerbs[i].verb,
+                            "info", CtrlApiVerbs[i].info,
+                            "author", CtrlApiVerbs[i].auth
+                        );
+        if (err) verb_info = json_object_new_string("static verb info ERROR !");
+        json_object_array_add(static_verbs_info, verb_info);
+    }
+
+
+    err = wrap_json_pack(&admin_info, "{ss ss sO}",
+                            "uid", "admin",
+                            "info", "verbs related to administration of this binding",
+                            "verbs", static_verbs_info
+                        );
+    if (err) admin_info = json_object_new_string("admin info ERROR !");
+
+    groups = json_object_new_array();
+    json_object_array_add(groups, admin_info);
+    CO_Master->slaveListInfo(groups);
+
+    err = wrap_json_pack(&response, "{so so}",
+                            "metadata", global_info,
+                            "groups", groups
+                        );
+    if (err) {
+        afb_req_fail_f(request, "info parse fail", "Fail at generayting verb info : { \"global\": %s, \"groups\": %s }", json_object_get_string(global_info), json_object_get_string(groups));
+        return;
+    }
+    afb_req_success_f(request, response, NULL);
+}
 
 static int CtrlLoadStaticVerbs (afb_api_t api, afb_verb_t *verbs, void *vcbdata) {
     int errcount=0;

@@ -345,12 +345,20 @@ const char * CANopenSlaveDriver::info(){
 }
 
 json_object * CANopenSlaveDriver::infoJ(){
-    json_object * responseJ = json_object_new_object();
-    json_object_object_add(responseJ, "Slave_info", json_object_new_string(info()));
+    json_object * responseJ;
     json_object * sensorsJ = json_object_new_array();
     for(auto sensor : m_sensors){
-        json_object_array_add(sensorsJ, json_object_new_string(sensor->info()));
+        json_object_array_add(sensorsJ, sensor->infoJ());
     }
-    json_object_object_add(responseJ, "Sensors", sensorsJ);
+    int err = wrap_json_pack(&responseJ, "{ss, ss*, s{ss si} so*}",
+                        "uid", m_uid,
+                        "info", m_info,
+                        "status", 
+                            "slave", m_uid,
+                            "nodId", id(),
+                        "verbs", sensorsJ
+                    );
+    if (err)
+        responseJ = json_object_new_string("Slave info ERROR !");
     return responseJ;
 }

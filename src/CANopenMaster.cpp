@@ -164,19 +164,49 @@ CANopenMaster::CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId /*=
 }
 
 json_object * CANopenMaster::infoJ(){
-    json_object * responseJ = json_object_new_object();
+    json_object *master_info, *responseJ = json_object_new_object();
     char * formatedInfo;
     char isRuningS[7];
     if(m_isRuning) strcpy(isRuningS, "true");
     else strcpy(isRuningS, "false");
-    asprintf(&formatedInfo, "uid: '%s', uri: '%s', nodId: %d, isRuning: %s, info: '%s'", m_uid, m_uri, m_nodId, isRuningS, m_info);
+    asprintf(&formatedInfo, "uri: '%s', nodId: %d, isRuning: %s, info: '%s', object dictionary: %s", m_uri, m_nodId, isRuningS, m_info, m_dcf);
+   
     json_object_object_add(responseJ, "Master_info", json_object_new_string(formatedInfo));
     json_object * slavesJ = json_object_new_array();
     for (auto slave: m_slaves){
         json_object_array_add(slavesJ, slave->infoJ());
     }
     json_object_object_add(responseJ, "Slaves", slavesJ);
-    return responseJ;
+
+    wrap_json_pack(&master_info, "{ss ss so}",
+                        "uid", m_uid,
+                        "info", formatedInfo,
+                        "verbs", slavesJ
+                        );
+    return master_info;
+}
+
+json_object * CANopenMaster::statusJ(){
+    json_object * master_status;
+    int err = wrap_json_pack(&master_status, "{ss si sb ss}",
+                        "uri", m_uri,
+                        "nodId", m_nodId,
+                        "isRuning", m_isRuning,
+                        "ObjectDictionnary", m_dcf
+                    );
+    if (err)
+        master_status = json_object_new_string("Master Status ERROR");
+    return master_status;
+}
+
+json_object * CANopenMaster::slaveListInfo(json_object * array){
+    //json_object * slave_list_info;
+    for (auto slave: m_slaves){
+        json_object_array_add(array, slave->infoJ());
+        //json_object_object_add(slave_list_info, NULL, slave->infoJ());
+        //slave_list_info = wrap_json_object_add(slave_list_info, slave->infoJ());
+    }
+    return array;
 }
 
 // void CANopenMaster::reset(){

@@ -46,6 +46,9 @@ class CANopenMaster{
     inline bool isRuning(){ return m_isRuning; }
     inline const char * info(){ return m_info; }
     json_object * infoJ();
+    json_object * statusJ();
+    json_object * slaveListInfo(json_object * array);
+
   
   private:
     lely::io::IoGuard m_IoGuard;

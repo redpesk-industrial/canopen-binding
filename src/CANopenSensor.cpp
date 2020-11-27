@@ -60,8 +60,9 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
     // set default values
     m_slave = slaveDriver;
     m_api = api;
+    m_sample = nullptr;
 
-    err = wrap_json_unpack(sensorJ, "{ss,ss,so,ss,si,s?s,s?s,s?o !}",
+    err = wrap_json_unpack(sensorJ, "{ss,ss,so,ss,si,s?s,s?s,s?o,s?o !}",
                 "uid", &m_uid,
                 "type", &type,
                 "register", &regJ,
@@ -69,7 +70,8 @@ CANopenSensor::CANopenSensor(afb_api_t api, json_object * sensorJ, CANopenSlaveD
                 "size", &m_size,
                 "info", &m_info,
                 "privilege", &privilege,
-                "args", &argsJ);
+                "args", &argsJ,
+                "sample", &m_sample);
     if (err) {
         AFB_API_ERROR(m_api, "CANopenSensor: Fail to parse sensor: %s", json_object_to_json_string(sensorJ));
         return;
@@ -307,4 +309,36 @@ const char * CANopenSensor::info(){
     asprintf(&formatedInfo, "%sSUBSCRIBE|UNSUBSCRIBE] info: '%s'",formatedInfo, m_info);
 
     return formatedInfo;
+}
+
+json_object * CANopenSensor::infoJ(){
+    json_object * sensor_info, *usage, *actions;
+    char *verb;
+    asprintf(&verb, "%s/%s", m_slave->uid(), m_uid);
+    actions = json_object_new_array();
+    usage = json_object_new_array();
+    if(m_function.readCB)
+        json_object_array_add(actions, json_object_new_string("read"));
+
+    if(m_function.writeCB)
+        json_object_array_add(actions, json_object_new_string("writ"));
+
+    json_object_array_add(actions, json_object_new_string("subscribe"));
+    json_object_array_add(actions, json_object_new_string("unsubscribe"));
+
+    wrap_json_pack(&usage, "{so ss}",
+                        "action", actions,
+                        "data", m_format
+                    );
+
+
+    wrap_json_pack(&sensor_info, "{ss ss* ss* so* sO*}",
+                                "uid", m_uid,
+                                "info", info(),
+                                "verb", verb,
+                                "usage", usage,
+                                "sample", m_sample
+                            );
+
+    return sensor_info;
 }

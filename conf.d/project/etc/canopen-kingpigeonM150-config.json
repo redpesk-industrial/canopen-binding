@@ -4,7 +4,7 @@
     "uid": "canopen-svc",
     "version": "1.0",
     "api": "canopen",
-    "info": "Meta inforamtions"
+    "info": "Generic KingPigeno M150 CANopen module test config"
   },
   "plugins": [
     {
@@ -48,7 +48,12 @@
             "type": "RPDO",
             "format" : "kp_4-boolArray",
             "size" : 1,
-            "register" : "0x600001"
+            "register" : "0x600001",
+            "sample" : [
+              {"action":"read"},
+              {"action":"subscribe"},
+              {"action":"unsubscribe"}
+            ]
           },
           {
             "uid": "DIN01_EVENT_TIMER",
@@ -56,7 +61,13 @@
             "type": "SDO",
             "format" : "uint",
             "size" : 2,
-            "register" : "0x180005"
+            "register" : "0x180005",
+            "sample" : [
+              {"action":"read"},
+              {"action":"write", "data":1000},
+              {"action":"write", "data":0}
+            ]
+
           },
           {
             "uid": "DOUT01",
@@ -64,7 +75,19 @@
             "type": "TPDO",
             "format" : "kp_4-boolArray",
             "size" : 1,
-            "register" : "0x620001"
+            "register" : "0x620001",
+            "sample" : [
+              {"action":"write", "data":15},
+              {"action":"write", "data":0},
+              {"action":"write", "data":{"val": true, "mask":1}},
+              {"action":"write", "data":{"val": false, "mask":1}},
+              {"action":"write", "data":{"val": true, "mask":2}},
+              {"action":"write", "data":{"val": false, "mask":2}},
+              {"action":"write", "data":{"val": true, "mask":[false,false,true,false]}},
+              {"action":"write", "data":{"val": false, "mask":[false,false,true,false]}},
+              {"action":"write", "data":{"val": true, "mask":[false,false,false,true]}},
+              {"action":"write", "data":{"val": false, "mask":[false,false,false,true]}}
+            ]
           },
           {
             "uid": "AIN01",
@@ -72,7 +95,12 @@
             "type": "RPDO",
             "format" : "kp_2-intArray",
             "size" : 4,
-            "register" : "0x640101"
+            "register" : "0x640101",
+            "sample" : [
+              {"action":"read"},
+              {"action":"subscribe"},
+              {"action":"unsubscribe"}
+            ]
           },
           {
             "uid": "AIN02",
@@ -80,7 +108,12 @@
             "type": "RPDO",
             "format" : "kp_2-intArray",
             "size" : 4,
-            "register" : "0x640102"
+            "register" : "0x640102",
+            "sample" : [
+              {"action":"read"},
+              {"action":"subscribe"},
+              {"action":"unsubscribe"}
+            ]
           }
         ]
       }
