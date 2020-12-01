@@ -76,9 +76,9 @@ set (g++_minimal_version 4.9)
 # -----------------------------
 set (PKG_REQUIRED_LIST
 	json-c
-	afb-daemon
-	appcontroller
-	afb-helpers
+	afb-binding
+	afb-libcontroller
+	afb-libhelpers
 	liblely-coapp
 )
 
