@@ -112,6 +112,7 @@ set(C_COMPILE_OPTIONS "" CACHE STRING "Compilation flags for C language.")
 #set(DEBUG_COMPILE_OPTIONS "-g" "-ggdb" "-Wp,-U_FORTIFY_SOURCE" CACHE STRING "Compilation flags for DEBUG build type.")
 #set(CCOV_COMPILE_OPTIONS "-g" "-O2" "--coverage" CACHE STRING "Compilation flags for CCOV build type.")
 #set(RELEASE_COMPILE_OPTIONS "-g" "-O2" CACHE STRING "Compilation flags for RELEASE build type.")
+add_compile_options(-DAFB_BINDING_VERSION=3)
 
 # (BUG!!!) as PKG_CONFIG_PATH does not work [should be an env variable]
 # ---------------------------------------------------------------------
