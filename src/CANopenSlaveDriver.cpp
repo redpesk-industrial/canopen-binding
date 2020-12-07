@@ -42,7 +42,7 @@ static void slaveDynRequest(afb_req_t request){
 
 CANopenSlaveDriver::CANopenSlaveDriver(
         ev_exec_t * exec,
-        lely::canopen::BasicMaster& master,
+        lely::canopen::AsyncMaster& master,
         afb_api_t api,
         json_object * slaveJ,
         uint8_t nodId
@@ -248,7 +248,7 @@ void CANopenSlaveDriver::request (afb_req_t request,  json_object * queryJ) {
 int CANopenSlaveDriver::addSensorEvent(CANopenSensor * sensor){ 
     try{
         m_sensorEventQueue.insert(m_sensorEventQueue.end(), sensor);
-    }catch(std::exception){
+    }catch(const std::exception &){
         return ERROR;
     }
     return 0;
@@ -263,7 +263,7 @@ int CANopenSlaveDriver::delSensorEvent(CANopenSensor* sensor){
             }
             else q++;
         }
-    }catch(std::exception){
+    }catch(const std::exception &){
         return ERROR;
     }
     return 0;

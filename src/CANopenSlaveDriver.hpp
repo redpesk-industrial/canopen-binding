@@ -45,7 +45,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     using lely::canopen::FiberDriver::FiberDriver;
     CANopenSlaveDriver(
         ev_exec_t* exec,
-        lely::canopen::BasicMaster& master,
+        lely::canopen::AsyncMaster& master,
         afb_api_t api,
         json_object * slaveJ,
         uint8_t nodId
