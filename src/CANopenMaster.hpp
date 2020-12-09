@@ -43,7 +43,7 @@ class CANopenMaster{
   public:
     CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId = 1);
     inline bool chanIsOpen(){ return m_chan.is_open(); }
-    inline bool isRuning(){ return m_isRuning; }
+    inline bool isRunning(){ return m_isRunning; }
     inline const char * info(){ return m_info; }
     json_object * infoJ();
     json_object * statusJ();
@@ -67,7 +67,7 @@ class CANopenMaster{
     uint8_t m_nodId;
     // A vector referensing every slaves handle by the master
     std::vector<std::shared_ptr<CANopenSlaveDriver>> m_slaves;
-    bool m_isRuning = false;
+    bool m_isRunning = false;
 };
 
 #endif /* _ServiceCANopenMaster_INCLUDE_ */

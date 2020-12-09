@@ -321,7 +321,7 @@ json_object * CANopenSensor::infoJ(){
         json_object_array_add(actions, json_object_new_string("read"));
 
     if(m_function.writeCB)
-        json_object_array_add(actions, json_object_new_string("writ"));
+        json_object_array_add(actions, json_object_new_string("write"));
 
     json_object_array_add(actions, json_object_new_string("subscribe"));
     json_object_array_add(actions, json_object_new_string("unsubscribe"));

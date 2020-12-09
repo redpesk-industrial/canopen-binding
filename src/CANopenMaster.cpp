@@ -160,16 +160,16 @@ CANopenMaster::CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId /*=
     struct sd_event_source* event_source = nullptr;
     auto userdata = const_cast<void*>(static_cast<const void*>(static_cast<ev_poll_t*>(m_poll.get_poll())));
     err = sd_event_add_io(afb_daemon_get_event_loop(), &event_source, m_poll.get_fd(), EPOLLIN, ServiceCANopenMasterHandler, userdata);
-    if(err == 0) m_isRuning = true;
+    if(err == 0) m_isRunning = true;
 }
 
 json_object * CANopenMaster::infoJ(){
     json_object *master_info, *responseJ = json_object_new_object();
     char * formatedInfo;
-    char isRuningS[7];
-    if(m_isRuning) strcpy(isRuningS, "true");
-    else strcpy(isRuningS, "false");
-    asprintf(&formatedInfo, "uri: '%s', nodId: %d, isRuning: %s, info: '%s', object dictionary: %s", m_uri, m_nodId, isRuningS, m_info, m_dcf);
+    char isRunningS[7];
+    if(m_isRunning) strcpy(isRunningS, "true");
+    else strcpy(isRunningS, "false");
+    asprintf(&formatedInfo, "uri: '%s', nodId: %d, isRunning: %s, info: '%s', object dictionary: %s", m_uri, m_nodId, isRunningS, m_info, m_dcf);
    
     json_object_object_add(responseJ, "Master_info", json_object_new_string(formatedInfo));
     json_object * slavesJ = json_object_new_array();
@@ -191,8 +191,8 @@ json_object * CANopenMaster::statusJ(){
     int err = wrap_json_pack(&master_status, "{ss si sb ss}",
                         "uri", m_uri,
                         "nodId", m_nodId,
-                        "isRuning", m_isRuning,
-                        "ObjectDictionnary", m_dcf
+                        "isRunning", m_isRunning,
+                        "ObjectDictionary", m_dcf
                     );
     if (err)
         master_status = json_object_new_string("Master Status ERROR");

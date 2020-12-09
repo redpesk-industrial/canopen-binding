@@ -138,7 +138,7 @@ static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ
 
     // Load CANopen network configuration and start
     CO_Master = new CANopenMaster(api, rtusJ);
-    if (!CO_Master->isRuning()) return ERROR;
+    if (!CO_Master->isRunning()) return ERROR;
 
     // add static controls verbs
     err = CtrlLoadStaticVerbs (api, CtrlApiVerbs, (void*) CO_Master);

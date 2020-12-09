@@ -91,7 +91,7 @@
           },
           {
             "uid": "AIN01",
-            "info": "Analog input register 01, contains 2 analog input of 16bit itch",
+            "info": "Analog input register 01, contains 2 analog input of 16bit each",
             "type": "RPDO",
             "format" : "kp_2-intArray",
             "size" : 4,
@@ -104,7 +104,7 @@
           },
           {
             "uid": "AIN02",
-            "info": "Analog input register 02, contains 2 analog input of 16bit itch",
+            "info": "Analog input register 02, contains 2 analog input of 16bit each",
             "type": "RPDO",
             "format" : "kp_2-intArray",
             "size" : 4,
