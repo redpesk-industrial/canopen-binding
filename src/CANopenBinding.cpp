@@ -200,7 +200,7 @@ int afbBindingEntry(afb_api_t api) {
     else AFB_API_NOTICE(api, "Found environnement config path : %s", envConfig);
 
 
-    status=asprintf (&searchPath,"%s:%s/etc", envConfig, GetBindingDirPath(api));
+    status=asprintf (&searchPath,"%s:%s", envConfig, GetBindingDirPath(api));
     AFB_API_NOTICE(api, "Json config directory : %s", searchPath);
 
     const char* prefix = "canopen";
