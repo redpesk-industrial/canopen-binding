@@ -88,7 +88,7 @@ set (PKG_REQUIRED_LIST
 if(IS_DIRECTORY $ENV{HOME}/opt/afb-monitoring)
 set(MONITORING_ALIAS "--alias=/monitoring:$ENV{HOME}/opt/afb-monitoring")
 endif()
-set(CLOSING_MESSAGE "Debug from buildir: afb-daemon --name=afb-kingpigeonM150 --port=1234 ${MONITORING_ALIAS} --workdir=$ENV{PWD}/package --ldpaths=. --roothttp=../../htdocs --token= -vvv")
+set(CLOSING_MESSAGE "Debug from buildir: afb-daemon --name=afb-kingpigeonM150 --port=1234 ${MONITORING_ALIAS} --workdir=$ENV{PWD}/package --binding=$ENV{PWD}/src/lib/afb-CANopen.so -vvv")
 set(PACKAGE_MESSAGE "Install widget file using in the target : afm-util install ${PROJECT_NAME}.wgt")
 
 # Customize link option
