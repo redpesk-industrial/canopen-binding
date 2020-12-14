@@ -1,28 +1,11 @@
 # Configuration
 
-## Adding your own config
-
-Json config file is selected from `afb-daemon --name=afb-midlename-xxx` option. This allows you to switch from one json config to an other without editing any file. `middlename` is use to select a specific config. As example `--name='afb-kpM15-config'` will select `canopen-kpM150-myconfig.json`.
-
-You may also choose to force your config file by exporting CONTROL_CONFIG_PATH environement variable. For further information, check AGL controller documentation [here](https://docs.automotivelinux.org/docs/en/guppy/devguides/reference/ctrler/controllerConfig.html)
-
-```bash
-# for exemple :
-# $HOME
-# └── my-config
-#     ├── canopen-myconfig-config.json
-#     └── my-master.dcf
-
-export CONTROL_CONFIG_PATH="$HOME/my-config"
-afb-binder --name=afb-myconfig --port=1234  --binding=src/lib/CANopen.so --roothttp=../htdocs --token= --verbose
-```
-
 ## CANopen binding support a set of default encoder
 
 * int
 * uint
 * double
-* string _--not tested yet_
+* string
 
 Nevertheless user may also add its own encoding/decoding format to handle device specific representation (ex: device info string),or custom application encoding (ex: float to uint16 for an analog output or bool array for digital input/output). Custom encoder/decoder are store within user plugin (see sample at src/plugins/kingpigeon).
 
@@ -58,7 +41,11 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
             "type": "RPDO", // type of communication used
             "format" : "kp_bool_din4", // encoding/decoding format
             "size" : 1, //size of the sensor in bytes
-            "register" : "0x620001" // sensor located at index 0x6200 sub-index 01
+            "register" : "0x620001", // sensor located at index 0x6200 sub-index 01
+            "sample" : [ // optional : samples that will be available in the afb-ui-devtool
+              {"action":"read"},
+              {"action":"subscribe"}
+            ]
           },
           {
             "uid": "DIN01_EVENT_TIMER",
@@ -75,7 +62,11 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
             "type": "TPDO",
             "format" : "uint",
             "size" : 1,
-            "register" : "0x600001"
+            "register" : "0x600001",
+            "sample" : [
+              {"action":"write", "data":15},
+              {"action":"write", "data":0}
+            ]
           },
     ...
 ```
@@ -116,7 +107,7 @@ The CANopen binding support both builtin format converter and optional custom co
 // Sample of custom formatter (king-pigeon-encore.c)
 // -------------------------------------------------
 
-std::map<std::string, coDecodeCB> kingpigeonDecodeFormatersTable{
+std::map<std::string, coDecodeCB> kingpigeonDecodeFormattersTable{
   //uid              decoding CB
   {"kp_4-boolArray", kingpigeon_4_bool_array_decode},
   {"kp_2-intArray" , kingpigeon_2_int_array_decode }
@@ -129,13 +120,13 @@ CTLP_ONLOAD(plugin, coEncoderHandle) {
 
   int err;
   
-  // add a all list of decode formaters
-  err = coEncoder->addDecodeFormateur(kingpigeonDecodeFormatersTable);
-  if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add %d entree to decode formater table", err);
+  // add a all list of decode formatters
+  err = coEncoder->addDecodeFormatter(kingpigeonDecodeFormattersTable);
+  if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add %d entree to decode formatter table", err);
   
   // add a single encoder
-  err = coEncoder->addEncodeFormateur("kp_4-boolArray",kingpigeon_bool_array_encode);
-  if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add 'kp_4-boolArray' entree to encode formater table");
+  err = coEncoder->addEncodeFormatter("kp_4-boolArray",kingpigeon_bool_array_encode);
+  if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add 'kp_4-boolArray' entree to encode formatter table");
   
   return 0;
 }

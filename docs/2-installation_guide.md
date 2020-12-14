@@ -1,44 +1,44 @@
-# install
+# Installation
 
 ## Easy install
 
-This binding is available in the Redpesk repo, so if you are runing a Redpesk or a redhat based os you can install it with package manager :
+This binding is available in the Redpesk repo, so if you are running one of the supported Linux distro you can install it with your package manager :
 
-``` bash
-# Add the repository
-cat << EOF > /etc/yum.repos.d/canopen-binding.repo
-[canopen-binding]
-name=canopen-binding
-baseurl=https://iotbzh-app.redpesk.bzh/kbuild/repos/canopen-binding--redpesk-devel-28-build/latest/\$basearch
-enabled=1
-repo_gpgcheck=0
-type=rpm
-gpgcheck=0
-skip_if_unavailable=False
-EOF
+* Declare redpesk repository: [(see doc)](../../developer-guides/host-configuration/docs/1-Setup-your-build-host.html)
 
-# Install the binding
-sudo dnf install canopen-binding
-```
+* Install the binding :
+
+    ``` bash
+    # Fedora / OpenSUSE / Redpesk :
+    sudo dnf install canopen-binding
+
+    # Ubuntu / Debian
+    sudo apt install canopen-binding
+    ```
 
 ## Install from sources
 
 ### Dependencies
 
 * Redpesk application framework 'afb-binder'
-* Redpesk controller 'afb-libcontroller-devel'
-* Redpesk helpers 'afb-libhelpers-devel'
+* Redpesk controller 'afb-libcontroller'
+* Redpesk helpers 'afb-libhelpers'
 * Redpesk cmake template 'afb-cmake-modules'
 * lely-core CANopen library
 
+> Note: _use *-dev or *-devel packages if available_
+
 #### Redpesk dependencies
 
-* Redpesk microservices build tools: [(see doc)](https://docs.iot.bzh/docs/en/master/devguides/reference/2-download-packages.html)
-* Install Redpesk controller: [(see doc)](https://docs.iot.bzh/docs/en/guppy/devguides/reference/ctrler/controller.html)
+Add Redpesk repositories and install the Application Framework [(see doc)](../../developer-guides/host-configuration/docs/1-Setup-your-build-host.html)
+
+Install Programs and Libraries you need [(see doc)](../../developer-guides/host-configuration/docs/2-getting-source-files.html)
 
 #### CANopen lib dependencies
 
-* Compile and Install fd_loop brach of lely-core CANopen library :
+Warning : this binding uses a specific version of liblely please use the one specified below
+
+* Compile and Install lely-core CANopen library :
 
 ``` bash
 git clone http://git.ovh.iot/redpesk/redpesk-industrial/liblely.git

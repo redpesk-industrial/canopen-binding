@@ -1,8 +1,8 @@
 ###########################################################################
 #  Copyright (C) 2015-2020 IoT.bzh Company
-# 
+#
 #  Author: Johann Gautier <johann.gautier@iot.bzh>
-# 
+#
 #  $RP_BEGIN_LICENSE$
 #  Commercial License Usage
 #   Licensees holding valid commercial IoT.bzh licenses may use this file in
@@ -11,7 +11,7 @@
 #   a written agreement between you and The IoT.bzh Company. For licensing terms
 #   and conditions see https://www.iot.bzh/terms-conditions. For further
 #   information use the contact form at https://www.iot.bzh/contact.
-# 
+#
 #  GNU General Public License Usage
 #   Alternatively, this file may be used under the terms of the GNU General
 #   Public license version 3. This license is as published by the Free Software
@@ -88,7 +88,7 @@ set (PKG_REQUIRED_LIST
 if(IS_DIRECTORY $ENV{HOME}/opt/afb-monitoring)
 set(MONITORING_ALIAS "--alias=/monitoring:$ENV{HOME}/opt/afb-monitoring")
 endif()
-set(CLOSING_MESSAGE "Debug from buildir: afb-daemon --name=afb-kingpigeonM150 --port=1234 ${MONITORING_ALIAS} --workdir=$ENV{PWD}/package --binding=$ENV{PWD}/src/lib/afb-CANopen.so -vvv")
+set(CLOSING_MESSAGE "Debug from buildir: afb-binder --name=afb-kingpigeonM150 --port=1234 ${MONITORING_ALIAS} --workdir=$ENV{PWD}/package --binding=$ENV{PWD}/src/lib/afb-CANopen.so -vvv")
 set(PACKAGE_MESSAGE "Install widget file using in the target : afm-util install ${PROJECT_NAME}.wgt")
 
 # Customize link option
