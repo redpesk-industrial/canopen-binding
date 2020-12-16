@@ -2,7 +2,7 @@
 
 ## Easy install
 
-This binding is available in the Redpesk repo, so if you are running one of the supported Linux distro you can install it with your package manager :
+This binding is available in the Redpesk repo, so if you are running on one of the supported Linux distros you can install it with your package manager :
 
 * Declare redpesk repository: [(see doc)](../../developer-guides/host-configuration/docs/1-Setup-your-build-host.html)
 

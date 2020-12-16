@@ -2,12 +2,12 @@
 
 This test example is based on a King Pigeon Industrial CANopen IO Module. Cabling example and documentation are available on [Device Store / King Pigeon](../../redpesk-marine/devices-store/docs/devices-store/king-pigeon.html) chapter of the Redpesk documentation.
 
-This test example presume that your device is set to bitrate = 20000 ![CAN open Communication Rate Set switch](images/CANopen_Communication_Rate_Set_Switch.png){:: style="margin: auto; display: initial; height: 50px; width: auto;"}
+This test example presumes that your device is set to bitrate = 20000 ![CAN open Communication Rate Set switch](images/CANopen_Communication_Rate_Set_Switch.png){:: style="margin: auto; display: initial; height: 50px; width: auto;"}
 and nod id = 2 ![CAN open Address Setting switch](images/CANopen_Address_Setting_Switch.png){:: style="margin: auto; display: initial; height: 50px; width: auto;"}
 
 ## Set up device
 
-Set up your can connection with the right can chanel (usually can0) and a bit rate corresponding to your device setting (in this case 20000).
+Set up your can connection with the right can channel (usually can0) and a bit rate corresponding to your device setting (in this case 20000).
 
 ```bash
 sudo ip link set can0 type can bitrate 20000
@@ -33,7 +33,7 @@ Be sure to be in the build directory and run :
 afb-binder --name=afb-kingpigeonM150-config --port=1234  --binding=src/lib/afb-CANopen.so --workdir=package --verbose
 ```
 
-or if you instaled it (from package or with make install)
+or if you installed it (from package or with make install)
 
 ```bash
 export CANOPEN_BINDING_DIR=/var/local/lib/afm/applications/canopen-binding
@@ -60,8 +60,8 @@ run it :
 
 ``` bash
 afb-client --human 'ws://localhost:1234/api'
-# you can now send requests with the foloing sintax : <api> <verb> [eventual data in json format]
-# heare some available example for canopen binding :
+# you can now send requests with the following syntax : <api> <verb> [eventual data in json format]
+# here are some available examples for canopen binding :
 canopen ping                                        # Answer pong
 canopen info                                        # Return information about the binding and available verbs
 canopen slave2/DOUT01 {"action":"write", "data":15} # Write 0b1111 on digital output 01 of slave 2
@@ -74,7 +74,7 @@ for more option use `afb-client --help`
 
 ## Adding your own config
 
-Json config file is selected from `afb-binder --name=afb-midlename-xxx` option. This allows you to switch from one json config to an other without editing any file. `middlename` is use to select a specific config. As example `--name='afb-kpM15-config'` will select `canopen-kpM150-myconfig.json`.
+Json config file is selected from `afb-binder --name=afb-midlename-xxx` option. This allows you to switch from one json config to an other without editing any file. `middlename` is used to select a specific config. As example `--name='afb-kpM15-config'` will select `canopen-kpM150-myconfig.json`.
 
 You may also choose to force your config file by exporting CONTROL_CONFIG_PATH environnement variable. For further information, check AGL controller documentation [here](../../developer-guides/controllerConfig.html)
 

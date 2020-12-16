@@ -1,17 +1,17 @@
 # Configuration
 
-## CANopen binding support a set of default encoder
+## CANopen binding support a set of default encoders
 
 * int
 * uint
 * double
 * string
 
-Nevertheless user may also add its own encoding/decoding format to handle device specific representation (ex: device info string),or custom application encoding (ex: float to uint16 for an analog output or bool array for digital input/output). Custom encoder/decoder are store within user plugin (see sample at src/plugins/kingpigeon).
+Nevertheless user may also add its own encoding/decoding format to handle device specific representation (ex: device info string),or custom application encoding (ex: float to uint16 for an analog output or bool array for digital input/output). Custom encoder/decoder are stored within user plugin (see sample at src/plugins/kingpigeon).
 
 ## API usage
 
-CANopen binding create one api/verb by sensor. By default each sensor api/verb is prefixed by the RTU uid. With following config mak
+CANopen binding creates one api/verb by sensor. By default each sensor api/verb is prefixed by the RTU uid. With following config mak
 
 ```json
 "canopen":{
@@ -19,7 +19,7 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
     "info": "Master handeling 1 Kingpigeon M150 module", // optional
     "uri" : "can0",
     "nodId": 1, // optional 1 by default
-    "dcf": "kp2-master.dcf", // DCF or EDS file describing the behavior of the master and it's handling of the CANopen network
+    "dcf": "kp2-master.dcf", // DCF or EDS file describing the behavior of the master and its handling of the CANopen network
     "slaves": [
       {
         "uid": "kp01",
@@ -73,10 +73,10 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
 
 ## CANopen controller exposed
 
-### Two builtin api/verb
+### Two built-in api/verb
 
 * `api://canopen/ping` check if binder is alive
-* `api://canopen/info` return information about the binding configuration and list available verbs
+* `api://canopen/info` return information about the binding configuration and available verbs list
 
 ### On action api/verb per declared Sensor
 
@@ -85,7 +85,7 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
 * `api://canopen/mySlave2/mySensor01`
 * etc ...
 
-### For each sensors the API accept 4 possible actions
+### For each sensor the API accepts 4 possible actions
 
 * `action=read` return register(s) value after format decoding
 * `action=write` push value on register(s) after format encoding
@@ -94,14 +94,14 @@ CANopen binding create one api/verb by sensor. By default each sensor api/verb i
 
 ### Format Converter
 
-The CANopen binding support both builtin format converter and optional custom converter provided by user through plugins.
+The CANopen binding support both built-in format converter and optional custom converter provided by user through plugins.
 
-* Standard converter include the traditional int, uint, double ...
+* Standard converter includes the traditional int, uint, double ...
 * Custom converter are provided through optional plugins. Custom converter should declare a static structure and register it at plugin loadtime(CTLP_ONLOAD).
   * uid is the formatter name as declare inside JSON config file.
   * decode/encore callback are respectively called for read/write action
-  * Each sensor stor it's last known value and is accessible with te member function `currentVal()`
-  * Each sensor also attaches a void* context accessible with member function `getData()` and `setData()`. Developer may declare a private context for each sensor.
+  * Each sensor stores its last known value and is accessible with the member function `currentVal()`
+  * Each sensor also attaches a void* context accessible with the member function `getData()` and `setData()`. Developer may declare a private context for each sensor.
 
 ```c++
 // Sample of custom formatter (king-pigeon-encore.c)
@@ -119,15 +119,15 @@ CTLP_ONLOAD(plugin, coEncoderHandle) {
   CANopenEncoder* coEncoder = (CANopenEncoder*)coEncoderHandle;
 
   int err;
-  
+
   // add a all list of decode formatters
   err = coEncoder->addDecodeFormatter(kingpigeonDecodeFormattersTable);
   if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add %d entree to decode formatter table", err);
-  
+
   // add a single encoder
   err = coEncoder->addEncodeFormatter("kp_4-boolArray",kingpigeon_bool_array_encode);
   if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add 'kp_4-boolArray' entree to encode formatter table");
-  
+
   return 0;
 }
 ```
