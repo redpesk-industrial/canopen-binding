@@ -9,11 +9,14 @@ This binding is available in the Redpesk repo, so if you are running on one of t
 * Install the binding :
 
     ``` bash
-    # Fedora / OpenSUSE / Redpesk :
+    # Fedora / Redpesk :
     sudo dnf install canopen-binding
 
-    # Ubuntu / Debian
+    # Ubuntu / Debian :
     sudo apt install canopen-binding
+
+    # OpenSUSE :
+    sudo zypper install canopen-binding
     ```
 
 ## Install from sources
@@ -52,6 +55,7 @@ make install
 ### CANopen Binding build
 
 ```bash
+git clone https://github.com/redpesk-industrial/canopen-binding.git
 mkdir build && cd build
 cmake ..
 make

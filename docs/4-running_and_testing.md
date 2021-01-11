@@ -48,7 +48,7 @@ afb-binder \
 
 install `afb-ui-devtools`
 
-open binding UI with browser at `http://localhost:1234/`
+open binding UI with browser at `http://localhost:1234/devtools/index.html`
 
 ![afb-ui-devtool](images/afb-ui-devtool_canopen_Screenshot.png)
 

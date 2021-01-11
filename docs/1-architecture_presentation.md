@@ -7,6 +7,6 @@ It acts as a master on the CANopen bus and is generated and handled via the [(op
 
 To work, this binding requires a master DCF file in which it is described the slaves object dictionary, and a JSON file that describes the behavior of the binding and references the sensors (more information about it can be found in the configuration chapter).
 
-* [Installation Guid](./2-installation_guide.html)
-* [Running and Testing](./3-configuration.html)
-* [Configuration](./4-running_and_testing.html)
+* [Installation Guide](./2-installation_guide.html)
+* [Running and Testing](./4-running_and_testing.html)
+* [Configuration](./3-configuration.html)
