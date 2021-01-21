@@ -4,7 +4,7 @@
 
 This binding is available in the Redpesk repo, so if you are running on one of the supported Linux distros you can install it with your package manager :
 
-* Declare redpesk repository: [(see doc)](../../developer-guides/host-configuration/docs/1-Setup-your-build-host.html)
+* Declare redpesk repository: [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
 
 * Install the binding :
 
@@ -33,9 +33,9 @@ This binding is available in the Redpesk repo, so if you are running on one of t
 
 #### Redpesk dependencies
 
-Add Redpesk repositories and install the Application Framework [(see doc)](../../developer-guides/host-configuration/docs/1-Setup-your-build-host.html)
+Add Redpesk repositories and install the Application Framework [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
 
-Install Programs and Libraries you need [(see doc)](../../developer-guides/host-configuration/docs/2-getting-source-files.html)
+Install Programs and Libraries you need [(see doc)]({% chapter_link host-configuration-doc.getting-your-source-files %})
 
 #### CANopen lib dependencies
 

@@ -1,6 +1,6 @@
 # Running/Testing
 
-This test example is based on a King Pigeon Industrial CANopen IO Module. Cabling example and documentation are available on [Device Store / King Pigeon](../../redpesk-marine/devices-store/docs/devices-store/king-pigeon.html) chapter of the Redpesk documentation.
+This test example is based on a King Pigeon Industrial CANopen IO Module. Cabling example and documentation are available on [Device Store / King Pigeon]({% chapter_link devices-store-doc.king-pigeon %}) chapter of the Redpesk documentation.
 
 This test example presumes that your device is set to bitrate = 20000 ![CAN open Communication Rate Set switch](images/CANopen_Communication_Rate_Set_Switch.png){:: style="margin: auto; display: initial; height: 50px; width: auto;"}
 and nod id = 2 ![CAN open Address Setting switch](images/CANopen_Address_Setting_Switch.png){:: style="margin: auto; display: initial; height: 50px; width: auto;"}
@@ -76,7 +76,7 @@ for more option use `afb-client --help`
 
 Json config file is selected from `afb-binder --name=afb-midlename-xxx` option. This allows you to switch from one json config to an other without editing any file. `middlename` is used to select a specific config. As example `--name='afb-kpM15-config'` will select `canopen-kpM150-myconfig.json`.
 
-You may also choose to force your config file by exporting CONTROL_CONFIG_PATH environnement variable. For further information, check AGL controller documentation [here](../../developer-guides/controllerConfig.html)
+You may also choose to force your config file by exporting CONTROL_CONFIG_PATH environnement variable. For further information, check AGL controller documentation [here]({% chapter_link libappcontroller-guides.controller-configuration %})
 
 ```bash
 # for exemple :
