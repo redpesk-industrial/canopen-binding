@@ -2,14 +2,14 @@
 
 ## Easy install
 
-This binding is available in the Redpesk repo, so if you are running on one of the supported Linux distros you can install it with your package manager :
+This binding is available in the redpesk repo, so if you are running on one of the supported Linux distros you can install it with your package manager :
 
 * Declare redpesk repository: [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
 
 * Install the binding :
 
     ``` bash
-    # Fedora / Redpesk :
+    # Fedora / redpesk :
     sudo dnf install canopen-binding
 
     # Ubuntu / Debian :
@@ -23,17 +23,17 @@ This binding is available in the Redpesk repo, so if you are running on one of t
 
 ### Dependencies
 
-* Redpesk application framework 'afb-binder'
-* Redpesk controller 'afb-libcontroller'
-* Redpesk helpers 'afb-libhelpers'
-* Redpesk cmake template 'afb-cmake-modules'
+* redpesk application framework 'afb-binder'
+* redpesk controller 'afb-libcontroller'
+* redpesk helpers 'afb-libhelpers'
+* redpesk cmake template 'afb-cmake-modules'
 * lely-core CANopen library
 
 > Note: _use *-dev or *-devel packages if available_
 
-#### Redpesk dependencies
+#### redpesk dependencies
 
-Add Redpesk repositories and install the Application Framework [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
+Add redpesk repositories and install the Application Framework [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
 
 Install Programs and Libraries you need [(see doc)]({% chapter_link host-configuration-doc.getting-your-source-files %})
 

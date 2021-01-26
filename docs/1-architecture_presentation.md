@@ -1,6 +1,6 @@
 # CANopen Binding
 
-This binding allows the control of a CANopen field network from a Redpesk type system. It handles different formats natively (int, float, string...) but can also handle custom formatting using custom decoding/encoding plugins.
+This binding allows the control of a CANopen field network from a redpesk type system. It handles different formats natively (int, float, string...) but can also handle custom formatting using custom decoding/encoding plugins.
 It acts as a master on the CANopen bus and is generated and handled via the [(open source industrial c++ library Lely)](https://opensource.lely.com/canopen/).
 
 ![CANopen service architecture](images/CANopen-service-architecture.jpg)

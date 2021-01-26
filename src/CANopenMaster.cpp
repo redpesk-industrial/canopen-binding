@@ -22,7 +22,7 @@
  $RP_END_LICENSE$
 */
 
-//to pass lely loop event fd to Redpesk
+//to pass lely loop event fd to redpesk
 #include <systemd/sd-event.h>
 
 #include <string.h>

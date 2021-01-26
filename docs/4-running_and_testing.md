@@ -1,6 +1,6 @@
 # Running/Testing
 
-This test example is based on a King Pigeon Industrial CANopen IO Module. Cabling example and documentation are available on [Device Store / King Pigeon]({% chapter_link devices-store-doc.king-pigeon %}) chapter of the Redpesk documentation.
+This test example is based on a King Pigeon Industrial CANopen IO Module. Cabling example and documentation are available on [Device Store / King Pigeon]({% chapter_link devices-store-doc.king-pigeon %}) chapter of the redpesk documentation.
 
 This test example presumes that your device is set to bitrate = 20000 ![CAN open Communication Rate Set switch](images/CANopen_Communication_Rate_Set_Switch.png){:: style="margin: auto; display: initial; height: 50px; width: auto;"}
 and nod id = 2 ![CAN open Address Setting switch](images/CANopen_Address_Setting_Switch.png){:: style="margin: auto; display: initial; height: 50px; width: auto;"}

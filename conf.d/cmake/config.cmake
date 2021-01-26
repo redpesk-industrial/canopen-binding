@@ -27,7 +27,7 @@
 set(PROJECT_NAME canopen-binding)
 set(PROJECT_VERSION "1.0")
 set(PROJECT_PRETTY_NAME "CANopen binding")
-set(PROJECT_DESCRIPTION "Provide a Redpesk CANopen Binding")
+set(PROJECT_DESCRIPTION "Provide a redpesk CANopen Binding")
 set(PROJECT_URL "https://github.com/iotbzh/CANopen-service")
 set(PROJECT_ICON "icon.png")
 set(PROJECT_AUTHOR "Iot-Team")
@@ -131,10 +131,10 @@ set(WIDGET_CONFIG_TEMPLATE ${CMAKE_SOURCE_DIR}/conf.d/wgt/config.xml.in CACHE PA
 #- text/html : HTML application,
 #	content.src designates the home page of the application
 #
-#- application/vnd.RP.native : Redpesk compatible native,
+#- application/vnd.RP.native : redpesk compatible native,
 #	content.src designates the relative path of the binary.
 #
-# - application/vnd.RP.service: Redpesk service, content.src is not used.
+# - application/vnd.RP.service: redpesk service, content.src is not used.
 #
 #- ***application/x-executable***: Native application,
 #	content.src designates the relative path of the binary.
