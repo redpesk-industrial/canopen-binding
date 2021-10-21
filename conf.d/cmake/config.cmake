@@ -88,7 +88,7 @@ set (PKG_REQUIRED_LIST
 if(IS_DIRECTORY $ENV{HOME}/opt/afb-monitoring)
 set(MONITORING_ALIAS "--alias=/monitoring:$ENV{HOME}/opt/afb-monitoring")
 endif()
-set(CLOSING_MESSAGE "Debug from buildir: afb-binder --name=afb-kingpigeonM150 --port=1234 ${MONITORING_ALIAS} --workdir=$ENV{PWD}/package --binding=$ENV{PWD}/src/lib/afb-CANopen.so -vvv")
+set(CLOSING_MESSAGE "Debug from buildir: afb-binder --name=afb-kingpigeonM150 --port=1234 ${MONITORING_ALIAS} --workdir=$ENV{PWD}/package --binding=$ENV{PWD}/package/lib/afb-CANopen.so -vvv")
 set(PACKAGE_MESSAGE "Install widget file using in the target : afm-util install ${PROJECT_NAME}.wgt")
 
 # Customize link option
@@ -96,7 +96,7 @@ set(PACKAGE_MESSAGE "Install widget file using in the target : afm-util install 
 #list(APPEND link_libraries -an-option)
 
 # Compilation options definition
-set(CONTROL_CONFIG_PATH "${CMAKE_SOURCE_DIR}/conf.d/project/etc:${CMAKE_BINARY_DIR}/package/etc:${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/etc" CACHE STRING "CONTROL_CONFIG_PATH")
+set(CONTROL_CONFIG_PATH "${CMAKE_BINARY_DIR}/package/etc:${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/etc" CACHE STRING "CONTROL_CONFIG_PATH")
 add_definitions(-DCONTROL_CONFIG_PATH="${CONTROL_CONFIG_PATH}")
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-std=c++17>)
 # Use CMake generator expressions to specify only for a specific language
