@@ -63,6 +63,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     const char * info();
 
     inline const char * uid() {return m_uid;}
+    inline bool isup() {return m_connected;}
 
     afb_req_t m_current_req;
 
@@ -72,6 +73,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
     const char * m_dcf;
     afb_api_t m_api;
     uint m_count;
+    bool m_connected = false;
     std::vector<std::shared_ptr<CANopenSensor>> m_sensors;
     std::list<CANopenSensor*> m_sensorEventQueue;
     json_object *m_onconfJ = nullptr;
@@ -89,6 +91,14 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
                 afb_event_push (sensor->event(), responseJ);
             }
         }
+    }
+
+    void OnHeartbeat(bool occurred) noexcept override {
+        m_connected = !occurred;
+        std::cout << "heart beat occured";
+        if (occurred)
+            std::cout << " timed out"; 
+        std::cout << std::endl;
     }
 
     //*// This function gets called when the boot-up process of the slave completes.
@@ -118,6 +128,7 @@ class CANopenSlaveDriver : public lely::canopen::FiberDriver {
         } catch (lely::canopen::SdoError& e) {
             res(e.code());
         }
+	m_connected = true;
     }//*/
 };
 
