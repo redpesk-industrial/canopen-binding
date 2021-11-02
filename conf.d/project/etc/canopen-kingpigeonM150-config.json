@@ -21,7 +21,7 @@
     "info": "CANopen Master",
     "uri" : "can0",
     "nodId": 1,
-    "dcf": "kp2-master.dcf",
+    "dcf": "canopen-kingpigeonM150-config/master.dcf",
     "slaves": [
       {
         "uid": "slave2",
