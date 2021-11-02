@@ -32,7 +32,7 @@ PROJECT_TARGET_ADD(CANopen-config)
 	add_input_files("${CONF_FILES}")
 
 	######################################################################
-	# Genegating master dcf file if a yml file is availe for eatch config
+	# Generating master dcf file if a yml file is available for each config
 	######################################################################
 
 	foreach(CONF_FILE ${CONF_FILES})

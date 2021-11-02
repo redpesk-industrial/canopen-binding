@@ -160,7 +160,7 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
 
     if (!strcasecmp (action, "WRITE")) {
         if (!m_slave->isup()){
-	    afb_req_fail_f (request, "Write-error", "CANopenSensor::request: slave %s is not runing", m_slave->uid()); 
+	    afb_req_fail_f (request, "Write-error", "CANopenSensor::request: slave %s is not running", m_slave->uid()); 
             return;
 	}
 	if(!m_function.writeCB || !m_encode){
@@ -175,7 +175,7 @@ void CANopenSensor::request (afb_req_t request, json_object * queryJ) {
     }
     else if (!strcasecmp (action, "READ")) {
         if (!m_slave->isup()){
-	    afb_req_fail_f (request, "Write-error", "CANopenSensor::request: slave %s is not runing", m_slave->uid()); 
+	    afb_req_fail_f (request, "Write-error", "CANopenSensor::request: slave %s is not running", m_slave->uid()); 
             return;
 	}
 	if(!m_function.readCB || !m_decode){
