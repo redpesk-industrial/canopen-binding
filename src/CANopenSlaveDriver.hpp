@@ -39,97 +39,111 @@
 
 class CANopenSensor;
 
-class CANopenSlaveDriver : public lely::canopen::FiberDriver {
-  
-  public:
-    using lely::canopen::FiberDriver::FiberDriver;
-    CANopenSlaveDriver(
-        ev_exec_t* exec,
-        lely::canopen::AsyncMaster& master,
-        afb_api_t api,
-        json_object * slaveJ,
-        uint8_t nodId
-    );
+class CANopenSlaveDriver : public lely::canopen::FiberDriver
+{
 
-    void request (afb_req_t request, json_object * queryJ);
+public:
+	using lely::canopen::FiberDriver::FiberDriver;
+	CANopenSlaveDriver(
+	    ev_exec_t *exec,
+	    lely::canopen::AsyncMaster &master,
+	    afb_api_t api,
+	    json_object *slaveJ,
+	    uint8_t nodId);
 
-    // IMPORTANT : use this funtion only int the driver exec
-    int addSensorEvent(CANopenSensor* sensor);
-    
-    // IMPORTANT : use this funtion only int the driver exec
-    int delSensorEvent(CANopenSensor* sensor);
+	void request(afb_req_t request, json_object *queryJ);
 
-    json_object * infoJ();
-    const char * info();
+	// IMPORTANT : use this funtion only int the driver exec
+	int addSensorEvent(CANopenSensor *sensor);
 
-    inline const char * uid() {return m_uid;}
-    inline bool isup() {return m_connected;}
+	// IMPORTANT : use this funtion only int the driver exec
+	int delSensorEvent(CANopenSensor *sensor);
 
-    afb_req_t m_current_req;
+	json_object *infoJ();
+	const char *info();
 
-  private:
-    const char * m_uid;
-    const char * m_info;
-    const char * m_dcf;
-    afb_api_t m_api;
-    uint m_count;
-    bool m_connected = false;
-    std::vector<std::shared_ptr<CANopenSensor>> m_sensors;
-    std::list<CANopenSensor*> m_sensorEventQueue;
-    json_object *m_onconfJ = nullptr;
-    
-    void slavePerStartConfig(json_object * conf);
+	inline const char *uid() { return m_uid; }
+	inline bool isup() { return m_connected; }
 
-    // This function gets called every time a value is written to the local object dictionary of the master
-    void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override {
-        // check in the sensor event list
-        for (auto sensor: m_sensorEventQueue){
-            // If the sensor match, read it and push the event to afb
-            if(idx == sensor->reg() && subidx == sensor->subReg()){
-                json_object * responseJ;
-                sensor->read(&responseJ);
-                afb_event_push (sensor->event(), responseJ);
-            }
-        }
-    }
+	afb_req_t m_current_req;
 
-    void OnHeartbeat(bool occurred) noexcept override {
-        m_connected = !occurred;
-        std::cout << "heart beat occured";
-        if (occurred)
-            std::cout << " timed out"; 
-        std::cout << std::endl;
-    }
+private:
+	const char *m_uid;
+	const char *m_info;
+	const char *m_dcf;
+	afb_api_t m_api;
+	uint m_count;
+	bool m_connected = false;
+	std::vector<std::shared_ptr<CANopenSensor>> m_sensors;
+	std::list<CANopenSensor *> m_sensorEventQueue;
+	json_object *m_onconfJ = nullptr;
 
-    //*// This function gets called when the boot-up process of the slave completes.
-    void OnBoot(lely::canopen::NmtState nmtState, char es, const ::std::string&) noexcept override {
-        // if master cycle period is null or undefined set it to 100ms
-        int val = master[0x1006][0];
-        if(val <= 0) master[0x1006][0] = UINT32_C(100000);
-    }//*/
+	void slavePerStartConfig(json_object *conf);
 
-    //*// This function gets called during the boot-up process for the slave.
-    void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override {
-        try{
-            if(m_onconfJ){
-                if (json_object_is_type(m_onconfJ, json_type_array)) {
-                    int count = (int)json_object_array_length(m_onconfJ);
-                    for (int idx = 0; idx < count; idx++) {
-                        json_object *conf = json_object_array_get_idx(m_onconfJ, idx);
-                        slavePerStartConfig(conf);
-                    }
+	// This function gets called every time a value is written to the local object dictionary of the master
+	void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override
+	{
+		// check in the sensor event list
+		for (auto sensor : m_sensorEventQueue)
+		{
+			// If the sensor match, read it and push the event to afb
+			if (idx == sensor->reg() && subidx == sensor->subReg())
+			{
+				json_object *responseJ;
+				sensor->read(&responseJ);
+				afb_event_push(sensor->event(), responseJ);
+			}
+		}
+	}
 
-                } else {
-                    slavePerStartConfig(m_onconfJ);
-                }
-            }
-            // Report success (empty error code).
-            res({});
-        } catch (lely::canopen::SdoError& e) {
-            res(e.code());
-        }
-	m_connected = true;
-    }//*/
+	void OnHeartbeat(bool occurred) noexcept override
+	{
+		m_connected = !occurred;
+		std::cout << "heart beat occured";
+		if (occurred)
+			std::cout << " timed out";
+		std::cout << std::endl;
+	}
+
+	//*// This function gets called when the boot-up process of the slave completes.
+	void OnBoot(lely::canopen::NmtState nmtState, char es, const ::std::string &) noexcept override
+	{
+		// if master cycle period is null or undefined set it to 100ms
+		int val = master[0x1006][0];
+		if (val <= 0)
+			master[0x1006][0] = UINT32_C(100000);
+	} //*/
+
+	//*// This function gets called during the boot-up process for the slave.
+	void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override
+	{
+		try
+		{
+			if (m_onconfJ)
+			{
+				if (json_object_is_type(m_onconfJ, json_type_array))
+				{
+					int count = (int)json_object_array_length(m_onconfJ);
+					for (int idx = 0; idx < count; idx++)
+					{
+						json_object *conf = json_object_array_get_idx(m_onconfJ, idx);
+						slavePerStartConfig(conf);
+					}
+				}
+				else
+				{
+					slavePerStartConfig(m_onconfJ);
+				}
+			}
+			// Report success (empty error code).
+			res({});
+		}
+		catch (lely::canopen::SdoError &e)
+		{
+			res(e.code());
+		}
+		m_connected = true;
+	} //*/
 };
 
 #endif /* _CANOPENSLAVEDRIVER_INCLUDE_ */
