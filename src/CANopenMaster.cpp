@@ -94,6 +94,11 @@ CANopenMaster::CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId /*=
 		AFB_API_NOTICE(api, "found DCF file at %s", m_dcf);
 	}
 
+	// Check if master DCF require Upload Files(slave configuration SDO binary file)
+	// and make symbolic links to them in working directory so master can find them.
+	if (fixDcfRequires(m_dcf) != 0)
+		AFB_API_WARNING(api, "One or more UploadFile required by master DCF could not be linked");
+
 	// load and connect CANopen controleur
 	try
 	{
@@ -150,6 +155,10 @@ CANopenMaster::CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId /*=
 	err = sd_event_add_io(afb_daemon_get_event_loop(), &event_source, m_poll.get_fd(), EPOLLIN, ServiceCANopenMasterHandler, userdata);
 	if (err == 0)
 		m_isRunning = true;
+}
+
+CANopenMaster::~CANopenMaster(){
+	cleanDcfRequires();
 }
 
 json_object *CANopenMaster::infoJ()

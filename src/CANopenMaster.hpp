@@ -41,6 +41,7 @@ class CANopenMaster
 
 public:
 	CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId = 1);
+	~CANopenMaster();
 	inline bool chanIsOpen() { return m_chan.is_open(); }
 	inline bool isRunning() { return m_isRunning; }
 	inline const char *info() { return m_info; }
