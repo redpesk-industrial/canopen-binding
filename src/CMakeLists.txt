@@ -39,7 +39,7 @@ PROJECT_TARGET_ADD(CANopenEncoder)
 PROJECT_TARGET_ADD(CANopen)
 
 	# compile any C file starting with a lower case
-	file(GLOB CHEADERS *.hpp)
+	file(GLOB CHEADERS *.hpp utils/*.hpp)
 
 	# Define project Targets
 	add_library(${TARGET_NAME} MODULE
@@ -47,6 +47,7 @@ PROJECT_TARGET_ADD(CANopen)
 					CANopenBinding.cpp
 					CANopenSensor.cpp
 					CANopenSlaveDriver.cpp
+					utils/utils.c
 					)
 
 	# Binder exposes a unique public entry point

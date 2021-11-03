@@ -33,7 +33,6 @@
 #include <lely/coapp/master.hpp>
 
 #include <afb/afb-binding>
-#include <ctl-config.h>
 
 class CANopenSlaveDriver;
 

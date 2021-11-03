@@ -26,6 +26,7 @@
 #include <systemd/sd-event.h>
 
 #include <string.h>
+#include "utils/utils.hpp"
 
 #include "CANopenMaster.hpp"
 #include "CANopenSlaveDriver.hpp"
@@ -37,58 +38,19 @@ static int ServiceCANopenMasterHandler(sd_event_source *, int, uint32_t, void *u
 	return 0;
 }
 
-char *fullPathToDCF(afb_api_t api, char *dcfFile)
+char *findConfigFile(afb_api_t api, char *file)
 {
-	// We load 1st file others are just warnings
-	size_t p_length;
-	char *filepath = NULL;
-	const char *filename;
-	char *fullpath;
+	char *searchpath;
 	const char *envConfig;
 
 	envConfig = getenv("CONTROL_CONFIG_PATH");
 	if (!envConfig)
-	{
-		AFB_API_NOTICE(api, "Using default environnement config path : %s", CONTROL_CONFIG_PATH);
 		envConfig = CONTROL_CONFIG_PATH;
-	}
-	else
-		AFB_API_NOTICE(api, "Found environnement config path : %s", envConfig);
 
-	asprintf(&fullpath, "%s:%s/etc", envConfig, GetBindingDirPath(api));
-	AFB_API_NOTICE(api, "DCF config directory : %s", fullpath);
+	asprintf(&searchpath, "%s:%s/etc", envConfig, GetBindingDirPath(api));
+	AFB_API_NOTICE(api, "Searching config file in path : %s", searchpath);
 
-	json_object *responseJ = ScanForConfig(fullpath, CTL_SCAN_RECURSIVE, dcfFile, "");
-
-	for (int index = 0; index < json_object_array_length(responseJ); index++)
-	{
-		json_object *entryJ = json_object_array_get_idx(responseJ, index);
-
-		int err = wrap_json_unpack(entryJ, "{s:s, s:s !}",
-					   "fullpath", &fullpath,
-					   "filename", &filename);
-		if (err)
-		{
-			AFB_API_ERROR(api, "Invalid DCF entry= %s", json_object_get_string(entryJ));
-		}
-
-		if (index == 0)
-		{
-			p_length = strlen(fullpath) + 1 + strlen(filename);
-			filepath = (char *)malloc(p_length + 1);
-
-			strncpy(filepath, fullpath, p_length);
-			strncat(filepath, "/", p_length - strlen(filepath));
-			strncat(filepath, filename, p_length - strlen(filepath));
-		}
-		else
-		{
-			AFB_API_WARNING(api, "DCF file found but not used : %s/%s", fullpath, filename);
-		}
-	}
-
-	json_object_put(responseJ);
-	return filepath;
+	return findFile(file, searchpath);
 }
 
 CANopenMaster::CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId /*= 1*/):
@@ -103,12 +65,13 @@ CANopenMaster::CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId /*=
 
 	assert(rtuJ);
 	assert(api);
+	char * dcfFile;
 
 	err = wrap_json_unpack(rtuJ, "{ss,s?s,ss,s?s,s?i,so !}",
 			       "uid", &m_uid,
 			       "info", &m_info,
 			       "uri", &m_uri,
-			       "dcf", &m_dcf,
+			       "dcf", &dcfFile,
 			       "nodId", &m_nodId,
 			       "slaves", &slavesJ);
 	if (err)
@@ -116,12 +79,20 @@ CANopenMaster::CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId /*=
 		AFB_API_ERROR(api, "Fail to parse rtu JSON : (%s)", json_object_to_json_string(rtuJ));
 		return;
 	}
-
-	// Find the path of the master description file
-	m_dcf = fullPathToDCF(api, m_dcf);
-	if (!m_dcf)
-		return;
-	AFB_API_NOTICE(api, "found DCF file at %s", m_dcf);
+	// if path is absolute use it as is
+	if(dcfFile[0] == '/')
+		m_dcf = dcfFile;
+	
+	// if path is relative, search in config directories
+	else {
+		// Find the path of the master description file
+		m_dcf = findConfigFile(api, dcfFile);
+		if (!m_dcf) {
+			AFB_API_ERROR(api, "Could not find config file \"%s\"", dcfFile);
+			return;
+		}
+		AFB_API_NOTICE(api, "found DCF file at %s", m_dcf);
+	}
 
 	// load and connect CANopen controleur
 	try
