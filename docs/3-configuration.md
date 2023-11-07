@@ -172,3 +172,4 @@ package/etc/
 │   ├── master.dcf
 │   └── my_slave.bin
 └── canopen-kingpigeonM150-config.json
+```
