@@ -1,7 +1,5 @@
 /*
- Copyright (C) 2015-2020 IoT.bzh Company
-
- Author: Johann Gautier <johann.gautier@iot.bzh>
+ Copyright (C) 2015-2024 IoT.bzh Company
 
  $RP_BEGIN_LICENSE$
  Commercial License Usage
@@ -22,13 +20,22 @@
  $RP_END_LICENSE$
 */
 
-#ifndef _CANOPENGLUE_HEADER_
-#define _CANOPENGLUE_HEADER_
+#ifndef _cstrmap_INCLUDED_
+#define _cstrmap_INCLUDED_
 
-#include <iostream>
-#include <json-c/json.h>
+#include <map>
+#include <string.h>
 
-int32_t get_data_int32(json_object *dataJ);
-int64_t get_data_int64(json_object *dataJ);
+/** class for comparing C-strings */
+class cmpcstr
+{
+	public: constexpr bool operator()( const char *lhs, const char *rhs ) const
+			{ return strcmp(lhs,rhs)<0; }
+};
 
-#endif /* _CANOPENGLUE_HEADER_ */
+/** basic class for storing elements keyed by C-strings */
+template <class T>
+class cstrmap : public std::map<const char*, T, cmpcstr>
+	{};
+#endif // _cstrmap_INCLUDED_
+

@@ -22,239 +22,225 @@
  $RP_END_LICENSE$
 */
 
+#include "CANopenSlaveDriver.hpp"
+
 #include <string.h>
 
-// if 2 before 1 => conflict with 'is_error' betwin a lely function and a json define named identically
-#include "CANopenSlaveDriver.hpp" /*1*/
-#include "CANopenSensor.hpp"	  /*2*/
+#include "CANopenSensor.hpp"
 #include "CANopenMaster.hpp"
 #include "CANopenGlue.hpp"
 
-#ifndef ERROR
-#define ERROR -1
-#endif
+#include <rp-utils/rp-jsonc.h>
 
-static void slaveDynRequest(afb_req_t request)
+static afb_auth_t auth_admin = afb::auth_permission("superadmin");
+
+/**
+* @brief Link for AFB framework verb implementations
+*/
+void CANopenSlaveDriver::OnRequest(afb_req_t request, unsigned nparams, afb_data_t const params[])
 {
-	json_object *queryJ = afb_req_json(request);
-	CANopenSlaveDriver *slave = (CANopenSlaveDriver *)afb_req_get_vcbdata(request);
-	slave->request(request, queryJ);
+	// retrieve action handle from request and execute the request
+	CANopenSlaveDriver *slave = reinterpret_cast<CANopenSlaveDriver*>(afb_req_get_vcbdata(request));
+	slave->request(request, nparams, params);
 }
 
 CANopenSlaveDriver::CANopenSlaveDriver(
-    ev_exec_t *exec,
-    lely::canopen::AsyncMaster &master,
-    afb_api_t api,
-    json_object *slaveJ,
-    uint8_t nodId) : lely::canopen::FiberDriver(exec, master, nodId)
+	CANopenMaster &master,
+	json_object *slaveJ,
+	uint8_t nodId
+)
+	: lely::canopen::BasicDriver(master, master, nodId)
+	, m_master{master}
+	, m_api{master}
+	, m_sensors{}
 {
 	int err = 0;
-	json_object *sensorsJ = nullptr;
+	json_object *sensorJ, *sensorsJ;
 	char *adminCmd;
-	assert(slaveJ);
+	unsigned idx, count;
 
-	err = wrap_json_unpack(slaveJ, "{ss,s?s,s?s,s?o,so}",
+	err = rp_jsonc_unpack(slaveJ, "{ss,s?s,s?o,so}",
 			       "uid", &m_uid,
 			       "info", &m_info,
-			       "dcf", &m_dcf,
 			       "onconf", &m_onconfJ,
 			       "sensors", &sensorsJ);
 	if (err)
 	{
-		AFB_API_ERROR(api, "Fail to parse slave JSON : (%s)", json_object_to_json_string(slaveJ));
+		AFB_API_ERROR(m_api, "Fail to parse slave JSON : (%s)", json_object_to_json_string(slaveJ));
 		return;
 	}
 
-	// create an admin command for SDO row communication on the CANopen network
-	afb_auth_t *authent = (afb_auth_t *)calloc(1, sizeof(afb_auth_t));
-	authent->type = afb_auth_Permission;
-	authent->text = "superadmin";
-
-	err = asprintf(&adminCmd, "%s/%s", m_uid, "superadmin");
-	err = afb_api_add_verb(api, adminCmd, m_info, slaveDynRequest, this, authent, 0, 0);
+	m_uid_len = strlen(m_uid);
+	err = asprintf(&adminCmd, "%s/%s", uid(), "superadmin");
+	if (err < 0)
+		throw std::runtime_error(std::string("Fail to create superadmin verb for sensor ") + m_uid);
+	err = afb_api_add_verb(m_api, adminCmd, m_info, OnRequest, this, &auth_admin, 0, 0);
 	if (err)
-	{
-		AFB_API_ERROR(api, "CANopenSlaveDriver: fail to register API uid=%s verb=%s info=%s", m_uid, adminCmd, m_info);
-		return;
-	}
-
+		throw std::runtime_error(std::string("Failed to register superadmin verb ") + adminCmd);
+#if 1
+	err = afb_api_add_verb(m_api, uid(), m_info, OnRequest, this, nullptr, 0, 0);
 	if (err)
-	{
-		AFB_API_ERROR(api, "CANopenSlaveDriver: fail to register API verb=%s", m_uid);
-		return;
-	}
+		throw std::runtime_error(std::string("Failed to register superadmin verb ") + adminCmd);
+#endif
 
 	// loop on sensors
 	if (json_object_is_type(sensorsJ, json_type_array))
 	{
-		int count = (int)json_object_array_length(sensorsJ);
-		m_sensors = std::vector<std::shared_ptr<CANopenSensor>>((size_t)count);
-		for (int idx = 0; idx < count; idx++)
-		{
-			json_object *sensorJ = json_object_array_get_idx(sensorsJ, idx);
-			m_sensors[idx] = std::make_shared<CANopenSensor>(api, sensorJ, this);
-		}
+		count = (unsigned)json_object_array_length(sensorsJ);
+		if (count == 0)
+			throw std::invalid_argument(std::string("Empty sensor array uid=") + m_uid);
+		sensorJ = json_object_array_get_idx(sensorsJ, 0);
 	}
 	else
 	{
-		m_sensors[0] = std::make_shared<CANopenSensor>(api, sensorsJ, this);
+		count = 1;
+		sensorJ = sensorsJ;
 	}
-	return;
+	for (idx = 0;;)
+	{
+		AFB_API_DEBUG(m_api, "creation of sensor %s", json_object_to_json_string(sensorJ));
+		std::shared_ptr<CANopenSensor> sensor = std::make_shared<CANopenSensor>(*this, sensorJ);
+		m_sensors[sensor->uid()] = sensor;
+		if (++idx == count)
+			break;
+		sensorJ = json_object_array_get_idx(sensorsJ, idx);
+	}
 }
 
-void CANopenSlaveDriver::request(afb_req_t request, json_object *queryJ)
+void CANopenSlaveDriver::request(afb_req_t request, unsigned nparams, afb_data_t const params[])
 {
 
 	const char *action;
+	afb_data_t data;
 	json_object *dataJ = nullptr;
-	json_object *responseJ = nullptr;
 	json_object *regJ;
 	json_object *valJ;
-	int reg;
-	double val;
+	json_object *queryJ;
 	int size;
 	int err;
 
-	err = wrap_json_unpack(queryJ, "{ss s?o !}",
+	// get the JSON object
+	err = afb_req_param_convert(request, 0, AFB_PREDEFINED_TYPE_JSON_C, &data);
+	if (err < 0) {
+		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "conversion to JSON failed %d", err);
+		return;
+	}
+	queryJ = reinterpret_cast<json_object*>(afb_data_ro_pointer(data));
+
+
+	err = rp_jsonc_unpack(queryJ, "{ss s?o !}",
 			       "action", &action,
 			       "data", &dataJ);
 
 	if (err)
 	{
-		afb_req_fail_f(
-		    request,
-		    "query-error",
-		    "CANopenSlaveDriver::request: invalid 'json' rtu=%s query=%s",
-		    m_uid, json_object_get_string(queryJ));
+invalid_request:
+		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Invalid 'request' rtu=%s query=%s", uid(), json_object_get_string(queryJ));
 		return;
 	}
 
 	if (!strcasecmp(action, "WRITE"))
 	{
-		err = wrap_json_unpack(dataJ, "{so so si!}",
+		// get write parameters
+		err = rp_jsonc_unpack(dataJ, "{so so si!}",
 				       "reg", &regJ,
 				       "val", &valJ,
 				       "size", &size);
-
 		if (err)
 		{
-			afb_req_fail_f(
-			    request,
-			    "query-error",
-			    "CANopenSlaveDriver::request: invalid %s action data 'json' rtu=%s data=%s",
-			    action, m_uid, json_object_get_string(dataJ));
-			return;
+			goto invalid_request;
 		}
 
+		// decode register
 		try
 		{
-			reg = get_data_int(regJ);
+			afb_req_addref(request);
+			int32_t reg = get_data_int32(regJ);
+			int32_t val = get_data_int32(valJ);
+			uint8_t subIdx = (uint8_t)(reg & 0x0ff);
+			uint16_t idx = (uint16_t)((reg >> 8) & 0x00ffff);
+			lely::canopen::SdoFuture<void> f;
+			switch (size)
+			{
+			case 1:
+				f = AsyncWrite<uint8_t>(idx, subIdx, (uint8_t)val);
+				break;
+			case 2:
+				f = AsyncWrite<uint16_t>(idx, subIdx, (uint16_t)val);
+				break;
+			case 3:
+			case 4:
+				f = AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)val);
+				break;
+			default:
+				throw std::invalid_argument("Invalid write size (should be 1, 2, 3 or 4)");
+			}
+			f.then(GetExecutor(), [this, request, idx, subIdx](lely::canopen::SdoFuture<void> f) {
+				auto r = f.get();
+				if (r.has_error())
+				{
+					REQFAIL(request, AFB_ERRNO_GENERIC_FAILURE, "Async write of slave %s [0x%x]:[0x%x] failed", uid(), idx, subIdx);
+				}
+				else
+				{
+					afb_req_reply(request, 0, 0, NULL);
+				}
+				afb_req_unref(request);
+			});
 		}
-		catch (std::runtime_error &e)
+		catch (std::exception &e)
 		{
-			afb_req_fail_f(
-			    request,
-			    "query-error",
-			    "CANopenSlaveDriver::request: %s => %s register convertion error \nwhat() : %s",
-			    m_uid, action, e.what());
-			return;
-		}
-		uint16_t idx = ((uint32_t)reg & 0x00ffff00) >> 8;
-		uint8_t subIdx = (uint32_t)reg & 0x000000ff;
-
-		try
-		{
-			val = get_data_double(valJ);
-		}
-		catch (std::runtime_error &e)
-		{
-			afb_req_fail_f(
-			    request,
-			    "query-error",
-			    "CANopenSlaveDriver::request: %s => %s val convertion error \nwhat() : %s",
-			    m_uid, action, e.what());
-			return;
-		}
-
-		AFB_REQ_DEBUG(request, "send value 0x%x at register[0x%x][0x%x] of slave '%s'", (uint32_t)val, idx, subIdx, m_uid);
-		switch (size)
-		{
-		case 1:
-			AsyncWrite<uint8_t>(idx, subIdx, (uint8_t)val);
-			break;
-		case 2:
-			AsyncWrite<uint16_t>(idx, subIdx, (uint16_t)val);
-			break;
-		case 3:
-			AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)val);
-			break;
-		case 4:
-			AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)val);
-			break;
-		default:
-			afb_req_fail_f(
-			    request,
-			    "query-error",
-			    "CANopenSlaveDriver::request: invalid size %d. Available size (in byte) are 1, 2, 3 or 4",
-			    size);
-			break;
+			REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Write request error %s for %s, %s",
+											e.what(), uid(), json_object_to_json_string(dataJ));
+			afb_req_unref(request);
 		}
 	}
 	else if (!strcasecmp(action, "READ"))
 	{
-		err = wrap_json_unpack(dataJ, "{so !}",
+		// get read parameters
+		err = rp_jsonc_unpack(dataJ, "{so !}",
 				       "reg", &regJ);
-
 		if (err)
 		{
-			afb_req_fail_f(
-			    request,
-			    "query-error",
-			    "CANopenSensor::request: invalid %s action data 'json' rtu=%s data=%s",
-			    action, m_uid, json_object_get_string(dataJ));
-			return;
+			goto invalid_request;
 		}
 
+		// decode register
 		try
 		{
-			reg = get_data_int(regJ);
+			afb_req_addref(request);
+			int32_t reg = get_data_int32(regJ);
+			uint8_t subIdx = (uint8_t)(reg & 0x0ff);
+			uint16_t idx = (uint16_t)((reg >> 8) & 0x00ffff);
+			lely::canopen::SdoFuture<uint32_t> f = AsyncRead<uint32_t>(idx, subIdx);
+			f.then(GetExecutor(), [this, request, idx, subIdx](lely::canopen::SdoFuture<uint32_t> f) {
+				auto r = f.get();
+				if (r.has_error())
+				{
+					REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Async read of slave %s [0x%x]:[0x%x] failed", uid(), idx, subIdx);
+				}
+				else
+				{
+					uint32_t v = (uint32_t)r.value();
+					AFB_REQ_DEBUG(request, "Async read of slave %s [0x%x]:[0x%x] returned 0x%x", uid(), idx, subIdx, v);
+					afb_req_reply_json_c_hold(request, 0, json_object_new_int64(v));
+				}
+				afb_req_unref(request);
+			});
 		}
 		catch (std::runtime_error &e)
 		{
-			afb_req_fail_f(
-			    request,
-			    "query-error",
-			    "CANopenSlaveDriver::request: %s => %s register convertion error \nwhat() : %s",
-			    m_uid, action, e.what());
-			return;
+			REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Invalid %s register %s => %s (%s)", action, uid(), json_object_get_string(regJ), e.what());
+			afb_req_unref(request);
 		}
-		uint16_t idx = ((uint32_t)reg & 0x00ffff00) >> 8;
-		uint8_t subIdx = (uint32_t)reg & 0x000000ff;
-
-		afb_req_t current_req = request;
-		afb_req_addref(current_req);
-
-		// Use "Post" to avoid asynchronous conflicts
-		Post([this, request, idx, subIdx]()
-		     {
-			     auto v = Wait(AsyncRead<uint32_t>(idx, subIdx));
-			     AFB_REQ_DEBUG(request, "DEBUG : Async read of slave %s [0x%x]:[0x%x] returned 0x%x", m_uid, idx, subIdx, v);
-			     afb_req_success(request, json_object_new_int64(v), NULL);
-			     afb_req_unref(request);
-		     });
-		return;
 	}
 	else
 	{
-		afb_req_fail_f(request, "syntax-error", "CANopenSensor::request: action='%s' UNKNOWN rtu=%s query=%s", action, m_uid, json_object_get_string(queryJ));
-		return;
+		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Invalid action %s  rtu=%s query=%s", action, uid(), json_object_get_string(queryJ));
 	}
-	// everything looks good let's response
-	afb_req_success(request, responseJ, NULL);
-	return;
 }
 
-// IMPORTANT : use this funtion only int the driver exec
+// IMPORTANT : use this funtion only in the driver exec
 int CANopenSlaveDriver::addSensorEvent(CANopenSensor *sensor)
 {
 	try
@@ -263,7 +249,7 @@ int CANopenSlaveDriver::addSensorEvent(CANopenSensor *sensor)
 	}
 	catch (const std::exception &)
 	{
-		return ERROR;
+		return -1;
 	}
 	return 0;
 }
@@ -285,94 +271,15 @@ int CANopenSlaveDriver::delSensorEvent(CANopenSensor *sensor)
 	}
 	catch (const std::exception &)
 	{
-		return ERROR;
+		return -1;
 	}
 	return 0;
-}
-
-void CANopenSlaveDriver::slavePerStartConfig(json_object *conf)
-{
-	const char *actionInfo;
-	int reg;
-	int size;
-	double data;
-	int err;
-	json_object *dataJ;
-	json_object *regJ;
-
-	err = wrap_json_unpack(conf, "{s?s,so,si,so}",
-			       "info", &actionInfo,
-			       "register", &regJ,
-			       "size", &size,
-			       "data", &dataJ);
-	if (err)
-	{
-		AFB_ERROR("%s->slavePerStartConfig : Fail to parse slave JSON : (%s)", m_uid, json_object_to_json_string(conf));
-		return;
-	}
-
-	if (strlen(actionInfo))
-		AFB_NOTICE("%s->slavePerStartConfig : %s", m_uid, actionInfo);
-	else
-		AFB_NOTICE("%s->slavePerStartConfig", m_uid);
-
-	// Get register and sub register from the parsed register
-	try
-	{
-		reg = get_data_int(regJ);
-	}
-	catch (std::runtime_error &e)
-	{
-		AFB_ERROR("%s->slavePerStartConfig : %s", m_uid, e.what());
-		return;
-	}
-	uint16_t idx = ((uint32_t)reg & 0x00ffff00) >> 8;
-	uint8_t subIdx = (uint32_t)reg & 0x000000ff;
-
-	try
-	{
-		data = get_data_double(dataJ);
-	}
-	catch (std::runtime_error &e)
-	{
-		AFB_ERROR("%s->slavePerStartConfig : %s", m_uid, e.what());
-		return;
-	}
-	try
-	{
-		switch (size)
-		{
-		case 1:
-			Wait(AsyncWrite<uint8_t>(idx, subIdx, (uint8_t)data));
-			break;
-		case 2:
-			Wait(AsyncWrite<uint16_t>(idx, subIdx, (uint16_t)data));
-			break;
-		case 3:
-			Wait(AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)data));
-			break;
-		case 4:
-			Wait(AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)data));
-			break;
-		default:
-			AFB_ERROR(
-			    "%s->slavePerStartConfig : invalid size %d. Available size (in byte) are 1, 2, 3 or 4",
-			    m_uid, size);
-			return;
-		}
-	}
-	catch (lely::canopen::SdoError &e)
-	{
-		AFB_ERROR(
-		    "%s->slavePerStartConfig : could not configure register [0x%x][0x%x] with value 0X%x \nwhat() : %s",
-		    m_uid, idx, subIdx, (uint32_t)data, e.what());
-	}
 }
 
 const char *CANopenSlaveDriver::info()
 {
 	char *formatedInfo;
-	asprintf(&formatedInfo, "slave: '%s', nodId: %d, info: '%s'", m_uid, id(), m_info);
+	asprintf(&formatedInfo, "slave: '%s', nodId: %d, info: '%s'", uid(), id(), m_info);
 	return formatedInfo;
 }
 
@@ -382,16 +289,200 @@ json_object *CANopenSlaveDriver::infoJ()
 	json_object *sensorsJ = json_object_new_array();
 	for (auto sensor : m_sensors)
 	{
-		json_object_array_add(sensorsJ, sensor->infoJ());
+		json_object_array_add(sensorsJ, sensor.second->infoJ());
 	}
-	int err = wrap_json_pack(&responseJ, "{ss, ss*, s{ss si} so*}",
-				 "uid", m_uid,
+	int err = rp_jsonc_pack(&responseJ, "{ss, ss*, s{ss si} so*}",
+				 "uid", uid(),
 				 "info", m_info,
 				 "status",
-					"slave", m_uid,
+					"slave", uid(),
 					"nodId", id(),
 				 "verbs", sensorsJ);
 	if (err)
 		responseJ = json_object_new_string("Slave info ERROR !");
 	return responseJ;
 }
+
+// This function gets called every time a value is written to the local object dictionary of the master
+void CANopenSlaveDriver::OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept
+{
+	AFB_API_DEBUG(*this, "-- on RPDO write %s:%04x:%u --", uid(), (unsigned)idx, (unsigned)subidx);
+	// check in the sensor event list
+	for (auto sensor : m_sensorEventQueue)
+	{
+		// If the sensor match, read it and push the event to afb
+		if (idx == sensor->reg() && subidx == sensor->subReg())
+		{
+			sensor->readThenPush();
+			break;
+		}
+	}
+}
+
+void CANopenSlaveDriver::OnHeartbeat(bool occurred) noexcept
+{
+	AFB_API_DEBUG(*this, "-- on heart beat %s:%s --", uid(), occurred ? "true" : "false");
+	if (m_connected == occurred)
+		AFB_API_NOTICE(*this, "heartbeat %s", occurred ? "timeout, disconnect" : "connect");
+	m_connected = !occurred;
+}
+
+// This function gets called when the boot-up process of the slave completes.
+void CANopenSlaveDriver::OnBoot(lely::canopen::NmtState nmtState, char es, const ::std::string &str) noexcept
+{
+	char c[2] = { es, 0 };
+	AFB_API_DEBUG(*this, "-- on boot %s:%d:%s:%s --", uid(), (int)nmtState, es?c:"nul", str.c_str());
+
+	// if master cycle period is null or undefined set it to 100ms
+	int val = master[0x1006][0];
+	if (val <= 0)
+		master[0x1006][0] = UINT32_C(100000);
+}
+
+void CANopenSlaveDriver::dump(std::ostream &os) const
+{
+	const char *i = "      ";
+	os << i << "-- channel --" << std::endl;
+	os << i << "uid " << uid() << std::endl;
+	os << i << "up? " << (isup() ? "yes" : "no") << std::endl;
+	os << i << "id " << id() << std::endl;
+	os << i << "netid " << netid() << std::endl;
+	os << i << "info " << info() << std::endl;
+	for (auto it : m_sensors) {
+		it.second->dump(os);
+	}
+}
+
+
+
+
+
+
+
+
+
+// This function gets called during the boot-up process for the slave.
+void CANopenSlaveDriver::OnConfig(::std::function<void(::std::error_code ec)> res) noexcept
+{
+	AFB_API_DEBUG(*this, "-- on config %s --", uid());
+
+	m_connected = false;
+	doStartAction(0, [this,res](::std::error_code ec){
+		m_connected = true;
+		res(ec);
+	});
+	m_connected = true;
+}
+
+void CANopenSlaveDriver::doStartAction(int idxcnf, ::std::function<void(::std::error_code ec)> res) noexcept
+{
+	const char *actionInfo = "no info action";
+	int reg;
+	int size;
+	int32_t data;
+	int err;
+	json_object *dataJ;
+	json_object *regJ;
+	json_object *conf = nullptr;
+
+	// what is to be evaluated now
+	if (m_onconfJ)
+	{
+		if (json_object_is_type(m_onconfJ, json_type_array))
+		{
+			if (idxcnf < (int)json_object_array_length(m_onconfJ))
+				conf = json_object_array_get_idx(m_onconfJ, idxcnf);
+		}
+		else if (idxcnf == 0)
+		{
+			conf = m_onconfJ;
+		}
+	}
+
+	// nothing? ok return without error
+	if (!conf) {
+		res({});
+		return;
+	}
+	idxcnf++;
+
+	// extract the config
+	AFB_API_DEBUG(*this, "%s: StartConfig: (%s)", uid(), json_object_to_json_string(conf));
+	err = rp_jsonc_unpack(conf, "{s?s,so,si,so}",
+			       "info", &actionInfo,
+			       "register", &regJ,
+			       "size", &size,
+			       "data", &dataJ);
+	if (err)
+	{
+		AFB_API_ERROR(*this, "%s: Fail to parse slave JSON : (%s)", uid(), json_object_to_json_string(conf));
+		return doStartAction(idxcnf, res);
+	}
+
+	// Get register and sub register from the parsed register
+	try
+	{
+		reg = get_data_int32(regJ);
+		data = get_data_int32(dataJ);
+	}
+	catch (std::runtime_error &e)
+	{
+		AFB_API_ERROR(*this, "%s: %s (when %s)", uid(), e.what(), actionInfo);
+		return doStartAction(idxcnf, res);
+	}
+
+	uint16_t idx = ((uint32_t)reg & 0x00ffff00) >> 8;
+	uint8_t subIdx = (uint32_t)reg & 0x000000ff;
+	AFB_API_NOTICE(*this, "%s: %s (%x > [%x.%x])", uid(), actionInfo, data, idx, subIdx);
+
+	try
+	{
+		lely::canopen::SdoFuture<void> f;
+		switch (size)
+		{
+		case 1:
+			f = AsyncWrite<uint8_t>(idx, subIdx, (uint8_t)data);
+			break;
+		case 2:
+			f = AsyncWrite<uint16_t>(idx, subIdx, (uint16_t)data);
+			break;
+		case 3:
+		case 4:
+			f = AsyncWrite<uint32_t>(idx, subIdx, (uint32_t)data);
+			break;
+		default:
+			AFB_API_ERROR(
+			    *this,
+			    "%s: invalid size %d. Available size (in byte) are 1, 2, 3 or 4",
+			    uid(), size);
+			return;
+		}
+		f.then(GetExecutor(), [this,actionInfo,data,idx,subIdx,idxcnf,res](lely::canopen::SdoFuture<void> f){
+			auto& result = f.get();
+		        if (result.has_error()) {
+				try {
+					::std::rethrow_exception(result.error());
+				} catch (const ::std::system_error& e) {
+					AFB_API_ERROR(*this, "%s: error (%s, %x > [%x.%x]), %s", uid(), data, idx, subIdx, e.what());
+				} catch (...) {
+					// Ignore exceptions we cannot handle.
+					AFB_API_ERROR(*this, "%s: error (%s, %x > [%x.%x])", uid(), data, idx, subIdx);
+				}
+		        }
+			else
+			{
+				AFB_API_DEBUG(*this, "%s: DONE (%s, %x > [%x.%x])", uid(), actionInfo, data, idx, subIdx);
+			}
+			return doStartAction(idxcnf, res);
+		});
+	}
+	catch (lely::canopen::SdoError &e)
+	{
+		AFB_API_ERROR(
+		    *this,
+		    "%s: could not configure register [0x%x][0x%x] with value 0X%x \nwhat() : %s",
+		    uid(), idx, subIdx, (uint32_t)data, e.what());
+		return doStartAction(idx + 1, res);
+	}
+}
+

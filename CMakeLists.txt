@@ -24,6 +24,9 @@
 
 cmake_minimum_required(VERSION 3.15)
 
+include(FindPkgConfig)
+include(GNUInstallDirs)
+
 # Project Info
 # ------------------
 project(canopen-binding
@@ -32,4 +35,37 @@ project(canopen-binding
 	HOMEPAGE_URL "https://github.com/iotbzh/CANopen-service"
 	LANGUAGES CXX C)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/conf.d/cmake/config.cmake)
+set(PROJECT_PRETTY_NAME "CANopen binding")
+set(PROJECT_ICON "icon.png")
+set(PROJECT_AUTHOR "Iot-Team")
+set(PROJECT_AUTHOR_MAIL "johann.gautier@iot.bzh")
+set(PROJECT_LICENSE "APL2.0")
+set(PROJECT_URL ${PROJECT_HOMEPAGE_URL})
+set(API_NAME "CANopen")
+set(WIDGET_TYPE application/vnd.RP.service)
+set(WIDGET_ENTRY_POINT lib/afb-CANopen.so)
+
+# Declare options
+set(AFM_APP_DIR ${CMAKE_INSTALL_PREFIX}/redpesk CACHE PATH "Applications directory")
+set(APP_DIR ${AFM_APP_DIR}/${PROJECT_NAME})
+
+# PKG_CONFIG required packages
+# -----------------------------
+
+pkg_check_modules(deps REQUIRED
+	json-c
+	afb-binding
+	librp-utils-static
+	afb-helpers4-static>=10.0.5
+	liblely-coapp
+)
+
+pkg_get_variable(vscript afb-binding version_script)
+
+add_compile_options(${deps_CFLAGS})
+include_directories(${deps_INCLUDE_DIRS})
+add_link_options(${deps_LDFLAGS})
+link_libraries(${deps_LINK_LIBRARIES})
+
+add_subdirectory(src)
+add_subdirectory(src/plugins)

@@ -22,64 +22,90 @@
  $RP_END_LICENSE$
 */
 
-#include <algorithm>
-
 #include "CANopenGlue.hpp"
 
-data_type get_data_type(std::string str)
+#include <algorithm>
+
+
+typedef enum
 {
-	if (std::all_of(str.begin(), str.end(), ::isdigit))
-	{
-		return DATA_TYPE_STR_DECIMAL;
-	}
-	if ((str.compare(0, 2, "0x") || str.compare(0, 2, "0X")) && std::all_of(str.begin() + 2, str.end(), ::isxdigit))
-	{
-		return DATA_TYPE_HEX;
-	}
-	return DATA_TYPE_STRING;
-}
+	DATA_TYPE_NULL,
+	DATA_TYPE_DECIMAL,
+	DATA_TYPE_STR_DECIMAL,
+	DATA_TYPE_HEX,
+	DATA_TYPE_STRING
+} data_type;
 
 data_type get_data_type(json_object *dataJ)
 {
-	if (json_object_is_type(dataJ, json_type_string))
+	const char *txt;
+	bool hexa;
+
+	switch(json_object_get_type(dataJ))
 	{
-		return get_data_type(json_object_get_string(dataJ));
-	}
-	if (json_object_is_type(dataJ, json_type_int) || json_object_is_type(dataJ, json_type_double))
-	{
+	case json_type_string:
+		txt = json_object_get_string(dataJ);
+		if (txt[0] < '0' || txt[0] > '9')
+			return DATA_TYPE_STRING;
+
+		hexa = txt[0] == '0' && ((txt[1] | '\040') == 'x');
+		txt += hexa;
+		while(char c = *++txt) {
+			if (c < '0'
+			 || (c > '9' && (!hexa || (c | '\040') < 'a' || (c | '\040') > 'f')))
+				return DATA_TYPE_STRING;
+		}
+		return hexa ? DATA_TYPE_HEX : DATA_TYPE_STR_DECIMAL;
+
+	case json_type_boolean:
+	case json_type_int:
+	case json_type_double:
 		return DATA_TYPE_DECIMAL;
+
+	default:
+		return DATA_TYPE_NULL;
 	}
-	return DATA_TYPE_NULL;
 }
 
-int get_data_int(json_object *dataJ)
+int32_t get_data_int32(json_object *dataJ)
 {
-	switch (get_data_type(dataJ))
+	if (json_object_get_type(dataJ) == json_type_string)
 	{
-	case DATA_TYPE_HEX:
-		return stoi(std::string(json_object_get_string(dataJ)).substr(2), 0, 16);
-	case DATA_TYPE_STR_DECIMAL:
-		return stoi(std::string(json_object_get_string(dataJ)));
-	case DATA_TYPE_DECIMAL:
+		long cvt;
+		char *end;
+		const char *txt = json_object_get_string(dataJ);
+		if (txt[0] == '0' && (txt[1] & '\337') == 'X')
+			cvt = strtol(&txt[2], &end, 16);
+		else
+			cvt = strtol(txt, &end, 10);
+		if (!*end)
+			return (int32_t)cvt;
+	}
+	else if (json_object_get_type(dataJ) == json_type_int)
 		return json_object_get_int(dataJ);
-	default:
-		throw std::runtime_error("data " + (std::string)json_object_to_json_string(dataJ) + " not handeled by get_data_int");
-		return 0;
-	}
+
+	throw std::runtime_error("data " + (std::string)json_object_to_json_string(dataJ) + " not handeled by get_data_int32");
+	return 0;
 }
 
-double get_data_double(json_object *dataJ)
+int64_t get_data_int64(json_object *dataJ)
 {
-	switch (get_data_type(dataJ))
+	errno = 0;
+	int64_t result = json_object_get_int64(dataJ);
+	if (!errno)
+		return result;
+
+	if (json_object_get_type(dataJ) == json_type_string)
 	{
-	case DATA_TYPE_HEX:
-		return stod(std::string(json_object_get_string(dataJ)));
-	case DATA_TYPE_STR_DECIMAL:
-		return stod(std::string(json_object_get_string(dataJ)));
-	case DATA_TYPE_DECIMAL:
-		return json_object_get_double(dataJ);
-	default:
-		throw std::runtime_error("data " + (std::string)json_object_to_json_string(dataJ) + " not handeled by get_data_double");
-		return 0;
+		const char *txt = json_object_get_string(dataJ);
+		if (*txt++ == '0' && (*txt++ | '\040') == 'x')
+		{
+			char *end;
+			long long cvt = strtoll(txt, &end, 16);
+			if (!*end)
+				return (int64_t)cvt;
+		}
 	}
+	throw std::runtime_error("data " + (std::string)json_object_to_json_string(dataJ) + " not handeled by get_data_int64");
+	return 0;
 }

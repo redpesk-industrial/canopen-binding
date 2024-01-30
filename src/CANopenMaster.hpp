@@ -25,48 +25,101 @@
 #ifndef _ServiceCANopenMaster_INCLUDE_
 #define _ServiceCANopenMaster_INCLUDE_
 
-#include <lely/io2/posix/fd_loop.hpp>
+#include <list>
+#include <memory>
+#include <ostream>
+
 #include <lely/io2/linux/can.hpp>
 #include <lely/io2/posix/poll.hpp>
 #include <lely/io2/sys/io.hpp>
 #include <lely/io2/sys/timer.hpp>
 #include <lely/coapp/master.hpp>
 
-#include <afb/afb-binding>
+#include <rp-utils/rp-path-search.h>
+
+#include "common-binding.hpp"
+#include "utils/cstrmap.hpp"
+#include "CANopenExec.hpp"
 
 class CANopenSlaveDriver;
 
+/**
+ * The class CANopenMaster holds a CANopen bus connection
+ */
 class CANopenMaster
 {
-
 public:
-	CANopenMaster(afb_api_t api, json_object *rtuJ, uint8_t nodId = 1);
+	CANopenMaster(CANopenExec &exec);
 	~CANopenMaster();
-	inline bool chanIsOpen() { return m_chan.is_open(); }
-	inline bool isRunning() { return m_isRunning; }
+	inline bool isRunning() { return m_can && m_can->isRunning(); }
 	inline const char *info() { return m_info; }
 	json_object *infoJ();
+	int init(json_object *rtuJ, rp_path_search_t *paths);
+
+	int start();
 	json_object *statusJ();
 	json_object *slaveListInfo(json_object *array);
 
+	inline operator afb_api_t () const { return m_exec; }
+	inline operator ev_exec_t*() const { return m_exec; }
+	inline operator lely::canopen::BasicMaster&() const { return *m_can; }
+	inline const char *uid() const { return m_uid; }
+	void dump(std::ostream &os) const;
+
+	template <class T>
+	lely::canopen::SdoFuture<T> AsyncRead(uint8_t id, uint16_t idx, uint8_t subidx) {
+		return m_can->AsyncRead<T>(id, idx, subidx);
+	}
+
+	template <class T>
+	lely::canopen::SdoFuture<void> AsyncWrite(uint8_t id, uint16_t idx, uint8_t subidx, T&& value) {
+		return m_can->AsyncWrite(id, idx, subidx, std::forward<T>(value));
+	}
+
+
 private:
-	lely::io::IoGuard m_IoGuard;
-	lely::io::Context m_ctx;
-	lely::io::Poll m_poll;
-	lely::io::FdLoop m_loop;
-	lely::ev::Executor m_exec;
-	lely::io::Timer m_timer;
-	lely::io::CanChannel m_chan;
-	std::shared_ptr<lely::io::CanController> m_ctrl;
-	std::shared_ptr<lely::canopen::AsyncMaster> m_master;
+	/// @brief the single execution handler
+	CANopenExec &m_exec;
+
+	/// @brief the CAN open bus/channel handler
+	std::shared_ptr<CANopenChannel> m_can;
+
+	/// @brief uid of the master
 	const char *m_uid = nullptr;
+
+	/// @brief description of the channel
 	const char *m_info = nullptr;
-	const char *m_uri = nullptr;
-	char *m_dcf = nullptr;
-	uint8_t m_nodId;
-	// A vector referensing every slaves handle by the master
-	std::vector<std::shared_ptr<CANopenSlaveDriver>> m_slaves;
+
+	/// @brief A vector referencing slaves handle by the master
+	cstrmap<std::shared_ptr<CANopenSlaveDriver>> m_slaves;
+
+	/// @brief running status
 	bool m_isRunning = false;
+
+struct node { node*next; CANopenSlaveDriver*item; } *head_ = nullptr;
+};
+
+/**
+ * The class CANopenMaster holds a CANopen bus connection
+ */
+class CANopenMasterSet
+{
+public:
+	CANopenMasterSet(CANopenExec &exec) : exec_{exec}, masters_{} {}
+	int add(json_object *cfg, rp_path_search_t *paths);
+	int start();
+	json_object *statusJ();
+	void slaveListInfo(json_object *groups);
+	void dump(std::ostream &os) const;
+
+private:
+	/// the single execution handler
+	CANopenExec &exec_;
+
+	/** masters canopen buses */
+	cstrmap<std::shared_ptr<CANopenMaster>> masters_;
+
+struct node { node*next; CANopenMaster*item; } *head_ = nullptr;
 };
 
 #endif /* _ServiceCANopenMaster_INCLUDE_ */

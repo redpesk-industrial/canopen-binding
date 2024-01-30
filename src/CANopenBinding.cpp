@@ -22,225 +22,368 @@
  $RP_END_LICENSE$
 */
 
+
+#include "CANopenExec.hpp"
 #include "CANopenMaster.hpp"
 #include "CANopenEncoder.hpp"
 
-#include <ctl-config.h>
-#include <filescan-utils.h>
+#include <iostream>
 
-#ifndef ERROR
-#define ERROR -1
-#endif
+#include <rp-utils/rp-jsonc.h>
+#include <rp-utils/rp-path-search.h>
 
-static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ);
-static void bindingInfo(afb_req_t request);
 
-// Config Section definition (note: controls section index should match handle
-// retrieval in HalConfigExec)
-static CtlSectionT ctrlSections[] = {
-    {.key = "plugins", .uid = nullptr, .info = nullptr, .loadCB = PluginConfig, .handle = (void *)&CANopenEncoder::instance(), .actions = nullptr},
-    //{ .key = "onload", .uid = nullptr, .info = nullptr, .loadCB = OnloadConfig, .handle = nullptr, .actions = nullptr },
-    {.key = "canopen", .uid = nullptr, .info = nullptr, .loadCB = CANopenConfig, .handle = nullptr, .actions = nullptr},
-    {.key = nullptr, .uid = nullptr, .info = nullptr, .loadCB = nullptr, .handle = nullptr, .actions = nullptr}};
+class coConfig;
 
-static void PingTest(afb_req_t request)
+// main entry is called right after binding is loaded with dlopen
+extern "C" int afbBindingEntry(afb_api_t rootapi, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *api_data);
+
+class coConfig
 {
-	static int count = 0;
-	char response[32];
-	json_object *queryJ = afb_req_json(request);
+	/** the API */
+	afb_api_t rootapi_;
 
-	snprintf(response, sizeof(response), "Pong=%d", count++);
-	AFB_API_NOTICE(request->api, "CANopen:ping count=%d query=%s", count, json_object_get_string(queryJ));
-	afb_req_success_f(request, json_object_new_string(response), NULL);
-}
+	/** the API */
+	afb_api_t api_;
 
-// Static verb not depending on CANopen json config file
-static afb_verb_t CtrlApiVerbs[] = {
-    {.verb = "ping", .callback = PingTest, .auth = nullptr, .info = "CANopen API ping test", .vcbdata = nullptr, .session = 0, .glob = 0},
-    {.verb = "info", .callback = bindingInfo, .auth = nullptr, .info = "display info about the binding", .vcbdata = nullptr, .session = 0, .glob = 0},
-    {.verb = nullptr, .callback = nullptr, .auth = nullptr, .info = nullptr, .vcbdata = nullptr, .session = 0, .glob = 0} /* marker for end of the array */
-};
+	/** meta data from controller */
+	ctl_metadata_t metadata_;
 
-static void bindingInfo(afb_req_t request)
-{
+	/** plugins from controller */
+	plugin_store_t plugins_ = PLUGIN_STORE_INITIAL;
 
-	json_object *response, *global_info, *admin_info, *static_verbs_info, *verb_info, *groups;
-	int err, i;
+	/** on-start controller actions */
+	ctl_actionset_t onstart_ = CTL_ACTIONSET_INITIALIZER;
 
-	CANopenMaster *CO_Master = (CANopenMaster *)afb_req_get_vcbdata(request);
-	CtlConfigT *ctlConfig = (CtlConfigT *)afb_api_get_userdata(afb_req_get_api(request));
+	/** on-events controller actions */
+	ctl_actionset_t onevent_ = CTL_ACTIONSET_INITIALIZER;
 
-	err = wrap_json_pack(&global_info, "{ss ss* ss* ss* sO}",
-			     "uid", ctlConfig->uid,
-			     "info", ctlConfig->info,
-			     "version", ctlConfig->version,
-			     "author", ctlConfig->author,
-			     "status", CO_Master->statusJ());
-	if (err)
-		global_info = json_object_new_string("global info ERROR !");
+	/** holder for the configuration */
+	json_object *config_;
 
-	static_verbs_info = json_object_new_array();
-	for (i = 0; CtrlApiVerbs[i].verb; i++)
-	{
-		err = wrap_json_pack(&verb_info, "{ss ss* ss*}",
-				     "uid", CtrlApiVerbs[i].verb,
-				     "info", CtrlApiVerbs[i].info,
-				     "author", CtrlApiVerbs[i].auth);
-		if (err)
-			verb_info = json_object_new_string("static verb info ERROR !");
-		json_object_array_add(static_verbs_info, verb_info);
+	/** Executor */
+	CANopenExec exec_;
+
+	/** masters canopen buses */
+	CANopenMasterSet masters_;
+
+	/** path search */
+	rp_path_search_t *paths_ = nullptr;
+
+	/// constructor for initializing instance with known values
+	coConfig(afb_api_t rootapi, json_object *config)
+		: rootapi_{rootapi}
+		, api_{rootapi}
+		, config_{json_object_get(config)}
+		, exec_{rootapi}
+		, masters_{exec_}
+		{}
+
+	/// destructor
+	~coConfig() {
+		ctl_actionset_free(&onstart_);
+		ctl_actionset_free(&onevent_);
+		plugin_store_drop_all(&plugins_);
+		json_object_put(config_);
 	}
 
-	err = wrap_json_pack(&admin_info, "{ss ss sO}",
-			     "uid", "admin",
-			     "info", "verbs related to administration of this binding",
-			     "verbs", static_verbs_info);
-	if (err)
-		admin_info = json_object_new_string("admin info ERROR !");
-
-	groups = json_object_new_array();
-	json_object_array_add(groups, admin_info);
-	CO_Master->slaveListInfo(groups);
-
-	err = wrap_json_pack(&response, "{so so}",
-			     "metadata", global_info,
-			     "groups", groups);
-	if (err)
+	/// initialization
+	int init()
 	{
-		afb_req_fail_f(request, "info parse fail", "Fail at generayting verb info : { \"global\": %s, \"groups\": %s }", json_object_get_string(global_info), json_object_get_string(groups));
-		return;
+		int rc, status = 0;
+
+		// init instance for searching files
+		rc = rp_path_search_make_dirs(&paths_, "${CANOPENPATH}:${AFB_ROOTDIR}/etc:${AFB_ROOTDIR}/plugins:.");
+		if (rc < 0) {
+			AFB_API_ERROR(rootapi_, "failed to initialize path search");
+			status = rc;
+		}
+
+		// read controller sections configs (canopen section is read from
+		// apicontrolcb after api creation)
+		rc = ctl_subread_metadata(&metadata_, config_, false);
+		if (rc < 0) {
+			AFB_API_ERROR(rootapi_, "failed to read metadata section");
+			status = rc;
+		}
+
+		// read plugins
+		rc = ctl_subread_plugins(&plugins_, config_, paths_, "plugins");
+		if (rc < 0) {
+			AFB_API_ERROR(rootapi_, "failed to read plugins section");
+			status = rc;
+		}
+
+		// initialize the encoders and decoders of plugins
+		rc = plugin_store_iter(plugins_, _init_plugin_codecs_, reinterpret_cast<void*>(this));
+		if (rc < 0) {
+			AFB_API_ERROR(rootapi_, "failed to record plugins codecs");
+			status = rc;
+		}
+
+		// read onstart section
+		rc = ctl_subread_actionset(&onstart_, config_, "onstart");
+		if (rc < 0) {
+			AFB_API_ERROR(rootapi_, "failed to read onstart section");
+			status = rc;
+		}
+
+		// read events section
+		rc = ctl_subread_actionset(&onevent_, config_, "events");
+		if (rc < 0) {
+			AFB_API_ERROR(rootapi_, "failed to read events section");
+			status = rc;
+		}
+masters_.dump(std::cerr);
+		// creates the api
+		if (status == 0) {
+			rc = afb_create_api(&api_, metadata_.api, metadata_.info, 1, _control_, reinterpret_cast<void*>(this));
+			if (rc < 0) {
+				AFB_API_ERROR(rootapi_, "creation of api %s failed", metadata_.api);
+				status = rc;
+			}
+		}
+masters_.dump(std::cerr);
+		// lock json config in ram
+		return status;
 	}
-	afb_req_success_f(request, response, NULL);
-}
 
-static int CtrlLoadStaticVerbs(afb_api_t api, afb_verb_t *verbs, void *vcbdata)
-{
-	int errcount = 0;
-
-	for (int idx = 0; verbs[idx].verb; idx++)
+	// declares the encoders and decoders of one plugin
+	static int _init_plugin_codecs_(void *closure, const plugin_t *plugin)
 	{
-		errcount += afb_api_add_verb(api, CtrlApiVerbs[idx].verb, CtrlApiVerbs[idx].info, CtrlApiVerbs[idx].callback, vcbdata, 0, 0, 0);
+		// get pointer to the function declaring codecs
+		void *ptr = plugin_get_object(plugin, "canopenDeclareCodecs");
+		if (ptr == NULL)
+			return 0; // none exists, not an error, plugins can serve numerous purposes
+
+		// cast pointers to their real expected type
+		int(*dclfun)(afb_api_t,CANopenEncoder*) = reinterpret_cast<int(*)(afb_api_t,CANopenEncoder*)>(ptr);
+		coConfig *config = reinterpret_cast<coConfig*>(closure);
+
+		// invoke the declaring function
+		int rc = dclfun(config->api_, &CANopenEncoder::instance());
+		if (rc < 0)
+			AFB_API_ERROR(config->api_, "Declaration of codec failed for plugin %s", plugin_name(plugin));
+		return rc;
 	}
 
-	return errcount;
-};
+	// tiny wrapper to enter instance method
+	static int _control_(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *closure)
+	{
+		return reinterpret_cast<coConfig*>(closure)->control(api, ctlid, ctlarg);
+	}
 
-static int CANopenConfig(afb_api_t api, CtlSectionT *section, json_object *rtusJ)
-{
-	int err;
-	CANopenMaster *CO_Master;
+	// main binding control
+	int control(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg)
+	{
+		json_object *cfg;
+		int status = 0;
+		unsigned idx, cnt;
 
-	// everything is done during initial config call
-	if (!rtusJ)
+		switch (ctlid) {
+		case afb_ctlid_Root_Entry:
+			// should be never happen
+			AFB_API_ERROR(rootapi_, "canopen root_entry call after api creation");
+			return AFB_ERRNO_NOT_AVAILABLE;
+
+		// let process canopen config as part of binding config
+		case afb_ctlid_Pre_Init:
+			exec_.set(api_ = api);
+
+			// explain dependecies of API as required by metadata
+			status = ctl_set_requires(&metadata_, api);
+			if (status < 0) {
+				AFB_API_ERROR(api, "canopen mandatory api dependencies not satisfied");
+				return status;
+			}
+
+			// add static controls verbs
+			cnt = sizeof common_verbs / sizeof *common_verbs;
+			for (idx = 0 ; idx < cnt ; idx++) {
+				status = afb_api_add_verb(api,
+							common_verbs[idx].name, common_verbs[idx].info, common_verbs[idx].callback,
+							reinterpret_cast<void*>(this), 0, 0, 0);
+				if (status < 0) {
+					AFB_API_ERROR(api, "Registering static verb %s failed", common_verbs[idx].name);
+					return status;
+				}
+			}
+
+			// add the event handlers
+			status = ctl_actionset_add_events(&onevent_, api, plugins_, reinterpret_cast<void*>(this));
+			if (status < 0) {
+				AFB_API_ERROR(api, "Registering event handlers failed");
+				return status;
+			}
+
+			// Get the canopen config
+			if (!json_object_object_get_ex(config_, "canopen", &cfg)) {
+				AFB_API_ERROR(api, "No 'canopen' entry in configuration");
+				return AFB_ERRNO_GENERIC_FAILURE;
+			}
+
+			// create the masters
+			status = rp_jsonc_optarray_until(cfg, _add_master_, reinterpret_cast<void*>(this));
+			if (status < 0)
+				return status;
+
+			// start
+			status = exec_.start();
+			status = masters_.start();
+			if (status < 0)
+				return status;
+
+			// success of pre-initialization
+			break;
+
+		/* called for init */
+		case afb_ctlid_Init:
+
+			// execute on start actions
+			status = ctl_actionset_exec(&onstart_, api, plugins_, reinterpret_cast<void*>(this));
+			if (status < 0) {
+				AFB_API_ERROR(api, "canopen fail register sensors actions");
+				return status;
+			}
+			break;
+
+		/* called when required classes are ready */
+		case afb_ctlid_Class_Ready:
+			break;
+
+		/* called when an event is not handled */
+		case afb_ctlid_Orphan_Event:
+			AFB_API_NOTICE(api, "canopen received unexpected event:%s", ctlarg->orphan_event.name);
+			break;
+
+		/** called when shuting down */
+		case afb_ctlid_Exiting:
+			break;
+		}
 		return 0;
-
-	// Canopen can only have one Master;
-	if (json_object_is_type(rtusJ, json_type_array))
-	{
-		AFB_API_ERROR(api, "CANopenConfig : Multiple CANopen forbiden");
-		return ERROR;
 	}
 
-	// Load CANopen network configuration and start
-	CO_Master = new CANopenMaster(api, rtusJ);
-	if (!CO_Master->isRunning())
-		return ERROR;
-
-	// add static controls verbs
-	err = CtrlLoadStaticVerbs(api, CtrlApiVerbs, (void *)CO_Master);
-	if (err)
+	// tiny wrapper to configuring masters
+	static int _add_master_(void *closure, json_object *cfg)
 	{
-		AFB_API_ERROR(api, "CtrlLoadOneApi fail to Registry static API verbs");
-		return ERROR;
+		return reinterpret_cast<coConfig*>(closure)->add_master(cfg);
 	}
 
-	return 0;
-	AFB_API_ERROR(api, "Fail to initialise CANopen check Json Config");
-	return -1;
-}
+	// main binding control
+	int add_master(json_object *cfg)
+	{
+		return masters_.add(cfg, paths_);
+	}
 
-static int CtrlInitOneApi(afb_api_t api)
+	// implementation of ping
+	static void _ping_(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		afb_data_array_addref(nparams, params);
+		afb_req_reply(request, 0, nparams, params);
+	}
+
+	// tiny wrapper to enter instance method
+	static void _info_(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		coConfig *current = reinterpret_cast<coConfig*>(afb_req_get_vcbdata(request));
+		current->info(request, nparams, params);
+	}
+
+	// implement info
+	void info(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		int err;
+		unsigned idx, cnt;
+		json_object *response = NULL, *global_info = NULL, *admin_info = NULL,
+					*static_verbs_info = NULL, *verb_info = NULL,
+					*groups = NULL;
+
+		err = rp_jsonc_pack(&global_info, "{ss ss* ss* ss* sO}",
+					"uid", metadata_.uid,
+					"info", metadata_.info,
+					"version", metadata_.version,
+					"author", metadata_.author,
+					"status", masters_.statusJ());
+		if (err)
+			global_info = json_object_new_string("global info ERROR !");
+
+		static_verbs_info = json_object_new_array();
+		cnt = sizeof common_verbs / sizeof *common_verbs;
+		for (idx = 0; idx < cnt ; idx++)
+		{
+			err = rp_jsonc_pack(&verb_info, "{ss ss* ss*}",
+						"uid", common_verbs[idx].name,
+						"info", common_verbs[idx].info,
+						"author", "IoT.bzh");
+			if (err)
+				verb_info = json_object_new_string("static verb info ERROR !");
+			json_object_array_add(static_verbs_info, verb_info);
+		}
+
+		err = rp_jsonc_pack(&admin_info, "{ss ss sO}",
+					"uid", "admin",
+					"info", "verbs related to administration of this binding",
+					"verbs", static_verbs_info);
+		if (err)
+			admin_info = json_object_new_string("admin info ERROR !");
+
+		groups = json_object_new_array();
+		json_object_array_add(groups, admin_info);
+		masters_.slaveListInfo(groups);
+
+		err = rp_jsonc_pack(&response, "{so so}",
+					"metadata", global_info,
+					"groups", groups);
+		if (err)
+			err = AFB_ERRNO_INTERNAL_ERROR;
+		afb_req_reply_json_c_hold(request, err, response);
+	}
+
+	// Structure for describing static verbs
+	struct sverbdsc
+		{
+			const char *name;
+			const char *info;
+			void (*callback)(afb_req_t, unsigned, afb_data_t const[]);
+		};
+
+	// Declare array of static verb not depending on CANopen json config file
+	static const sverbdsc common_verbs[2];
+
+	// the entry point
+	friend int afbBindingEntry(afb_api_t rootapi, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *closure);
+};
+
+// Declare array of static verb not depending on CANopen json config file
+const coConfig::sverbdsc coConfig::common_verbs[2] = {
+	{ .name = "ping", .info = "CANopen API ping test", .callback = coConfig::_ping_ },
+	{ .name = "info", .info = "display info about the binding", .callback = coConfig::_info_ },
+};
+
+coConfig *last_global_coconfig;
+
+// main entry is called right after binding is loaded with dlopen
+extern "C"
+int afbBindingEntry(afb_api_t rootapi, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *closure)
 {
-	int err = 0;
-
-	// retrieve section config from api handle
-	CtlConfigT *ctrlConfig = (CtlConfigT *)afb_api_get_userdata(api);
-
-	err = CtlConfigExec(api, ctrlConfig);
-	if (err)
-	{
-		AFB_API_ERROR(api, "Error at CtlConfigExec step");
-		return err;
+	// this root entry is only called once for the main initialization
+	if (ctlid != afb_ctlid_Root_Entry) {
+		AFB_API_ERROR(rootapi, "Unexpected control API call %d", (int)ctlid);
+		return -1;
 	}
 
-	return err;
-}
-
-static int CtrlLoadOneApi(void *vcbdata, afb_api_t api)
-{
-	CtlConfigT *ctrlConfig = (CtlConfigT *)vcbdata;
-
-	// save closure as api's data context
-	afb_api_set_userdata(api, ctrlConfig);
-
-	// load section for corresponding API
-	int error = CtlLoadSections(api, ctrlConfig, ctrlSections);
-
-	// init and seal API function
-	afb_api_on_init(api, CtrlInitOneApi);
-	afb_api_seal(api);
-
-	return error;
-}
-
-int afbBindingEntry(afb_api_t api)
-{
-	int status = 0;
-	char *searchPath = nullptr;
-	const char *envConfig = nullptr;
-	afb_api_t handle;
-
-	AFB_API_NOTICE(api, "Controller in afbBindingEntry");
-
-	envConfig = getenv("CONTROL_CONFIG_PATH");
-	if (!envConfig)
-	{
-		AFB_API_NOTICE(api, "Using default environnement config path : %s", CONTROL_CONFIG_PATH);
-		envConfig = CONTROL_CONFIG_PATH;
-	}
-	else
-		AFB_API_NOTICE(api, "Found environnement config path : %s", envConfig);
-
-	status = asprintf(&searchPath, "%s:%s", envConfig, GetBindingDirPath(api));
-	AFB_API_NOTICE(api, "Json config directory : %s", searchPath);
-
-	const char *prefix = "canopen";
-	const char *configPath = CtlConfigSearch(api, searchPath, prefix);
-	if (!configPath)
-	{
-		AFB_API_ERROR(api, "afbBindingEntry: No %s-%s* config found in %s ", prefix, GetBinderName(), searchPath);
-		status = ERROR;
-		free(searchPath);
-		return status;
+	// instanciate
+	coConfig *config = new coConfig(rootapi, ctlarg->root_entry.config);
+	if (config == nullptr) {
+		AFB_API_ERROR(rootapi, "Out of memory");
+		return -1;
 	}
 
-	AFB_API_NOTICE(api, "api will be using config : %s", configPath);
+last_global_coconfig=config;
 
-	// load config file and create API
-	CtlConfigT *ctrlConfig = CtlLoadMetaData(api, configPath);
-	if (!ctrlConfig)
-	{
-		AFB_API_ERROR(api, "afbBindingEntry No valid control config file in:\n-- %s", configPath);
-		status = ERROR;
-		free(searchPath);
-		return status;
-	}
-
-	AFB_API_NOTICE(api, "Controller API='%s' info='%s'", ctrlConfig->api, ctrlConfig->info);
-
-	// create one API per config file (Pre-V3 return code ToBeChanged)
-	handle = afb_api_new_api(api, ctrlConfig->api, ctrlConfig->info, 1, CtrlLoadOneApi, ctrlConfig);
-	status = (handle) ? 0 : -1;
-
-	return status;
+	// initialize now
+	int rc = config->init();
+	if (rc < 0)
+		delete config;
+	return rc;
 }

@@ -25,125 +25,80 @@
 #ifndef _CANOPENSLAVEDRIVER_INCLUDE_
 #define _CANOPENSLAVEDRIVER_INCLUDE_
 
-#include <lely/coapp/fiber_driver.hpp>
+#include <set>
+#include <ostream>
 
-#include "CANopenSensor.hpp"
+#include <lely/coapp/driver.hpp>
 
-#include <afb/afb-binding>
-#include <ctl-config.h>
-#include <list>
-
-//*/For Debug
-#include <iostream>
-//*/
+#include "common-binding.hpp"
 
 class CANopenSensor;
 
-class CANopenSlaveDriver : public lely::canopen::FiberDriver
+#include "CANopenMaster.hpp"
+#include "utils/cstrmap.hpp"
+
+class CANopenSlaveDriver : public lely::canopen::BasicDriver
 {
-
 public:
-	using lely::canopen::FiberDriver::FiberDriver;
+	using lely::canopen::BasicDriver::BasicDriver;
+
 	CANopenSlaveDriver(
-	    ev_exec_t *exec,
-	    lely::canopen::AsyncMaster &master,
-	    afb_api_t api,
-	    json_object *slaveJ,
-	    uint8_t nodId);
+		CANopenMaster &master,
+		json_object *slaveJ,
+		uint8_t nodId);
 
-	void request(afb_req_t request, json_object *queryJ);
-
-	// IMPORTANT : use this funtion only int the driver exec
+	// IMPORTANT : use this funtion only in the driver exec
 	int addSensorEvent(CANopenSensor *sensor);
 
-	// IMPORTANT : use this funtion only int the driver exec
+	// IMPORTANT : use this funtion only in the driver exec
 	int delSensorEvent(CANopenSensor *sensor);
 
 	json_object *infoJ();
 	const char *info();
 
-	inline const char *uid() { return m_uid; }
-	inline bool isup() { return m_connected; }
+	inline size_t uid_length() const { return m_uid_len; }
+	inline const char *uid() const { return m_uid; }
+	inline const char *info() const { return m_info; }
+	inline bool isup() const { return m_connected; }
+	inline operator afb_api_t() const { return m_api; }
+	inline operator CANopenMaster&() { return m_master; }
+	inline operator ev_exec_t*() const { return m_master; }
+	void dump(std::ostream &os) const;
 
-	afb_req_t m_current_req;
+	template <class T>
+	lely::canopen::SdoFuture<T> AsyncRead(uint16_t idx, uint8_t subidx) {
+		return m_master.AsyncRead<T>(id(), idx, subidx);
+	}
+
+	template <class T>
+	lely::canopen::SdoFuture<void> AsyncWrite(uint16_t idx, uint8_t subidx, T&& value) {
+		return m_master.AsyncWrite(id(), idx, subidx, std::forward<T>(value));
+	}
+
 
 private:
-	const char *m_uid;
-	const char *m_info;
-	const char *m_dcf;
-	afb_api_t m_api;
-	uint m_count;
-	bool m_connected = false;
-	std::vector<std::shared_ptr<CANopenSensor>> m_sensors;
-	std::list<CANopenSensor *> m_sensorEventQueue;
+	void request(afb_req_t request, unsigned nparams, afb_data_t const params[]);
+
+private:
+	CANopenMaster &m_master;
+	afb_api_t m_api = nullptr;
+	const char *m_uid = nullptr;
+	unsigned m_uid_len = 0;
+	const char *m_info = nullptr;
+	uint m_count = 0;
+	bool m_connected = true;//false;
+	cstrmap<std::shared_ptr<CANopenSensor>> m_sensors;
+	std::set<CANopenSensor *> m_sensorEventQueue;
 	json_object *m_onconfJ = nullptr;
 
-	void slavePerStartConfig(json_object *conf);
+	void doStartAction(int idx, ::std::function<void(::std::error_code ec)> res) noexcept;
 
-	// This function gets called every time a value is written to the local object dictionary of the master
-	void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override
-	{
-		// check in the sensor event list
-		for (auto sensor : m_sensorEventQueue)
-		{
-			// If the sensor match, read it and push the event to afb
-			if (idx == sensor->reg() && subidx == sensor->subReg())
-			{
-				json_object *responseJ;
-				sensor->read(&responseJ);
-				afb_event_push(sensor->event(), responseJ);
-			}
-		}
-	}
-
-	void OnHeartbeat(bool occurred) noexcept override
-	{
-		m_connected = !occurred;
-		std::cout << "heart beat occured";
-		if (occurred)
-			std::cout << " timed out";
-		std::cout << std::endl;
-	}
-
-	//*// This function gets called when the boot-up process of the slave completes.
-	void OnBoot(lely::canopen::NmtState nmtState, char es, const ::std::string &) noexcept override
-	{
-		// if master cycle period is null or undefined set it to 100ms
-		int val = master[0x1006][0];
-		if (val <= 0)
-			master[0x1006][0] = UINT32_C(100000);
-	} //*/
-
-	//*// This function gets called during the boot-up process for the slave.
-	void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override
-	{
-		try
-		{
-			if (m_onconfJ)
-			{
-				if (json_object_is_type(m_onconfJ, json_type_array))
-				{
-					int count = (int)json_object_array_length(m_onconfJ);
-					for (int idx = 0; idx < count; idx++)
-					{
-						json_object *conf = json_object_array_get_idx(m_onconfJ, idx);
-						slavePerStartConfig(conf);
-					}
-				}
-				else
-				{
-					slavePerStartConfig(m_onconfJ);
-				}
-			}
-			// Report success (empty error code).
-			res({});
-		}
-		catch (lely::canopen::SdoError &e)
-		{
-			res(e.code());
-		}
-		m_connected = true;
-	} //*/
+	void request_read(afb_req_t request, uint32_t reg) noexcept;
+	void OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept override;
+	void OnHeartbeat(bool occurred) noexcept override;
+	void OnBoot(lely::canopen::NmtState nmtState, char es, const ::std::string &) noexcept override;
+	void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override;
+	static void OnRequest(afb_req_t request, unsigned nparams, afb_data_t const params[]);
 };
 
 #endif /* _CANOPENSLAVEDRIVER_INCLUDE_ */

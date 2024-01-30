@@ -1,7 +1,7 @@
 /*
- Copyright (C) 2015-2020 IoT.bzh Company
+ Copyright (C) 2015-2024 IoT.bzh Company
 
- Author: Johann Gautier <johann.gautier@iot.bzh>
+ Author: IoT.bzh <team@iot.bzh>
 
  $RP_BEGIN_LICENSE$
  Commercial License Usage
@@ -22,13 +22,39 @@
  $RP_END_LICENSE$
 */
 
-#ifndef _CANOPENGLUE_HEADER_
-#define _CANOPENGLUE_HEADER_
+#ifndef _COMMON_BINDING_INCLUDED_
+#define _COMMON_BINDING_INCLUDED_
 
-#include <iostream>
 #include <json-c/json.h>
 
-int32_t get_data_int32(json_object *dataJ);
-int64_t get_data_int64(json_object *dataJ);
+#define AFB_BINDING_VERSION 4
+#include <afb/afb-binding>
+#include <afb-helpers4/afb-data-utils.h>
+#include <afb-helpers4/afb-req-utils.h>
+#include <afb-helpers4/ctl-lib.h>
 
-#endif /* _CANOPENGLUE_HEADER_ */
+#if !defined(VERBOSE_ERROR_REPLY)
+# define VERBOSE_ERROR_REPLY 1
+#endif
+
+#if VERBOSE_ERROR_REPLY
+# define REQERRF(req,code,...)		afb_req_reply_string_f(req, code, __VA_ARGS__)
+#else
+# define REQERRF(req,code,...)		afb_req_reply_string_f(req, code, 0, NULL)
+#endif
+
+#define REQFAIL(req,code,...) do {\
+		AFB_REQ_WARNING(req, __VA_ARGS__); \
+		REQERRF(req, code, __VA_ARGS__); \
+	} while(0)
+
+#define APITHROW(api,...) do {\
+        char *str; \
+        (void)asprintf(&str,__VA_ARGS__); \
+        AFB_API_ERROR(api,"%s",str); \
+	std::runtime_error e(str); \
+        free(str); \
+        throw e; \
+    } while(0);
+
+#endif // _COMMON_BINDING_INCLUDED_

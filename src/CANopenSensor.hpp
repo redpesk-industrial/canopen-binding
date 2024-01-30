@@ -25,74 +25,96 @@
 #ifndef _CANOPENSENSOR_INCLUDE_
 #define _CANOPENSENSOR_INCLUDE_
 
-#include <afb/afb-binding>
-#include <ctl-config.h>
-#include "CANopenEncoder.hpp"
+#include <string>
+#include <ostream>
 
-class CANopenSlaveDriver;
+#include "common-binding.hpp"
+#include "CANopenEncoder.hpp"
+#include "CANopenSlaveDriver.hpp"
 
 class CANopenSensor
 {
-
 public:
-	CANopenSensor(afb_api_t api, json_object *sensorJ, CANopenSlaveDriver *slaveDriver);
-
-	// handle request coming from afb
-	void request(afb_req_t request, json_object *queryJ);
-
-	// Handle read request
-	int read(json_object **inputJ);
-
-	// Handle Write request
-	int write(json_object *inputJ);
+	CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ);
 
 	// return information about the sensor
-	const char *info();
+	char *info();
 	json_object *infoJ();
 
 	inline coEncodeCB encoder() { return m_encode; }
 	inline coDecodeCB decoder() { return m_decode; }
 	inline const char *uid() { return m_uid; }
+	inline const std::string &verb() const { return m_verb; }
 	inline afb_event_t event() { return m_event; }
 	inline uint16_t reg() { return m_register; }
 	inline uint8_t subReg() { return m_subRegister; }
 	inline int size() { return m_size; }
-	inline CANopenSlaveDriver *slave() { return m_slave; }
 	inline COdataType currentVal() { return m_currentVal; }
 	inline void *getData() { return m_data; }
 	inline void setData(void *data) { m_data = data; }
 
+	inline operator CANopenSlaveDriver&() { return m_driver; }
+	inline CANopenSlaveDriver *driver() { return &m_driver; }
+	inline operator afb_api_t() const { return m_driver; }
+	inline operator ev_exec_t*() { return m_driver; }
+
+	void readThenPush();
+
+	template <class T>
+	lely::canopen::SdoFuture<T> AsyncRead() {
+		return m_driver.AsyncRead<T>(m_register, m_subRegister);
+	}
+
+	template <class T>
+	lely::canopen::SdoFuture<void> AsyncWrite(T&& value) {
+		return m_driver.AsyncWrite(m_register, m_subRegister, std::forward<T>(value));
+	}
+
+	void dump(std::ostream &os) const;
+
 private:
+	CANopenSlaveDriver &m_driver;
 	const char *m_uid;
-	const char *m_info = "";
+	const char *m_info{""};
 	const char *m_privileges;
 	const char *m_format;
-	CANopenSlaveDriver *m_slave;
-	afb_api_t m_api;
+	std::string m_verb;
 	uint16_t m_register;
 	uint8_t m_subRegister;
-	json_object *m_sample;
+	json_object *m_sample{nullptr};
+	afb_auth_t m_auth;
 
 	// number of Bytes contained by the sensor register
 	// 1 = 8bits 2 = 16bits 4 = 32bits 5 = string
 	int m_size;
 	afb_event_t m_event = nullptr;
 
-	// set to true if the sensor uses asynchronus read/write function (SDO)
-	bool m_asyncSensor = false;
-
 	// read/write callback functions
 	CANopenEncodeCbS m_function;
 
 	// Formating encoder/decoder callback
-	coEncodeCB m_encode;
-	coDecodeCB m_decode;
+	coEncodeCB m_encode = nullptr;
+	coDecodeCB m_decode = nullptr;
 
 	// store curent state value
 	COdataType m_currentVal;
 
 	// available for othe information storing
-	void *m_data;
+	void *m_data = nullptr;
+
+private:
+	static void write_sync(CANopenSensor *sensor, COdataType data);
+
+	static void sensorDynRequest(afb_req_t request, unsigned nparams, afb_data_t const params[]);
+
+	// handle request coming from afb
+	void request(afb_req_t request, unsigned nparams, afb_data_t const params[]);
+
+	// push the current value
+	void push();
+
+	// Handle Write request
+	int write(json_object *inputJ);
 };
 
 #endif /* _CANOPENSENSOR_INCLUDE_ */

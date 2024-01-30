@@ -10,9 +10,9 @@
     {
       "uid": "CANopen-binding-plugin",
       "info": "Plugin to handle user custom encoding/decoding",
-      "spath": "package/lib/:./lib/plugins:./var",
+      "spath": "${CANOPENPATH}",
       "libs": [
-        "kingpigeon.ctlso"
+        "kingpigeon.so"
       ]
     }
   ], 
@@ -27,7 +27,27 @@
         "uid": "slave2",
         "info": "CANopen slave 2",
         "nodId": 2,
-        "sensors": [
+        "onconf": [
+          {
+            "info": "Turn off analog input cyclic event",
+            "register": "0x180205",
+            "size" : 2,
+            "data": 2000
+          },
+          {
+            "info": "Turn off analog input cyclic event",
+            "register": "0x180203",
+            "size" : 2,
+            "data": 2000
+          },
+          {
+            "info": "Turn off analog input cyclic event",
+            "register": "0x180202",
+            "size" : 1,
+            "data": 0
+          }
+        ],
+       "sensors": [
           {
             "uid": "DIN01",
             "info": "digital input register",
@@ -53,7 +73,6 @@
               {"action":"write", "data":1000},
               {"action":"write", "data":0}
             ]
-
           },
           {
             "uid": "DOUT01",

@@ -1,8 +1,8 @@
 ###########################################################################
 #  Copyright (C) 2015-2020 IoT.bzh Company
-# 
+#
 #  Author: Johann Gautier <johann.gautier@iot.bzh>
-# 
+#
 #  $RP_BEGIN_LICENSE$
 #  Commercial License Usage
 #   Licensees holding valid commercial IoT.bzh licenses may use this file in
@@ -11,7 +11,7 @@
 #   a written agreement between you and The IoT.bzh Company. For licensing terms
 #   and conditions see https://www.iot.bzh/terms-conditions. For further
 #   information use the contact form at https://www.iot.bzh/contact.
-# 
+#
 #  GNU General Public License Usage
 #   Alternatively, this file may be used under the terms of the GNU General
 #   Public license version 3. This license is as published by the Free Software
@@ -22,25 +22,16 @@
 #  $RP_END_LICENSE$
 ###########################################################################
 
-PROJECT_TARGET_ADD(kingpigeon)
+# Define project Targets
+add_library(kingpigeon MODULE kingpigeon-plugin.cpp)
 
-	# compile any C file starting with a lower case
-	#file(GLOB CSOURCES [a-z]*.cpp)
+# Alsa Plugin properties
+SET_TARGET_PROPERTIES(kingpigeon PROPERTIES
+		PREFIX ""
+		INSTALL_RPATH "$ORIGIN/.."
+)
 
-	# Define project Targets
-	add_library(${TARGET_NAME} MODULE  kingpigeon-plugin.cpp)
+target_link_libraries(kingpigeon CANopenEncoder ${link_libraries})
 
-	# Alsa Plugin properties
-	SET_TARGET_PROPERTIES(${TARGET_NAME} PROPERTIES
-			LABELS "PLUGIN"
-			PREFIX ""
-			SUFFIX ".ctlso"
-			INSTALL_RPATH "$ORIGIN/.."
-			OUTPUT_NAME ${TARGET_NAME}
-	)
-
-	target_link_libraries(${TARGET_NAME} CANopenEncoder ${link_libraries})
-
-	# compilation include path
-	target_include_directories(${TARGET_NAME}
-	PRIVATE "${CMAKE_SOURCE_DIR}/src")
+# compilation include path
+target_include_directories(kingpigeon BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/src")

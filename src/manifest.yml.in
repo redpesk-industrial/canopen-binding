@@ -1,0 +1,22 @@
+rp-manifest: 1
+id: @PROJECT_NAME@
+version: @PROJECT_VERSION@
+name: @PROJECT_NAME@
+description: @PROJECT_DESCRIPTION@
+author: @PROJECT_AUTHOR@ <@PROJECT_AUTHOR_MAIL@>
+license: @PROJECT_LICENSE@
+
+file-properties:
+  - name: lib/CANopen.so
+    value: public
+
+targets:
+  - target: main
+    content:
+      src:  lib/CANopen.so
+      type: application/vnd.redpesk.resource
+   required-permission:
+      - urn:AGL:permission::partner:scope-platform
+   provided-binding:
+      - name:  canopen
+        value: lib/CANopen.so

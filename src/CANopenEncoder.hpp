@@ -26,25 +26,27 @@
 #define _CANOPENENCODER_INCLUDE_
 
 #include <map>
-#include <iostream>
 #include <json-c/json.h>
+#include <lely/coapp/sdo.hpp>
 
 class CANopenSensor;
 
 // Container for multiple type variable
 union COdataType
 {
-	int error;
 	int32_t tInt;
-	int64_t tDouble;
+	int64_t tInt64;
 	const char *tString;
+	void reset() { tInt = 0; tInt64 = 0; tString = nullptr;}
 };
 
 // Struct containing Read and Write functions callbacks
 struct CANopenEncodeCbS
 {
 	COdataType (*readCB)(CANopenSensor *sensor);
-	int (*writeCB)(CANopenSensor *sensor, COdataType data);
+	void (*writeCB)(CANopenSensor *sensor, COdataType data);
+	lely::canopen::SdoFuture<COdataType> (*readAsyncCB)(CANopenSensor *sensor);
+	lely::canopen::SdoFuture<void> (*writeAsyncCB)(CANopenSensor *sensor, COdataType data);
 };
 
 // type definition for encode callback
@@ -60,19 +62,19 @@ public:
 	static CANopenEncoder &instance();
 
 	// return the appropriate read and write function callback according to sensor size and type
-	CANopenEncodeCbS getfunctionCB(std::string type, int size);
+	const CANopenEncodeCbS &getfunctionCB(std::string type, int size);
 
 	// return encode/decode formater callback based on it's uid
-	coEncodeCB getEncodeFormateurCB(std::string encode);
-	coDecodeCB getDecodeFormateurCB(std::string decode);
+	coEncodeCB getEncodeFormaterCB(std::string encode);
+	coDecodeCB getDecodeFormaterCB(std::string decode);
 
 	// add an encoder formater to the list of availables encoders
-	int addEncodeFormateur(std::string uid, coEncodeCB encodeCB);
-	int addEncodeFormateur(std::map<std::string, coEncodeCB> newEncodeFormaterTable);
+	int addEncodeFormater(std::string uid, coEncodeCB encodeCB);
+	int addEncodeFormater(const std::vector<std::pair<std::string, coEncodeCB>> &encodeFormaterTable);
 
 	// add an decoder formater to the list of availables encoders
-	int addDecodeFormateur(std::string uid, coDecodeCB decodeCB);
-	int addDecodeFormateur(std::map<std::string, coDecodeCB> newDecodeFormaterTable);
+	int addDecodeFormater(std::string uid, coDecodeCB decodeCB);
+	int addDecodeFormater(const std::vector<std::pair<std::string, coDecodeCB>> &decodeFormaterTable);
 
 	// Built in Encoding Formaters
 	static COdataType encodeInt(json_object *dataJ, CANopenSensor *sensor = nullptr);
@@ -89,21 +91,31 @@ private:
 	CANopenEncoder(); ///< Private constructor for singleton implementation
 
 	// SDO encoding functions
-	static int coSDOwrite8bits(CANopenSensor *sensor, COdataType data);
-	static int coSDOwrite16bits(CANopenSensor *sensor, COdataType data);
-	static int coSDOwrite32bits(CANopenSensor *sensor, COdataType data);
-	static int coSDOwrite64bits(CANopenSensor *sensor, COdataType data);
-	static int coSDOwriteString(CANopenSensor *sensor, COdataType data);
+	static void coSDOwrite8bits(CANopenSensor *sensor, COdataType data);
+	static void coSDOwrite16bits(CANopenSensor *sensor, COdataType data);
+	static void coSDOwrite32bits(CANopenSensor *sensor, COdataType data);
+	static void coSDOwrite64bits(CANopenSensor *sensor, COdataType data);
+	static void coSDOwriteString(CANopenSensor *sensor, COdataType data);
+
+	// SDO encoding functions
+	static lely::canopen::SdoFuture<void> coSDOwriteAsync8bits(CANopenSensor *sensor, COdataType data);
+	static lely::canopen::SdoFuture<void> coSDOwriteAsync16bits(CANopenSensor *sensor, COdataType data);
+	static lely::canopen::SdoFuture<void> coSDOwriteAsync32bits(CANopenSensor *sensor, COdataType data);
+	static lely::canopen::SdoFuture<void> coSDOwriteAsync64bits(CANopenSensor *sensor, COdataType data);
+	static lely::canopen::SdoFuture<void> coSDOwriteAsyncString(CANopenSensor *sensor, COdataType data);
+
 	// SDO decoding functions
-	static COdataType coSDOread8bits(CANopenSensor *sensor);
-	static COdataType coSDOread32bits(CANopenSensor *sensor);
-	static COdataType coSDOread64bits(CANopenSensor *sensor);
-	static COdataType coSDOreadString(CANopenSensor *sensor);
-	static COdataType coSDOread16bits(CANopenSensor *sensor);
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync8bits(CANopenSensor *sensor);
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync32bits(CANopenSensor *sensor);
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync64bits(CANopenSensor *sensor);
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsyncString(CANopenSensor *sensor);
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync16bits(CANopenSensor *sensor);
+
 	// PDO encoding functions
-	static int coPDOwrite8bits(CANopenSensor *sensor, COdataType data);
-	static int coPDOwrite16bits(CANopenSensor *sensor, COdataType data);
-	static int coPDOwrite32bits(CANopenSensor *sensor, COdataType data);
+	static void coPDOwrite8bits(CANopenSensor *sensor, COdataType data);
+	static void coPDOwrite16bits(CANopenSensor *sensor, COdataType data);
+	static void coPDOwrite32bits(CANopenSensor *sensor, COdataType data);
+
 	// PDO decoding functions
 	static COdataType coPDOread16bits(CANopenSensor *sensor);
 	static COdataType coPDOread32bits(CANopenSensor *sensor);
@@ -116,8 +128,8 @@ private:
 	static const std::map<std::string, std::map<int, CANopenEncodeCbS>> encodingTable;
 
 	// formaters Tables
-	static std::map<std::string, coEncodeCB> coEncodeFormateurTable;
-	static std::map<std::string, coDecodeCB> coDecodeFormateurTable;
+	static std::map<std::string, coEncodeCB> coEncodeFormaterTable;
+	static std::map<std::string, coDecodeCB> coDecodeFormaterTable;
 };
 
 #endif //_CANOPENENCODER_INCLUDE_

@@ -97,38 +97,38 @@ CANopen binding creates one api/verb by sensor. By default each sensor api/verb 
 The CANopen binding support both built-in format converter and optional custom converter provided by user through plugins.
 
 * Standard converter includes the traditional int, uint, double ...
-* Custom converter are provided through optional plugins. Custom converter should declare a static structure and register it at plugin loadtime(CTLP_ONLOAD).
+* Custom converter are provided through optional plugins. Custom converter should declare a registering function called `canopenDeclareCodecs` that receives an API handler and a CANopenEncoder object.
+* When declaring coder or decoder to a CANopenEncoder object:
   * uid is the formatter name as declare inside JSON config file.
   * decode/encore callback are respectively called for read/write action
   * Each sensor stores its last known value and is accessible with the member function `currentVal()`
   * Each sensor also attaches a void* context accessible with the member function `getData()` and `setData()`. Developer may declare a private context for each sensor.
 
-```c++
-// Sample of custom formatter (king-pigeon-encore.c)
+```C++
+// Sample of custom formatter (kingpigeon-plugin.cpp)
 // -------------------------------------------------
 
-std::map<std::string, coDecodeCB> kingpigeonDecodeFormattersTable{
-  //uid              decoding CB
-  {"kp_4-boolArray", kingpigeon_4_bool_array_decode},
-  {"kp_2-intArray" , kingpigeon_2_int_array_decode }
+CTL_PLUGIN_DECLARE("king_pigeon", "CANOPEN plugin for king pigeon");
+
+std::vector<std::pair<std::string, coDecodeCB>> kingpigeonDecodeFormatersTable {
+	//uid              decoding CB
+	{"kp_4-boolArray", kingpigeon_4_bool_array_decode},
+	{"kp_2-intArray", kingpigeon_2_int_array_decode}
 };
 
-CTLP_ONLOAD(plugin, coEncoderHandle) {
-  if(!coEncoderHandle) return -1;
-  // get the loaded CANopen Encoder
-  CANopenEncoder* coEncoder = (CANopenEncoder*)coEncoderHandle;
+extern "C"
+int canopenDeclareCodecs(afb_api_t api, CANopenEncoder *coEncoder)
+{
+	// add a all list of decode formaters
+	int err = coEncoder->addDecodeFormater(kingpigeonDecodeFormatersTable);
+	if (err)
+		AFB_API_WARNING(api, "Kingpigeon-plugin ERROR : fail to add %d entree to decode formater table", err);
+	// add a single encoder
+	err = coEncoder->addEncodeFormater("kp_4-boolArray", kingpigeon_bool_array_encode);
+	if (err)
+		AFB_API_WARNING(api, "Kingpigeon-plugin ERROR : fail to add 'kp_4-boolArray' entree to encode formater table");
 
-  int err;
-
-  // add a all list of decode formatters
-  err = coEncoder->addDecodeFormatter(kingpigeonDecodeFormattersTable);
-  if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add %d entree to decode formatter table", err);
-
-  // add a single encoder
-  err = coEncoder->addEncodeFormatter("kp_4-boolArray",kingpigeon_bool_array_encode);
-  if(err) AFB_API_WARNING(plugin->api, "Kingpigeon-plugin ERROR : fail to add 'kp_4-boolArray' entree to encode formatter table");
-
-  return 0;
+	return 0;
 }
 ```
 

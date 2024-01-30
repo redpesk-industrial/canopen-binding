@@ -8,33 +8,15 @@
       "name": "Kingpigeon - gcc build and debug active file",
       "type": "cppdbg",
       "request": "launch",
-      "program": "/usr/bin/afb-binder",
+      "program": "/home/jobol/.locenv/afb/bin/afb-binder",
       "args": [
-        "--name=redpesk-kingpigeonM150-config",
-        "--port=1234",
-        "--ldpaths=.",
-        "--workdir=.",
-        "--roothttp=./htdocs",
-        "--tracereq=all",
-        "--traceapi=all",
-        "--verbose",
-        "--verbose",
-        "--verbose",
-        "--trap-faults=no"
       ],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/build/package",
+      "cwd": "${workspaceFolder}/build",
       "environment": [],
       "externalConsole": false,
-      "MIMode": "gdb",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ],
-      "miDebuggerPath": "/usr/bin/gdb"
+      ], 
+      "miDebuggerServerAddress": "localhost:9999"
     }
   ]
 }

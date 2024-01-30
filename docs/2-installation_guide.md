@@ -2,9 +2,12 @@
 
 ## Easy install
 
-This binding is available in the redpesk repo, so if you are running on one of the supported Linux distros you can install it with your package manager :
+This binding is available in the redpesk repo, so if you are running
+on one of the supported Linux distros you can install it with your
+package manager :
 
-* Declare redpesk repository: [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
+* Declare redpesk repository:
+  [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
 
 * Install the binding :
 
@@ -23,19 +26,20 @@ This binding is available in the redpesk repo, so if you are running on one of t
 
 ### Dependencies
 
-* redpesk application framework 'afb-binder'
-* redpesk controller 'afb-libcontroller'
-* redpesk helpers 'afb-libhelpers'
-* redpesk cmake template 'afb-cmake-modules'
+* redpesk binding develpement files 'afb-binding-dev' or 'afb-binding-devel'
+* redpesk helpers 'afb-helpers4-static'
 * lely-core CANopen library
+* for running, redpesk application framework 'afb-binder'
 
 > Note: _use *-dev or *-devel packages if available_
 
 #### redpesk dependencies
 
-Add redpesk repositories and install the Application Framework [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
+Add redpesk repositories and install the Application Framework
+[(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
 
-Install Programs and Libraries you need [(see doc)]({% chapter_link host-configuration-doc.getting-your-source-files %})
+Install Programs and Libraries you need
+[(see doc)]({% chapter_link host-configuration-doc.getting-your-source-files %})
 
 #### CANopen lib dependencies
 

@@ -1,0 +1,811 @@
+[FileInfo]
+FileName=M150C.eds
+FileVersion=1
+FileRevision=1
+Description=EDS file for M150C
+CreationTime=02:52PM
+CreationDate=04-4-2018
+CreatedBy=King pigeon
+ModificationTime=02:52PM
+ModificationDate=04-4-2018
+ModifiedBy=King Pigeon
+EDSVersion=4.0
+ 
+[DeviceInfo]
+VendorName=King pigeon hi-tech.co.,ltd.
+ProductName=M150C
+BaudRate_10=1
+BaudRate_20=1
+BaudRate_50=1
+BaudRate_125=1
+BaudRate_250=1
+BaudRate_500=1
+BaudRate_800=1
+BaudRate_1000=1
+Granularity=0x8
+VendorNumber=60000
+ProductNumber=150
+SimpleBootUpMaster=0
+SimpleBootUpSlave=1
+DynamicChannelsSupported=0
+GroupMessaging=0
+NrOfRXPDO=2
+NrOfTXPDO=3
+LSS_Supported=0
+RevisionNumber=0x00010001
+OrderCode=M150C
+
+[DummyUsage]
+Dummy0001=0
+Dummy0002=0
+Dummy0003=0
+Dummy0004=0
+Dummy0005=0
+Dummy0006=0
+Dummy0007=0
+
+[Comments]
+Lines=1
+Line1=EDS file for M150C
+
+[MandatoryObjects]
+SupportedObjects=3
+1=0x1000
+2=0x1001
+3=0x1018
+
+[1000]
+ParameterName=Device Type
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x00030191
+
+[1001]
+ParameterName=Error Register
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x0
+
+[1018]
+SubNumber=4
+ParameterName=Identity Object
+ObjectType=9
+
+[1018sub0]
+ParameterName=Number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+LowLimit=3
+HighLimit=3
+DefaultValue=3
+
+[1018sub1]
+ParameterName=Vendor ID
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=60000
+
+[1018sub2]
+ParameterName=Product code
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=150
+
+[1018sub3]
+ParameterName=Revision number
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x00010001
+
+[OptionalObjects]
+SupportedObjects=17
+1=0x1003
+2=0x1014
+3=0x1016
+4=0x1017
+5=0x1400
+6=0x1401
+7=0x1600
+8=0x1601
+9=0x1800
+10=0x1801
+11=0x1802
+12=0x1a00
+13=0x1a01
+14=0x1a02
+15=0x6000
+16=0x6200
+17=0x6401
+
+
+[1003]
+SubNumber=2
+ParameterName=Pre-defined Error Field
+ObjectType=8
+
+[1003sub0]
+ParameterName=Number of errors
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x0000
+
+[1003sub1]
+ParameterName=Standard Error Field
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x0000
+
+[1014]
+ParameterName=COB-ID Emergency message
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=$NodeID + 0x80
+
+[1016]
+SubNumber=2
+ParameterName=Consumer Heartbeat Time
+ObjectType=8
+
+[1016sub0]
+ParameterName=Number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=1
+
+[1016sub1]
+ParameterName=Consumer Heartbeat Time
+ObjectType=7
+DataType=0x0007
+AccessType=RW
+PDOMapping=0
+DefaultValue=0
+
+[1017]
+ParameterName=Producer Heartbeat Time
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=0
+
+[1400]
+SubNumber=4
+ParameterName=Receive PDO1 parameter
+ObjectType=9
+
+[1400sub0]
+ParameterName=Number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=3
+
+[1400sub1]
+ParameterName=COB-ID
+ObjectType=7
+DataType=0x0007
+AccessType=RW
+PDOMapping=0
+DefaultValue=$NodeID + 0x200
+
+[1400sub2]
+ParameterName=Transmission type
+ObjectType=7
+DataType=0x0005
+AccessType=RW
+PDOMapping=0
+DefaultValue=255
+
+[1400sub3]
+ParameterName=Inhibit timer
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=0
+
+[1401]
+SubNumber=4
+ParameterName=Receive PDO2 parameter
+ObjectType=9
+
+[1401sub0]
+ParameterName=Number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=3
+
+[1401sub1]
+ParameterName=COB-ID
+ObjectType=7
+DataType=0x0007
+AccessType=RW
+PDOMapping=0
+DefaultValue=$NodeID + 0x80000300
+
+[1401sub2]
+ParameterName=Transmission type
+ObjectType=7
+DataType=0x0005
+AccessType=RW
+PDOMapping=0
+DefaultValue=255
+
+[1401sub3]
+ParameterName=Inhibit timer
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=0
+
+[1600]
+SubNumber=3
+ParameterName=Receive PDO1 mapping
+ObjectType=9
+
+[1600sub0]
+ParameterName=Number of mapped objects
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x2
+
+[1600sub1]
+ParameterName=1.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x62000108
+
+[1600sub2]
+ParameterName=2.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x62000208
+
+[1601]
+SubNumber=5
+ParameterName=Receive PDO2 mapping
+ObjectType=9
+
+[1601sub0]
+ParameterName=Number of mapped objects
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x4
+
+[1601sub1]
+ParameterName=1.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x20000108
+
+[1601sub2]
+ParameterName=2.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x20000208
+
+[1601sub3]
+ParameterName=3.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x20000320
+
+[1601sub4]
+ParameterName=4.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x20000410
+
+[1800]
+SubNumber=5
+ParameterName=Transmit PDO1 parameter
+ObjectType=9
+
+[1800sub0]
+ParameterName=Number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x5
+
+[1800sub1]
+ParameterName=COB-ID
+ObjectType=7
+DataType=0x0007
+AccessType=RW
+PDOMapping=0
+DefaultValue=$NodeID + 0x180
+
+[1800sub2]
+ParameterName=Transmission type
+ObjectType=7
+DataType=0x0005
+AccessType=RW
+PDOMapping=0
+DefaultValue=255
+
+[1800sub3]
+ParameterName=Inhibit timer
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=50
+
+[1800sub5]
+ParameterName=Event Timer
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=100
+
+[1801]
+SubNumber=5
+ParameterName=Transmit PDO2 parameter
+ObjectType=9
+
+[1801sub0]
+ParameterName=Number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x5
+
+[1801sub1]
+ParameterName=COB-ID
+ObjectType=7
+DataType=0x0007
+AccessType=RW
+PDOMapping=0
+DefaultValue=$NodeID + 0x80000280
+
+[1801sub2]
+ParameterName=Transmission type
+ObjectType=7
+DataType=0x0005
+AccessType=RW
+PDOMapping=0
+DefaultValue=255
+
+[1801sub3]
+ParameterName=Inhibit timer
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=50
+
+[1801sub5]
+ParameterName=Event Timer
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=100
+
+[1802]
+SubNumber=5
+ParameterName=Transmit PDO3 parameter
+ObjectType=9
+
+[1802sub0]
+ParameterName=Number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x5
+
+[1802sub1]
+ParameterName=COB-ID
+ObjectType=7
+DataType=0x0007
+AccessType=RW
+PDOMapping=0
+DefaultValue=$NodeID + 0x380
+
+[1802sub2]
+ParameterName=Transmission type
+ObjectType=7
+DataType=0x0005
+AccessType=RW
+PDOMapping=0
+DefaultValue=255
+
+[1802sub3]
+ParameterName=Inhibit timer
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=50
+
+[1802sub5]
+ParameterName=Event Timer
+ObjectType=7
+DataType=0x0006
+AccessType=RW
+PDOMapping=0
+DefaultValue=100
+
+[1a00]
+SubNumber=3
+ParameterName=Transmit PDO1 mapping
+ObjectType=9
+
+[1a00sub0]
+ParameterName=Number of mapped objects
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x2
+
+[1a00sub1]
+ParameterName=1.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x60000108
+
+[1a00sub2]
+ParameterName=2.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x60000208
+
+[1a01]
+SubNumber=3
+ParameterName=Transmit PDO2 mapping
+ObjectType=9
+
+[1a01sub0]
+ParameterName=Number of mapped objects
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x2
+
+[1a01sub1]
+ParameterName=1.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x21000110
+
+[1a01sub2]
+ParameterName=2.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x21000220
+
+[1a02]
+SubNumber=5
+ParameterName=Transmit PDO3 mapping
+ObjectType=9
+
+[1a02sub0]
+ParameterName=Number of mapped objects
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x4
+
+[1a02sub1]
+ParameterName=1.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x64010110
+
+[1a02sub2]
+ParameterName=2.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x64010210
+
+[1a02sub3]
+ParameterName=3.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x64010310
+
+[1a02sub4]
+ParameterName=4.mapped object
+ObjectType=7
+DataType=0x0007
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x64010410
+
+[6000]
+SubNumber=3
+ParameterName=Read Input 8 Bit
+ObjectType=9
+
+[6000sub0]
+ParameterName=Number of mapped objects
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x2
+
+[6000sub1]
+ParameterName=Read Input 1h to 8h
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=1
+DefaultValue=0
+
+[6000sub2]
+ParameterName=Read Input 9h to 10h
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=1
+DefaultValue=0
+
+[6200]
+SubNumber=3
+ParameterName=Write Output 8 Bit
+ObjectType=9
+
+[6200sub0]
+ParameterName=Number of mapped objects
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x2
+
+[6200sub1]
+ParameterName=Write Output 1h to 8h
+ObjectType=7
+DataType=0x0005
+AccessType=RW
+PDOMapping=1
+DefaultValue=0
+
+[6200sub2]
+ParameterName=Write Output 9h to 10h
+ObjectType=7
+DataType=0x0005
+AccessType=RW
+PDOMapping=1
+DefaultValue=0
+
+[6401]
+SubNumber=5
+ParameterName=Read Analog Input 16 Bit
+ObjectType=9
+
+[6401sub0]
+ParameterName=Number of mapped objects
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=0x4
+
+[6401sub1]
+ParameterName=Read Analog Input 1
+ObjectType=7
+DataType=0x0006
+AccessType=RO
+PDOMapping=1
+DefaultValue=0
+
+[6401sub2]
+ParameterName=Read Analog Input 2
+ObjectType=7
+DataType=0x0006
+AccessType=RO
+PDOMapping=1
+DefaultValue=0
+
+[6401sub3]
+ParameterName=Read Analog Input 3
+ObjectType=7
+DataType=0x0006
+AccessType=RO
+PDOMapping=1
+DefaultValue=0
+
+[6401sub4]
+ParameterName=Read Analog Input 4
+ObjectType=7
+DataType=0x0006
+AccessType=RO
+PDOMapping=1
+DefaultValue=0
+
+[ManufacturerObjects]
+SupportedObjects=3
+1=0x2000
+2=0x2100
+3=0x2200
+
+
+[2000]
+SubNumber=5
+ParameterName=Pulse Output Control
+ObjectType=9
+
+[2000sub0]
+ParameterName=number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=4
+
+[2000sub1]
+ParameterName=Control byte
+ObjectType=7
+DataType=0x0005
+LowLimit=0x0
+HighLimit=0xff
+AccessType=rw
+DefaultValue=0
+PDOMapping=1
+
+[2000sub2]
+ParameterName=Duty
+ObjectType=7
+DataType=0x0005
+LowLimit=0x0
+HighLimit=0xff
+AccessType=rw
+PDOMapping=1
+
+[2000sub3]
+ParameterName=Pulse Output Number
+ObjectType=7
+DataType=0x0007
+LowLimit=0x0
+HighLimit=0xffffffff
+AccessType=rw
+DefaultValue=0
+PDOMapping=1
+
+[2000sub4]
+ParameterName=Freqency
+ObjectType=7
+DataType=0x0006
+LowLimit=0x0
+HighLimit=0xffff
+AccessType=rw
+PDOMapping=1
+
+[2100]
+SubNumber=3
+ParameterName=Pulse Output Status
+ObjectType=9
+
+[2100sub0]
+ParameterName=number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=2
+
+[2100sub1]
+ParameterName=Status byte
+ObjectType=7
+DataType=0x0006
+AccessType=ro
+DefaultValue=0
+PDOMapping=1
+
+[2100sub2]
+ParameterName=Pulse Input Counte
+ObjectType=7
+DataType=0x0007
+LowLimit=0x0
+HighLimit=0xffffffff
+AccessType=ro
+DefaultValue=0
+PDOMapping=1
+
+[2200]
+SubNumber=4
+ParameterName=Pulse Setting
+ObjectType=9
+
+[2200sub0]
+ParameterName=number of entries
+ObjectType=7
+DataType=0x0005
+AccessType=RO
+PDOMapping=0
+DefaultValue=3
+
+[2200sub1]
+ParameterName=Pulse Input Setting
+ObjectType=7
+DataType=0x0005
+LowLimit=0x0
+HighLimit=0x1
+AccessType=rw
+DefaultValue=0
+PDOMapping=0
+
+[2200sub2]
+ParameterName=Trigger Setting
+ObjectType=7
+DataType=0x0005
+LowLimit=0x0
+HighLimit=0x1
+AccessType=rw
+DefaultValue=0
+PDOMapping=0
+
+[2200sub3]
+ParameterName=Pulse Output Setting
+ObjectType=7
+DataType=0x0005
+LowLimit=0x0
+HighLimit=0x1
+AccessType=rw
+DefaultValue=0
+PDOMapping=0
+
