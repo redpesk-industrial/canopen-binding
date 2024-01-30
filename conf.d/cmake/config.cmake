@@ -123,7 +123,7 @@ set(LD_LIBRARY_PATH ${CMAKE_INSTALL_PREFIX}/lib64 ${CMAKE_INSTALL_PREFIX}/lib)
 # Optional location for config.xml.in
 # -----------------------------------
 set(WIDGET_ICON ${PROJECT_APP_TEMPLATES_DIR}/wgt/${PROJECT_ICON})
-set(WIDGET_CONFIG_TEMPLATE ${CMAKE_SOURCE_DIR}/conf.d/wgt/config.xml.in CACHE PATH "Path to widget config file template (config.xml.in)")
+set(MANIFEST_YAML_TEMPLATE ${CMAKE_SOURCE_DIR}/conf.d/wgt/manifest.yml.in CACHE PATH "Path to manifest file template")
 
 # Mandatory widget Mimetype specification of the main unit
 # --------------------------------------------------------------------------
