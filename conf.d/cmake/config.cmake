@@ -25,7 +25,7 @@
 # Project Info
 # ------------------
 set(PROJECT_NAME canopen-binding)
-set(PROJECT_VERSION "1.0")
+set(PROJECT_VERSION "1.1.1")
 set(PROJECT_PRETTY_NAME "CANopen binding")
 set(PROJECT_DESCRIPTION "Provide a redpesk CANopen Binding")
 set(PROJECT_URL "https://github.com/iotbzh/CANopen-service")
