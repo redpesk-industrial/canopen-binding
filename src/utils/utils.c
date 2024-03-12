@@ -80,8 +80,7 @@ int fixDcfRequires(char *dcfFile)
 	char buf[MAX_PATH_LEN];
 	char slaveBinPaht[MAX_PATH_LEN];
 	char cwd[MAX_PATH_LEN];
-	char * dcfPath = (char*)malloc(sizeof(dcfFile));
-	strcpy(dcfPath, dcfFile);
+	char * dcfPath = strdup(dcfFile);
 	dirname(dcfPath);
 
 	// int keylen = strlen(DCF_UPLOAD_FILE_KEY);
