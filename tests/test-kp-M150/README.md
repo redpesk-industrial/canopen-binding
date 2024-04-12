@@ -38,6 +38,7 @@ canopen info true
 canopen slave2/DIN01_EVENT_TIMER {"action":"write","data":10}
 canopen slave2/DIN01_EVENT_TIMER {"action":"write","data":1}
 canopen slave2/DIN01 {"action":"read"}
+canopen slave2/DIN01 {"action":"SUBSCRIBE"}
 canopen slave2/AIN01 {"action":"read"}
 canopen slave2/AIN01 {"action":"SUBSCRIBE"}
 canopen slave2/DOUT01 {"action":"write","data":1}

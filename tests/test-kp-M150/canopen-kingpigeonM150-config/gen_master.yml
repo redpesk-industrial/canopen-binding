@@ -35,11 +35,11 @@ slave_2:
   heartbeat_consumer: false
   heartbeat_producer: false # 1000 # ms
   # error_behavior: {}
-  # rpdo:
-  #   1:
-  #      enabled: true
+  rpdo:
+    1:
+       enabled: true
   #      # cob_id: auto
-  #      # transmission: 0x01
+       transmission: 0x01
   #      # inhibit_time: 0 # 100 us
   #      # event_timer: 0 # ms
   #      mapping:

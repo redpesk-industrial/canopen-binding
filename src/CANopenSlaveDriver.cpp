@@ -306,7 +306,9 @@ json_object *CANopenSlaveDriver::infoJ()
 // This function gets called every time a value is written to the local object dictionary of the master
 void CANopenSlaveDriver::OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept
 {
+#if 0
 	AFB_API_DEBUG(*this, "-- on RPDO write %s:%04x:%u --", uid(), (unsigned)idx, (unsigned)subidx);
+#endif
 	// check in the sensor event list
 	for (auto sensor : m_sensorEventQueue)
 	{
@@ -352,13 +354,6 @@ void CANopenSlaveDriver::dump(std::ostream &os) const
 		it.second->dump(os);
 	}
 }
-
-
-
-
-
-
-
 
 
 // This function gets called during the boot-up process for the slave.

@@ -98,8 +98,8 @@
             "uid": "AIN01",
             "info": "Analog input register 01, contains 2 analog input of 16bit each",
             "type": "RPDO",
-            "format" : "kp_2-intArray",
-            "size" : 4,
+            "format" : "uint",
+            "size" : 2,
             "register" : "0x640101",
             "sample" : [
               {"action":"read"},
@@ -111,8 +111,8 @@
             "uid": "AIN02",
             "info": "Analog input register 02, contains 2 analog input of 16bit each",
             "type": "RPDO",
-            "format" : "kp_2-intArray",
-            "size" : 4,
+            "format" : "uint",
+            "size" : 2,
             "register" : "0x640102",
             "sample" : [
               {"action":"read"},

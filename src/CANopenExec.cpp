@@ -110,9 +110,11 @@ CANopenChannel::CANopenChannel(CANopenExec &exec, const char *uri, const char *d
 	, chan_{exec, exec}
 	, master_{exec, exec, chan_, dcf, "", nodID}
 {
+#if 0
 	master_.OnWrite([this](uint16_t idx, uint8_t subidx) {
 		AFB_API_DEBUG(*this, "onwrite %04x.%d", unsigned(idx), unsigned(subidx));
 	});
+#endif
 }
 
 void CANopenChannel::reset()

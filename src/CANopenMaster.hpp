@@ -95,8 +95,6 @@ private:
 
 	/// @brief running status
 	bool m_isRunning = false;
-
-struct node { node*next; CANopenSlaveDriver*item; } *head_ = nullptr;
 };
 
 /**
@@ -118,8 +116,6 @@ private:
 
 	/** masters canopen buses */
 	cstrmap<std::shared_ptr<CANopenMaster>> masters_;
-
-struct node { node*next; CANopenMaster*item; } *head_ = nullptr;
 };
 
 #endif /* _ServiceCANopenMaster_INCLUDE_ */

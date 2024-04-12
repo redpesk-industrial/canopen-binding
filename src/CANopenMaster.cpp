@@ -108,7 +108,6 @@ int CANopenMaster::init(json_object *rtuJ, rp_path_search_t *paths)
 				throw std::out_of_range(std::string("slave id must be in 1 ... 127 but is ") + std::to_string(sid));
 			auto slave = std::make_shared<CANopenSlaveDriver>(*this, slaveJ, sid);
 			m_slaves[slave->uid()] = slave;
-node*h = new node; h->next=head_; h->item=slave.get(); head_=h;
 		}
 		catch (std::exception &e)
 		{
@@ -216,7 +215,6 @@ int CANopenMasterSet::add(json_object *cfg, rp_path_search_t *paths)
 
 	// record
 	masters_[master->uid()] = std::shared_ptr<CANopenMaster>(master);
-node*h = new node; h->next=head_; h->item=master; head_=h;
 	return 0;
 }
 
