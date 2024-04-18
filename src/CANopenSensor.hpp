@@ -50,8 +50,6 @@ public:
 	inline uint8_t subReg() { return m_subRegister; }
 	inline int size() { return m_size; }
 	inline COdataType currentVal() { return m_currentVal; }
-	inline void *getData() { return m_data; }
-	inline void setData(void *data) { m_data = data; }
 
 	inline operator CANopenSlaveDriver&() { return m_driver; }
 	inline CANopenSlaveDriver *driver() { return &m_driver; }
@@ -98,9 +96,6 @@ private:
 
 	// store curent state value
 	COdataType m_currentVal;
-
-	// available for othe information storing
-	void *m_data = nullptr;
 
 private:
 	static void write_sync(CANopenSensor *sensor, COdataType data);
