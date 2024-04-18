@@ -33,6 +33,8 @@
 
 #include <rp-utils/rp-jsonc.h>
 
+#include "utils/jsonc.hpp"
+
 void CANopenSensor::sensorDynRequest(afb_req_t request, unsigned nparams, afb_data_t const params[])
 {
 	// retrieve action handle from request and execute the request
@@ -159,7 +161,8 @@ CANopenSensor::CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ)
 void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t const params[])
 {
 	json_object *queryJ;
-	char *action;
+	const char *action;
+	json_object *obj;
 	json_object *dataJ = nullptr;
 	afb_data_t data;
 	int err;
@@ -174,14 +177,12 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 	queryJ = reinterpret_cast<json_object*>(afb_data_ro_pointer(data));
 
 	// parse request
-	err = rp_jsonc_unpack(queryJ, "{ss s?o !}",
-			       "action", &action,
-			       "data", &dataJ);
-	if (err < 0) {
-		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST,
-			"invalid 'json' rtu=%s sensor=%s query=%s", m_driver.uid(), m_uid, json_object_get_string(queryJ));
+	if (!get(request, queryJ, "action", obj, json_type_string, true)) {
+		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "bad or missing action");
 		return;
 	}
+	action = json_object_get_string(obj);
+	dataJ = json_object_object_get(queryJ, "data");
 
 	// parse the action
 	if (!strcasecmp(action, "WRITE"))

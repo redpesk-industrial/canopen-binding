@@ -143,6 +143,7 @@ void CANopenSlaveDriver::request(afb_req_t request, unsigned nparams, afb_data_t
 	json_object *dataJ = nullptr;
 	json_object *regJ;
 	json_object *valJ;
+	json_object *obj;
 	json_object *queryJ;
 	int size;
 	int err;
@@ -155,17 +156,12 @@ void CANopenSlaveDriver::request(afb_req_t request, unsigned nparams, afb_data_t
 	}
 	queryJ = reinterpret_cast<json_object*>(afb_data_ro_pointer(data));
 
-
-	err = rp_jsonc_unpack(queryJ, "{ss s?o !}",
-			       "action", &action,
-			       "data", &dataJ);
-
-	if (err)
-	{
-invalid_request:
-		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Invalid 'request' rtu=%s query=%s", uid(), json_object_get_string(queryJ));
+	if (!get(request, queryJ, "action", obj, json_type_string, true)) {
+		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "bad or missing action");
 		return;
 	}
+	action = json_object_get_string(obj);
+	dataJ = json_object_object_get(queryJ, "data");
 
 	if (!strcasecmp(action, "WRITE"))
 	{
@@ -266,6 +262,10 @@ invalid_request:
 	{
 		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Invalid action %s  rtu=%s query=%s", action, uid(), json_object_get_string(queryJ));
 	}
+	return;
+
+invalid_request:
+	REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Invalid 'request' rtu=%s query=%s", uid(), json_object_get_string(queryJ));
 }
 
 // IMPORTANT : use this funtion only in the driver exec

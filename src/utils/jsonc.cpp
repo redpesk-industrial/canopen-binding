@@ -22,9 +22,9 @@
 
 #include "jsonc.hpp"
 
-bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, json_type type, bool mandatory)
+static const char *_get_(json_object *obj, const char *key, json_object *&item, json_type type, bool mandatory)
 {
-	const char *errtxt = NULL;
+	const char *errtxt = nullptr;
 
 	if (!json_object_object_get_ex(obj, key, &item)) {
 		if (mandatory)
@@ -34,8 +34,25 @@ bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, j
 		if (type != json_type_double || json_type_int != json_object_get_type(item))
 			errtxt = "of valid type";
 	}
-	if (errtxt) {
-		AFB_API_ERROR(api, "key '%s' is not %s in configuration object %s",
+	return errtxt;
+}
+
+bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, json_type type, bool mandatory)
+{
+	const char *errtxt = _get_(obj, key, item, type, mandatory);
+	if (errtxt != nullptr) {
+		AFB_API_ERROR(api, "key '%s' is not %s in object %s",
+			key, errtxt, json_object_to_json_string(obj));
+		return false;
+	}
+	return true;
+}
+
+bool get(afb_req_t req, json_object *obj, const char *key, json_object *&item, json_type type, bool mandatory)
+{
+	const char *errtxt = _get_(obj, key, item, type, mandatory);
+	if (errtxt != nullptr) {
+		AFB_REQ_ERROR(req, "key '%s' is not %s in object %s",
 			key, errtxt, json_object_to_json_string(obj));
 		return false;
 	}
