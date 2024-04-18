@@ -32,7 +32,49 @@
 
 #include <rp-utils/rp-jsonc.h>
 
+#include "utils/jsonc.hpp"
+
+
 static afb_auth_t auth_admin = afb::auth_permission("superadmin");
+
+struct slave_config
+{
+	const char *uid = NULL;
+	const char *info = NULL;
+	json_object *onconf = NULL;
+	json_object *sensors = NULL;
+};
+
+
+static bool read_config(afb_api_t api, json_object *obj, slave_config &config)
+{
+	bool ok = true;
+	json_object *item;
+
+	if (!get(api, obj, "uid", item, json_type_string, true))
+		ok = false;
+	else
+		config.uid = json_object_get_string(item);
+
+	if (!get(api, obj, "sensors", item, json_type_array, true))
+		ok = false;
+	else {
+		config.sensors = item;
+	}
+
+	if (!get(api, obj, "info", item, json_type_string, false))
+		ok = false;
+	else
+		config.info = json_object_get_string(item);
+
+	if (!get(api, obj, "onconf", item, json_type_array, false))
+		ok = false;
+	else {
+		config.onconf = item;
+	}
+
+	return ok;
+}
 
 /**
 * @brief Link for AFB framework verb implementations
@@ -55,28 +97,27 @@ CANopenSlaveDriver::CANopenSlaveDriver(
 	, m_sensors{}
 {
 	int err = 0;
-	json_object *sensorJ, *sensorsJ;
+	json_object *obj;
 	char *adminCmd;
 	unsigned idx, count;
+	slave_config config;
 
-	err = rp_jsonc_unpack(slaveJ, "{ss,s?s,s?o,so}",
-			       "uid", &m_uid,
-			       "info", &m_info,
-			       "onconf", &m_onconfJ,
-			       "sensors", &sensorsJ);
-	if (err)
-	{
-		AFB_API_ERROR(m_api, "Fail to parse slave JSON : (%s)", json_object_to_json_string(slaveJ));
+	if (!read_config(m_api, slaveJ, config))
 		return;
-	}
 
+	m_uid = config.uid;
+	m_info = config.info;
+	m_onconfJ = config.onconf;
 	m_uid_len = strlen(m_uid);
+
 	err = asprintf(&adminCmd, "%s/%s", uid(), "superadmin");
 	if (err < 0)
 		throw std::runtime_error(std::string("Fail to create superadmin verb for sensor ") + m_uid);
+
 	err = afb_api_add_verb(m_api, adminCmd, m_info, OnRequest, this, &auth_admin, 0, 0);
 	if (err)
 		throw std::runtime_error(std::string("Failed to register superadmin verb ") + adminCmd);
+
 #if 1
 	err = afb_api_add_verb(m_api, uid(), m_info, OnRequest, this, nullptr, 0, 0);
 	if (err)
@@ -84,26 +125,13 @@ CANopenSlaveDriver::CANopenSlaveDriver(
 #endif
 
 	// loop on sensors
-	if (json_object_is_type(sensorsJ, json_type_array))
+	count = (unsigned)json_object_array_length(config.sensors);
+	for (idx = 0 ; idx < count ; idx++)
 	{
-		count = (unsigned)json_object_array_length(sensorsJ);
-		if (count == 0)
-			throw std::invalid_argument(std::string("Empty sensor array uid=") + m_uid);
-		sensorJ = json_object_array_get_idx(sensorsJ, 0);
-	}
-	else
-	{
-		count = 1;
-		sensorJ = sensorsJ;
-	}
-	for (idx = 0;;)
-	{
-		AFB_API_DEBUG(m_api, "creation of sensor %s", json_object_to_json_string(sensorJ));
-		std::shared_ptr<CANopenSensor> sensor = std::make_shared<CANopenSensor>(*this, sensorJ);
+		obj = json_object_array_get_idx(config.sensors, idx);
+		AFB_API_DEBUG(m_api, "creation of sensor %s", json_object_to_json_string(obj));
+		std::shared_ptr<CANopenSensor> sensor = std::make_shared<CANopenSensor>(*this, obj);
 		m_sensors[sensor->uid()] = sensor;
-		if (++idx == count)
-			break;
-		sensorJ = json_object_array_get_idx(sensorsJ, idx);
 	}
 }
 
