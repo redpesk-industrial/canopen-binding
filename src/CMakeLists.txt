@@ -48,6 +48,7 @@ add_library(CANopen MODULE
 		CANopenSensor.cpp
 		CANopenSlaveDriver.cpp
 		utils/utils.cpp
+		utils/jsonc.cpp
 	)
 
 INSTALL(TARGETS

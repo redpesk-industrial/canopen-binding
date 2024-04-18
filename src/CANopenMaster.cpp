@@ -32,6 +32,7 @@
 #include "CANopenSlaveDriver.hpp"
 
 #include "utils/utils.hpp"
+#include "utils/jsonc.hpp"
 
 struct master_config
 {
@@ -42,26 +43,6 @@ struct master_config
 	json_object *slaves = NULL;
 	uint16_t nodId = 255;
 };
-
-static bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, json_type type = json_type_null, bool mandatory = true)
-{
-	const char *errtxt = NULL;
-
-	if (!json_object_object_get_ex(obj, key, &item)) {
-		if (mandatory)
-			errtxt = "set";
-	}
-	else if (type != json_type_null && type != json_object_get_type(item)) {
-		if (type != json_type_double || json_type_int != json_object_get_type(item))
-			errtxt = "of valid type";
-	}
-	if (errtxt) {
-		AFB_API_ERROR(api, "key '%s' is not %s in configuration object %s",
-			key, errtxt, json_object_to_json_string(obj));
-		return false;
-	}
-	return true;
-}
 
 static bool read_config(afb_api_t api, json_object *obj, master_config &config)
 {
