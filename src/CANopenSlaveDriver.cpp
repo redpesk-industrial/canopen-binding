@@ -58,9 +58,8 @@ static bool read_config(afb_api_t api, json_object *obj, slave_config &config)
 
 	if (!get(api, obj, "sensors", item, json_type_array, true))
 		ok = false;
-	else {
+	else
 		config.sensors = item;
-	}
 
 	if (!get(api, obj, "info", item, json_type_string, false))
 		ok = false;
@@ -69,9 +68,8 @@ static bool read_config(afb_api_t api, json_object *obj, slave_config &config)
 
 	if (!get(api, obj, "onconf", item, json_type_array, false))
 		ok = false;
-	else {
+	else
 		config.onconf = item;
-	}
 
 	return ok;
 }

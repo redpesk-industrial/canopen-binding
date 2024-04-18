@@ -35,6 +35,72 @@
 
 #include "utils/jsonc.hpp"
 
+struct sensor_config
+{
+	const char *uid = NULL;
+	const char *type = NULL;
+	json_object *reg = NULL;
+	const char *format = NULL;
+	int size = 0;
+	const char *info = NULL;
+	const char *privilege = NULL;
+	json_object *args = NULL;
+	json_object *sample = NULL;
+};
+
+static bool read_config(afb_api_t api, json_object *obj, sensor_config &config)
+{
+	bool ok = true;
+	json_object *item;
+
+	if (!get(api, obj, "uid", item, json_type_string, true))
+		ok = false;
+	else
+		config.uid = json_object_get_string(item);
+
+	if (!get(api, obj, "type", item, json_type_string, true))
+		ok = false;
+	else
+		config.type = json_object_get_string(item);
+
+	if (!get(api, obj, "register", item, json_type_null, true))
+		ok = false;
+	else
+		config.reg = item;
+
+	if (!get(api, obj, "format", item, json_type_string, true))
+		ok = false;
+	else
+		config.format = json_object_get_string(item);
+
+	if (!get(api, obj, "size", item, json_type_int, true))
+		ok = false;
+	else
+		config.size = json_object_get_int(item);
+
+	if (!get(api, obj, "info", item, json_type_string, false))
+		ok = false;
+	else
+		config.info = json_object_get_string(item);
+
+	if (!get(api, obj, "info", item, json_type_string, false))
+		ok = false;
+	else
+		config.info = json_object_get_string(item);
+
+	if (!get(api, obj, "args", item, json_type_null, false))
+		ok = false;
+	else
+		config.args = item;
+
+	if (!get(api, obj, "sample", item, json_type_null, false))
+		ok = false;
+	else
+		config.sample = item;
+
+	return ok;
+}
+
 void CANopenSensor::sensorDynRequest(afb_req_t request, unsigned nparams, afb_data_t const params[])
 {
 	// retrieve action handle from request and execute the request
@@ -48,11 +114,8 @@ CANopenSensor::CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ)
 {
 	int err = 0;
 	int idx;
-	const char *type = NULL;
-	const char *privilege = NULL;
 	afb_auth_t *authent = NULL;
-	json_object *regJ;
-	json_object *argsJ = NULL;
+	sensor_config config;
 
 	// should already be allocated
 	assert(sensorJ);
@@ -60,39 +123,33 @@ CANopenSensor::CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ)
 	// set default values
 	m_sample = nullptr;
 
-	err = rp_jsonc_unpack(sensorJ, "{ss,ss,so,ss,si,s?s,s?s,s?o,s?o !}",
-			       "uid", &m_uid,
-			       "type", &type,
-			       "register", &regJ,
-			       "format", &m_format,
-			       "size", &m_size,
-			       "info", &m_info,
-			       "privilege", &privilege,
-			       "args", &argsJ,
-			       "sample", &m_sample);
-	if (err)
-	{
+	if (!read_config(*this, sensorJ, config)) {
 		APITHROW(*this, "failed to parse sensor config %s", json_object_to_json_string(sensorJ));
 	}
+	m_uid = config.uid;
+	m_format = config.format;
+	m_size = config.size;
+	m_info = config.info;
+	m_sample = config.sample;
 
 	// Get sensor register and sub register from the parsed register
 	try
 	{
-		idx = get_data_int32(regJ);
+		idx = get_data_int32(config.reg);
 	}
 	catch (std::runtime_error &e)
 	{
-		APITHROW(*this, "sensor %s, error at register convert %s: %s", m_uid, json_object_to_json_string(regJ), e.what());
+		APITHROW(*this, "sensor %s, error at register convert %s: %s", m_uid, json_object_to_json_string(config.reg), e.what());
 	}
 	m_subRegister = (uint8_t)(idx & 0x0ff);
 	m_register = (uint16_t)((idx >> 8) & 0x0ffff);
 
 	// create autentification for sensor
-	if (privilege)
+	if (config.privilege)
 	{
 		authent = &m_auth;
 		m_auth.type = afb_auth_Permission;
-		m_auth.text = privilege;
+		m_auth.text = config.privilege;
 	}
 
 	// load Encoder
@@ -101,11 +158,11 @@ CANopenSensor::CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ)
 	// Get the appropriate read/write callbacks
 	try
 	{
-		m_function = coEncoder->getfunctionCB(type, m_size);
+		m_function = coEncoder->getfunctionCB(config.type, m_size);
 	}
 	catch (std::out_of_range &)
 	{
-		APITHROW(*this, "sensor %s, unknown type %s for size %d", m_uid, type, m_size);
+		APITHROW(*this, "sensor %s, unknown type %s for size %d", m_uid, config.type, m_size);
 	}
 
 	// Get the encode formater

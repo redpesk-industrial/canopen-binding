@@ -59,3 +59,21 @@ bool get(afb_req_t req, json_object *obj, const char *key, json_object *&item, j
 	return true;
 }
 
+static bool _to_(const char *&item, json_object *&jso, bool status)
+{
+	if (status)
+		item = json_object_get_string(jso);
+	return status;
+}
+
+bool get(afb_api_t api, json_object *obj, const char *key, const char *&item, bool mandatory)
+{
+	json_object *jso;
+	return _to_(item, jso, get(api, obj, key, jso, json_type_string, mandatory));
+}
+
+bool get(afb_req_t req, json_object *obj, const char *key, const char *&item, bool mandatory)
+{
+	json_object *jso;
+	return _to_(item, jso, get(req, obj, key, jso, json_type_string, mandatory));
+}
