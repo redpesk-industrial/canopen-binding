@@ -24,6 +24,8 @@
 
 #include "utils/utils.hpp"
 
+#include "CANopenChannel.hpp"
+
 CANopenExec::CANopenExec(afb_api_t api)
 	: api_(api)
 	, io_guard_{}
@@ -93,47 +95,3 @@ void *CANopenExec::run_(void *arg)
 	return nullptr;
 }
 
-#include <iostream>
-// it to 128 if it is too small, which requires the CAP_NET_ADMIN capability
-// (the reason for this is to ensure proper blocking and polling behavior, see
-// section 3.4 in https://rtime.felk.cvut.cz/can/socketcan-qdisc-final.pdf).
-// There are two ways to avoid the need for sudo:
-// * Increase the size of the transmit queue : ip link set can0 txqueuelen 128
-// * Set CanController TX queue length to linux default : CanController ctrl("can0", 10)
-//   but this may cause frames to be dropped.
-CANopenChannel::CANopenChannel(CANopenExec &exec, const char *uri, const char *dcf, uint8_t nodID, size_t rxlen)
-	: exec_{exec}
-	, uri_{uri}
-	, dcf_{dcf}
-	, ctrl_{uri, rxlen}
-	, nodId_{nodID}
-	, chan_{exec, exec}
-	, master_{exec, exec, chan_, dcf, "", nodID}
-{
-#if 0
-	master_.OnWrite([this](uint16_t idx, uint8_t subidx) {
-		AFB_API_DEBUG(*this, "onwrite %04x.%d", unsigned(idx), unsigned(subidx));
-	});
-#endif
-}
-
-void CANopenChannel::reset()
-{
-	master_.Reset();
-}
-
-void CANopenChannel::start()
-{
-	chan_.open(ctrl_);
-	reset();
-	is_running_ = true;
-}
-
-void CANopenChannel::dump(std::ostream &os) const
-{
-	const char *i = "   ";
-	os << i << "id " << nodId() << std::endl;
-	os << i << "uri " << uri() << std::endl;
-	os << i << "run? " << (isRunning() ? "yes" : "no") << std::endl;
-	os << i << "dcf " << dcf() << std::endl;
-}

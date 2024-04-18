@@ -40,8 +40,6 @@ class CANopenSensor;
 class CANopenSlaveDriver : public lely::canopen::BasicDriver
 {
 public:
-	using lely::canopen::BasicDriver::BasicDriver;
-
 	CANopenSlaveDriver(
 		CANopenMaster &master,
 		json_object *slaveJ,
@@ -75,7 +73,6 @@ public:
 		return m_master.AsyncWrite(id(), idx, subidx, std::forward<T>(value));
 	}
 
-
 private:
 	void request(afb_req_t request, unsigned nparams, afb_data_t const params[]);
 
@@ -86,7 +83,7 @@ private:
 	unsigned m_uid_len = 0;
 	const char *m_info = nullptr;
 	uint m_count = 0;
-	bool m_connected = true;//false;
+	bool m_connected = true; //false;
 	cstrmap<std::shared_ptr<CANopenSensor>> m_sensors;
 	std::set<CANopenSensor *> m_sensorEventQueue;
 	json_object *m_onconfJ = nullptr;

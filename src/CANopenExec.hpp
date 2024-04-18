@@ -72,46 +72,4 @@ struct node { node*next; CANopenChannel*item; } *head_ = nullptr;
 	static void *run_(void*);
 };
 
-class CANopenChannel
-{
-public:
-	CANopenChannel(CANopenExec &exec, const char *uri, const char *dcf, uint8_t nodId, size_t rxlen = 0);
-	~CANopenChannel() {}
-	inline operator afb_api_t () const { return exec_; }
-	inline bool isRunning() const { return is_running_; }
-	inline operator lely::canopen::BasicMaster&() { return master_; }
-	inline operator const lely::canopen::BasicMaster&() const { return master_; }
-	inline const char *uri() const { return uri_.c_str(); }
-	inline const char *dcf() const { return dcf_.c_str(); }
-	inline uint8_t nodId() const { return nodId_; }
-	void dump(std::ostream &os) const;
-
-	void start();
-	void reset();
-
-	template <class T>
-	lely::canopen::SdoFuture<T>
-	AsyncRead(uint8_t id, uint16_t idx, uint8_t subidx) {
-		return master_.AsyncRead<T>(exec_, id, idx, subidx);
-	}
-
-	template <class T>
-	lely::canopen::SdoFuture<void>
-	AsyncWrite(uint8_t id, uint16_t idx, uint8_t subidx, T&& value) {
-		return master_.AsyncWrite(exec_, id, idx, subidx, ::std::forward<T>(value));
-	}
-
-private:
-	CANopenExec &exec_;
-	std::string uri_;
-	std::string dcf_;
-	lely::io::CanController ctrl_;
-	uint8_t nodId_ = 255;
-	lely::io::CanChannel chan_;
-	lely::canopen::BasicMaster master_;
-	bool is_running_ = false;
-};
-
-
-
 #endif // _ServiceCANopenExec_INCLUDE_

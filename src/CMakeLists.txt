@@ -41,8 +41,10 @@ INSTALL(TARGETS
 # Define project Targets
 add_library(CANopen MODULE
 		CANopenBinding.cpp
-		CANopenMaster.cpp
+		CANopenChannel.cpp
 		CANopenExec.cpp
+		CANopenMaster.cpp
+		CANopenMasterSet.cpp
 		CANopenSensor.cpp
 		CANopenSlaveDriver.cpp
 		utils/utils.cpp

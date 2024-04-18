@@ -40,6 +40,7 @@
 #include "common-binding.hpp"
 #include "utils/cstrmap.hpp"
 #include "CANopenExec.hpp"
+#include "CANopenChannel.hpp"
 
 class CANopenSlaveDriver;
 
@@ -52,7 +53,6 @@ public:
 	CANopenMaster(CANopenExec &exec);
 	~CANopenMaster();
 	inline bool isRunning() { return m_can && m_can->isRunning(); }
-	inline const char *info() { return m_info; }
 	json_object *infoJ();
 	int init(json_object *rtuJ, rp_path_search_t *paths);
 
@@ -87,6 +87,9 @@ private:
 	/// @brief uid of the master
 	const char *m_uid = nullptr;
 
+	/// @brief nodId of the master
+	uint8_t m_nodId = 255;
+
 	/// @brief description of the channel
 	const char *m_info = nullptr;
 
@@ -95,27 +98,6 @@ private:
 
 	/// @brief running status
 	bool m_isRunning = false;
-};
-
-/**
- * The class CANopenMaster holds a CANopen bus connection
- */
-class CANopenMasterSet
-{
-public:
-	CANopenMasterSet(CANopenExec &exec) : exec_{exec}, masters_{} {}
-	int add(json_object *cfg, rp_path_search_t *paths);
-	int start();
-	json_object *statusJ();
-	void slaveListInfo(json_object *groups);
-	void dump(std::ostream &os) const;
-
-private:
-	/// the single execution handler
-	CANopenExec &exec_;
-
-	/** masters canopen buses */
-	cstrmap<std::shared_ptr<CANopenMaster>> masters_;
 };
 
 #endif /* _ServiceCANopenMaster_INCLUDE_ */

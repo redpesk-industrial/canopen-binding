@@ -24,7 +24,7 @@
 
 
 #include "CANopenExec.hpp"
-#include "CANopenMaster.hpp"
+#include "CANopenMasterSet.hpp"
 #include "CANopenEncoder.hpp"
 
 #include <iostream>

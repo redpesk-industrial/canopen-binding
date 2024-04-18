@@ -33,6 +33,83 @@
 
 #include "utils/utils.hpp"
 
+struct master_config
+{
+	const char *uid = NULL;
+	const char *info = NULL;
+	const char *uri = NULL;
+	const char *dcf = NULL;
+	json_object *slaves = NULL;
+	uint16_t nodId = 255;
+};
+
+static bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, json_type type = json_type_null, bool mandatory = true)
+{
+	const char *errtxt = NULL;
+
+	if (!json_object_object_get_ex(obj, key, &item)) {
+		if (mandatory)
+			errtxt = "set";
+	}
+	else if (type != json_type_null && type != json_object_get_type(item)) {
+		if (type != json_type_double || json_type_int != json_object_get_type(item))
+			errtxt = "of valid type";
+	}
+	if (errtxt) {
+		AFB_API_ERROR(api, "key '%s' is not %s in configuration object %s",
+			key, errtxt, json_object_to_json_string(obj));
+		return false;
+	}
+	return true;
+}
+
+static bool read_config(afb_api_t api, json_object *obj, master_config &config)
+{
+	bool ok = true;
+	json_object *item;
+
+	if (!get(api, obj, "uid", item, json_type_string, true))
+		ok = false;
+	else
+		config.uid = json_object_get_string(item);
+
+	if (!get(api, obj, "uri", item, json_type_string, true))
+		ok = false;
+	else
+		config.uri = json_object_get_string(item);
+
+	if (!get(api, obj, "dcf", item, json_type_string, true))
+		ok = false;
+	else
+		config.dcf = json_object_get_string(item);
+
+	if (!get(api, obj, "nodId", item, json_type_int, true))
+		ok = false;
+	else {
+		int value = json_object_get_int(item);
+		if (value >= 1 && value <= 254)
+			config.nodId = (uint8_t)value;
+		else {
+			AFB_API_ERROR(api, "invalid nodId %d in configuration object %s",
+				value, json_object_to_json_string(obj));
+			ok = false;
+		}
+	}
+
+	if (!get(api, obj, "slaves", item, json_type_array, true))
+		ok = false;
+	else {
+		config.slaves = item;
+	}
+
+	if (!get(api, obj, "info", item, json_type_string, false))
+		ok = false;
+	else
+		config.info = json_object_get_string(item);
+
+	return ok;
+}
+
 CANopenMaster::CANopenMaster(CANopenExec &exec)
 	: m_exec(exec)
 {}
@@ -44,60 +121,38 @@ CANopenMaster::~CANopenMaster()
 int CANopenMaster::init(json_object *rtuJ, rp_path_search_t *paths)
 {
 	int err = 0;
-	json_object *slavesJ = NULL;
 
-	assert(rtuJ);
-	const char *dcfFile, *uri;
 	char *dcf;
-	int nodId;
+	int sid;
+	unsigned idx, count;
+	json_object *slaveNodId, *slaveJ;
 
-	err = rp_jsonc_unpack(rtuJ, "{ss,s?s,ss,s?s,s?i,so !}",
-			       "uid", &m_uid,
-			       "info", &m_info,
-			       "uri", &uri,
-			       "dcf", &dcfFile,
-			       "nodId", &nodId,
-			       "slaves", &slavesJ);
-	if (err)
-	{
-		AFB_API_ERROR(m_exec, "Fail to parse rtu JSON : (%s)", json_object_to_json_string(rtuJ));
+	master_config config;
+
+	// get the config
+	if (!read_config(m_exec, rtuJ, config))
 		return -1;
-	}
 
 	// locate the master DCF file
-	dcf = findFile(dcfFile, paths);
+	dcf = findFile(config.dcf, paths);
 	if (!dcf) {
-		AFB_API_ERROR(m_exec, "Could not find config file \"%s\"", dcfFile);
+		AFB_API_ERROR(m_exec, "Could not find config file \"%s\"", config.dcf);
 		return -1;
 	}
 	AFB_API_NOTICE(m_exec, "found DCF file at %s", dcf);
 
-	m_can = m_exec.open(uri, dcf, nodId);
+	m_uid = config.uid;
+	m_nodId = config.nodId;
+	m_info = config.info;
+	m_can = m_exec.open(config.uri, dcf, config.nodId);
 	free(dcf);
 
 	// loop on slaves
-	int sid;
-	unsigned idx = 0, count;
-	json_object *slaveNodId, *slaveJ;
-	if (json_object_is_type(slavesJ, json_type_array))
-	{
-		count = (unsigned)json_object_array_length(slavesJ);
-		if (count == 0)
-		{
-			AFB_API_ERROR(m_exec, "empty slaves array uid=%s uri=%s", m_uid, uri);
-			return -1;
-		}
-		slaveJ = json_object_array_get_idx(slavesJ, 0);
-	}
-	else
-	{
-		count = 1;
-		slaveJ = slavesJ;
-	}
-	for (;;)
-	{
+	count = (unsigned)json_object_array_length(config.slaves);
+	for (idx = 0 ; idx < count ; idx++) {
 		try
 		{
+			slaveJ = json_object_array_get_idx(config.slaves, idx);
 			AFB_API_DEBUG(m_exec, "creation of slave %s", json_object_to_json_string(slaveJ));
 			if (!json_object_object_get_ex(slaveJ, "nodId", &slaveNodId))
 				throw std::invalid_argument(std::string("id of slave is missing in ") + json_object_to_json_string(slaveJ));
@@ -114,9 +169,6 @@ int CANopenMaster::init(json_object *rtuJ, rp_path_search_t *paths)
 			AFB_API_ERROR(m_exec, "creation of slave failed %s", e.what());
 			return -1;
 		}
-		if (++idx >= count)
-			break;
-		slaveJ = json_object_array_get_idx(slavesJ, idx);
 	}
 	return 0;
 }
@@ -136,7 +188,7 @@ json_object *CANopenMaster::infoJ()
 	char *formatedInfo;
 
 	asprintf(&formatedInfo, "uri: '%s', nodId: %d, isRunning: %s, info: '%s', object dictionary: %s",
-				m_can->uri(), m_can->nodId(), isRunning() ? "true" : "false", m_info, m_can->dcf());
+				m_can->uri(), m_nodId, isRunning() ? "true" : "false", m_info, m_can->dcf());
 
 	json_object_object_add(responseJ, "Master_info", json_object_new_string(formatedInfo));
 	json_object *slavesJ = json_object_new_array();
@@ -158,7 +210,7 @@ json_object *CANopenMaster::statusJ()
 	json_object *master_status;
 	int err = rp_jsonc_pack(&master_status, "{ss si sb ss}",
 				 "uri", m_can->uri(),
-				 "nodId", (int)m_can->nodId(),
+				 "nodId", (int)m_nodId,
 				 "isRunning", isRunning(),
 				 "ObjectDictionary", m_can->dcf());
 	if (err)
@@ -169,9 +221,7 @@ json_object *CANopenMaster::statusJ()
 json_object *CANopenMaster::slaveListInfo(json_object *array)
 {
 	for (auto it : m_slaves)
-	{
 		json_object_array_add(array, it.second->infoJ());
-	}
 	return array;
 }
 
@@ -179,7 +229,8 @@ void CANopenMaster::dump(std::ostream &os) const
 {
 	const char *i = "";
 	os << i << "--- master ---" << std::endl;
-	os << i << "id " << uid() << std::endl;
+	os << i << "id " << m_uid << std::endl;
+	os << i << "nodId " << m_nodId << std::endl;
 	os << i << "run? " << (m_isRunning ? "yes" : "no") << std::endl;
 	os << i << m_info << std::endl;
 	m_can->dump(os);
@@ -189,75 +240,3 @@ void CANopenMaster::dump(std::ostream &os) const
 	}
 }
 
-int CANopenMasterSet::add(json_object *cfg, rp_path_search_t *paths)
-{
-	int status;
-
-	// Get the master canopen config, should be an object
-	if (!json_object_is_type(cfg, json_type_object)) {
-		AFB_API_ERROR(exec_, "Wrong CANopen descriptor");
-		return AFB_ERRNO_BAD_STATE;
-	}
-
-	// Load CANopen network configuration and start
-	CANopenMaster *master = new CANopenMaster(exec_);
-	if (master == nullptr) {
-		AFB_API_ERROR(exec_, "Out of memory");
-		return AFB_ERRNO_OUT_OF_MEMORY;
-	}
-
-	// init and start
-	status = master->init(cfg, paths);
-	if (status < 0) {
-		AFB_API_ERROR(exec_, "Initialization failed");
-		return AFB_ERRNO_GENERIC_FAILURE;
-	}
-
-	// record
-	masters_[master->uid()] = std::shared_ptr<CANopenMaster>(master);
-	return 0;
-}
-
-int CANopenMasterSet::start()
-{
-	for (auto master : masters_) {
-		int status = master.second->start();
-		if (status < 0) {
-			AFB_API_ERROR(exec_, "Start error");
-			return AFB_ERRNO_GENERIC_FAILURE;
-		}
-
-		// check it runs
-		if (!master.second->isRunning()) {
-			AFB_API_ERROR(exec_, "initialization failed");
-			return AFB_ERRNO_GENERIC_FAILURE;
-		}
-	}
-	return 0;
-}
-
-json_object *CANopenMasterSet::statusJ()
-{
-	json_object *status = nullptr;
-	if (masters_.size() == 1)
-		status = (*(masters_.begin())).second->statusJ();
-	else
-	{
-		status = json_object_new_array();
-		for(auto master : masters_)
-			json_object_array_add(status, master.second->statusJ());
-	}
-	return status;
-}
-
-void CANopenMasterSet::slaveListInfo(json_object *groups)
-{
-	for(auto master : masters_)
-		master.second->slaveListInfo(groups);
-}
-
-void CANopenMasterSet::dump(std::ostream &os) const
-{
-	for(auto master : masters_)
-		master.second->dump(os);
-}
