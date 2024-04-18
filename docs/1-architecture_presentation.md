@@ -9,8 +9,8 @@ It acts as a master on the CANopen bus and is generated and handled using
 
 ![CANopen service architecture](images/CANopen-service-architecture.jpg)
 
-To work, this binding requires a master DCF file in which it is described
-the slaves object dictionary, and a JSON file that describes the behavior
+To work, this binding requires a master DCF file in which is described
+the slaves objects dictionary, and a JSON file that describes the behavior
 of the binding and references the sensors (more information about it can be
 found in the configuration chapter).
 

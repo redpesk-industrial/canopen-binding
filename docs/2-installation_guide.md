@@ -26,7 +26,7 @@ package manager :
 
 ### Dependencies
 
-* redpesk binding develpement files 'afb-binding-dev' or 'afb-binding-devel'
+* redpesk binding development files 'afb-binding-dev' or 'afb-binding-devel'
 * redpesk helpers 'afb-helpers4-static'
 * lely-core CANopen library
 * for running, redpesk application framework 'afb-binder'
@@ -45,22 +45,35 @@ Install Programs and Libraries you need
 
 Warning : this binding uses a specific version of liblely please use the one specified below
 
-* Compile and Install lely-core CANopen library :
+* Compile and Install lely-core CANopen library (preferred version 2.3.3):
 
 ``` bash
-git clone http://git.ovh.iot/redpesk/redpesk-industrial/liblely.git
+curl https://gitlab.com/lely_industries/lely-core/-/archive/v2.3.3/lely-core-v2.3.3.tar.gz
+tar xf lely-core-v2.3.3.tar.gz
+cd lely-core-v2.3.3
+autoreconf -i
+./configure --disable-python --disable-threads --prefix=$HOME/.local
+make -j install
+```
+
+or from git
+
+``` bash
+git clone https://gitlab.com/lely_industries/lely-core.git
 cd liblely
 autoreconf -i
-./configure --disable-python --disable-threads
-make
-make install
+./configure --disable-python --disable-threads --prefix=$HOME/.local
+make -j install
 ```
 
 ### CANopen Binding build
 
 ```bash
 git clone https://github.com/redpesk-industrial/canopen-binding.git
-mkdir build && cd build
-cmake ..
+cd canopen-binding
+mkdir build
+cd build
+export PKG_CONFIG_PATH=$HOME/.local/lib64/pkgconfig:$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local
 make
 ```
