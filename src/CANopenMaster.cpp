@@ -46,46 +46,35 @@ struct master_config
 
 static bool read_config(afb_api_t api, json_object *obj, master_config &config)
 {
+	int intval;
 	bool ok = true;
-	json_object *item;
 
-	if (!get(api, obj, "uid", item, json_type_string, true))
+	if (!get(api, obj, "uid", config.uid))
 		ok = false;
-	else
-		config.uid = json_object_get_string(item);
 
-	if (!get(api, obj, "uri", item, json_type_string, true))
+	if (!get(api, obj, "uri", config.uri))
 		ok = false;
-	else
-		config.uri = json_object_get_string(item);
 
-	if (!get(api, obj, "dcf", item, json_type_string, true))
+	if (!get(api, obj, "dcf", config.dcf))
 		ok = false;
-	else
-		config.dcf = json_object_get_string(item);
 
-	if (!get(api, obj, "nodId", item, json_type_int, true))
+	if (!get(api, obj, "nodId", intval))
 		ok = false;
 	else {
-		int value = json_object_get_int(item);
-		if (value >= 1 && value <= 254)
-			config.nodId = (uint8_t)value;
+		if (intval >= 1 && intval <= 254)
+			config.nodId = (uint8_t)intval;
 		else {
 			AFB_API_ERROR(api, "invalid nodId %d in configuration object %s",
-				value, json_object_to_json_string(obj));
+				intval, json_object_to_json_string(obj));
 			ok = false;
 		}
 	}
 
-	if (!get(api, obj, "slaves", item, json_type_array, true))
+	if (!get(api, obj, "slaves", config.slaves, true, json_type_array))
 		ok = false;
-	else
-		config.slaves = item;
 
-	if (!get(api, obj, "info", item, json_type_string, false))
+	if (!get(api, obj, "info", config.info, false))
 		ok = false;
-	else
-		config.info = json_object_get_string(item);
 
 	return ok;
 }

@@ -49,27 +49,18 @@ struct slave_config
 static bool read_config(afb_api_t api, json_object *obj, slave_config &config)
 {
 	bool ok = true;
-	json_object *item;
 
-	if (!get(api, obj, "uid", item, json_type_string, true))
+	if (!get(api, obj, "uid", config.uid))
 		ok = false;
-	else
-		config.uid = json_object_get_string(item);
 
-	if (!get(api, obj, "sensors", item, json_type_array, true))
+	if (!get(api, obj, "sensors", config.sensors, true, json_type_array))
 		ok = false;
-	else
-		config.sensors = item;
 
-	if (!get(api, obj, "info", item, json_type_string, false))
+	if (!get(api, obj, "info", config.info, false))
 		ok = false;
-	else
-		config.info = json_object_get_string(item);
 
-	if (!get(api, obj, "onconf", item, json_type_array, false))
+	if (!get(api, obj, "onconf", config.onconf, false, json_type_array))
 		ok = false;
-	else
-		config.onconf = item;
 
 	return ok;
 }
@@ -154,11 +145,10 @@ void CANopenSlaveDriver::request(afb_req_t request, unsigned nparams, afb_data_t
 	}
 	queryJ = reinterpret_cast<json_object*>(afb_data_ro_pointer(data));
 
-	if (!get(request, queryJ, "action", obj, json_type_string, true)) {
+	if (!get(request, queryJ, "action", action)) {
 		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "bad or missing action");
 		return;
 	}
-	action = json_object_get_string(obj);
 	dataJ = json_object_object_get(queryJ, "data");
 
 	if (!strcasecmp(action, "WRITE"))

@@ -24,8 +24,11 @@
 
 #include "../common-binding.hpp"
 
-bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, json_type type = json_type_null, bool mandatory = true);
-bool get(afb_req_t req, json_object *obj, const char *key, json_object *&item, json_type type = json_type_null, bool mandatory = true);
+bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, bool mandatory = true, json_type type = json_type_null);
+bool get(afb_req_t req, json_object *obj, const char *key, json_object *&item, bool mandatory = true, json_type type = json_type_null);
 
 bool get(afb_api_t api, json_object *obj, const char *key, const char *&item, bool mandatory = true);
 bool get(afb_req_t req, json_object *obj, const char *key, const char *&item, bool mandatory = true);
+
+bool get(afb_api_t api, json_object *obj, const char *key, int &item, bool mandatory = true);
+bool get(afb_req_t req, json_object *obj, const char *key, int &item, bool mandatory = true);

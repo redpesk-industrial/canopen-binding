@@ -51,52 +51,30 @@ struct sensor_config
 static bool read_config(afb_api_t api, json_object *obj, sensor_config &config)
 {
 	bool ok = true;
-	json_object *item;
 
-	if (!get(api, obj, "uid", item, json_type_string, true))
+	if (!get(api, obj, "uid", config.uid))
 		ok = false;
-	else
-		config.uid = json_object_get_string(item);
 
-	if (!get(api, obj, "type", item, json_type_string, true))
+	if (!get(api, obj, "type", config.type))
 		ok = false;
-	else
-		config.type = json_object_get_string(item);
 
-	if (!get(api, obj, "register", item, json_type_null, true))
+	if (!get(api, obj, "register", config.reg))
 		ok = false;
-	else
-		config.reg = item;
 
-	if (!get(api, obj, "format", item, json_type_string, true))
+	if (!get(api, obj, "format", config.format))
 		ok = false;
-	else
-		config.format = json_object_get_string(item);
 
-	if (!get(api, obj, "size", item, json_type_int, true))
+	if (!get(api, obj, "size", config.size))
 		ok = false;
-	else
-		config.size = json_object_get_int(item);
 
-	if (!get(api, obj, "info", item, json_type_string, false))
+	if (!get(api, obj, "info", config.info, false))
 		ok = false;
-	else
-		config.info = json_object_get_string(item);
 
-	if (!get(api, obj, "info", item, json_type_string, false))
+	if (!get(api, obj, "args", config.args, false))
 		ok = false;
-	else
-		config.info = json_object_get_string(item);
 
-	if (!get(api, obj, "args", item, json_type_null, false))
+	if (!get(api, obj, "sample", config.sample, false))
 		ok = false;
-	else
-		config.args = item;
-
-	if (!get(api, obj, "sample", item, json_type_null, false))
-		ok = false;
-	else
-		config.sample = item;
 
 	return ok;
 }
@@ -234,11 +212,10 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 	queryJ = reinterpret_cast<json_object*>(afb_data_ro_pointer(data));
 
 	// parse request
-	if (!get(request, queryJ, "action", obj, json_type_string, true)) {
+	if (!get(request, queryJ, "action", action)) {
 		REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "bad or missing action");
 		return;
 	}
-	action = json_object_get_string(obj);
 	dataJ = json_object_object_get(queryJ, "data");
 
 	// parse the action

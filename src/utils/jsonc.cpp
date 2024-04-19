@@ -22,7 +22,7 @@
 
 #include "jsonc.hpp"
 
-static const char *_get_(json_object *obj, const char *key, json_object *&item, json_type type, bool mandatory)
+static const char *_get_(json_object *obj, const char *key, json_object *&item, bool mandatory, json_type type)
 {
 	const char *errtxt = nullptr;
 
@@ -37,9 +37,9 @@ static const char *_get_(json_object *obj, const char *key, json_object *&item, 
 	return errtxt;
 }
 
-bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, json_type type, bool mandatory)
+bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, bool mandatory, json_type type)
 {
-	const char *errtxt = _get_(obj, key, item, type, mandatory);
+	const char *errtxt = _get_(obj, key, item, mandatory, type);
 	if (errtxt != nullptr) {
 		AFB_API_ERROR(api, "key '%s' is not %s in object %s",
 			key, errtxt, json_object_to_json_string(obj));
@@ -48,9 +48,9 @@ bool get(afb_api_t api, json_object *obj, const char *key, json_object *&item, j
 	return true;
 }
 
-bool get(afb_req_t req, json_object *obj, const char *key, json_object *&item, json_type type, bool mandatory)
+bool get(afb_req_t req, json_object *obj, const char *key, json_object *&item, bool mandatory, json_type type)
 {
-	const char *errtxt = _get_(obj, key, item, type, mandatory);
+	const char *errtxt = _get_(obj, key, item, mandatory, type);
 	if (errtxt != nullptr) {
 		AFB_REQ_ERROR(req, "key '%s' is not %s in object %s",
 			key, errtxt, json_object_to_json_string(obj));
@@ -69,11 +69,31 @@ static bool _to_(const char *&item, json_object *&jso, bool status)
 bool get(afb_api_t api, json_object *obj, const char *key, const char *&item, bool mandatory)
 {
 	json_object *jso;
-	return _to_(item, jso, get(api, obj, key, jso, json_type_string, mandatory));
+	return _to_(item, jso, get(api, obj, key, jso, mandatory, json_type_string));
 }
 
 bool get(afb_req_t req, json_object *obj, const char *key, const char *&item, bool mandatory)
 {
 	json_object *jso;
-	return _to_(item, jso, get(req, obj, key, jso, json_type_string, mandatory));
+	return _to_(item, jso, get(req, obj, key, jso, mandatory, json_type_string));
 }
+
+static bool _to_(int &item, json_object *&jso, bool status)
+{
+	if (status)
+		item = json_object_get_int(jso);
+	return status;
+}
+
+bool get(afb_api_t api, json_object *obj, const char *key, int &item, bool mandatory)
+{
+	json_object *jso;
+	return _to_(item, jso, get(api, obj, key, jso, mandatory, json_type_int));
+}
+
+bool get(afb_req_t req, json_object *obj, const char *key, int &item, bool mandatory)
+{
+	json_object *jso;
+	return _to_(item, jso, get(req, obj, key, jso, mandatory, json_type_int));
+}
+
