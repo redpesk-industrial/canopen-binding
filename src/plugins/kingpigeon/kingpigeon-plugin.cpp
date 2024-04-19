@@ -16,7 +16,7 @@ COdataType newBoolArrayfromArray(json_object *dataJ)
 {
 	uint32_t value = 0;
 	unsigned i, n = (unsigned)json_object_array_length(dataJ);
-	for (int i = 0; i < n; i++)
+	for (i = 0; i < n; i++)
 		if (json_object_get_boolean(json_object_array_get_idx(dataJ, i)))
 			value |= ((uint32_t)1) << i;
 	return COdataType(value);
@@ -43,15 +43,16 @@ COdataType setBoolArrayFromIntMask(COdataType data, bool val, int mask)
 COdataType setBoolArrayFromArrayMask(COdataType data, bool val, json_object *maskJ)
 {
 	uint32_t x = data;
+	unsigned i, n = (unsigned)json_object_array_length(maskJ);
 	if (val)
 	{
-		for (int i = 0; i < json_object_array_length(maskJ); i++)
+		for (i = 0; i < n; i++)
 			if (json_object_get_boolean(json_object_array_get_idx(maskJ, i)))
 				x |= 1 << i;
 	}
 	else
 	{
-		for (int i = 0; i < json_object_array_length(maskJ); i++)
+		for (i = 0; i < n; i++)
 			if (json_object_get_boolean(json_object_array_get_idx(maskJ, i)))
 				x &= (0b11111111 ^ (1 << i));
 	}

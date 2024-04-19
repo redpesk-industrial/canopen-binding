@@ -132,7 +132,6 @@ void CANopenSlaveDriver::request(afb_req_t request, unsigned nparams, afb_data_t
 	json_object *dataJ = nullptr;
 	json_object *regJ;
 	json_object *valJ;
-	json_object *obj;
 	json_object *queryJ;
 	int size;
 	int err;
@@ -474,10 +473,10 @@ void CANopenSlaveDriver::doStartAction(int idxcnf, ::std::function<void(::std::e
 				try {
 					::std::rethrow_exception(result.error());
 				} catch (const ::std::system_error& e) {
-					AFB_API_ERROR(*this, "%s: error (%s, %x > [%x.%x]), %s", uid(), data, idx, subIdx, e.what());
+					AFB_API_ERROR(*this, "%s: error (%x > [%x.%x]), %s", uid(), data, idx, subIdx, e.what());
 				} catch (...) {
 					// Ignore exceptions we cannot handle.
-					AFB_API_ERROR(*this, "%s: error (%s, %x > [%x.%x])", uid(), data, idx, subIdx);
+					AFB_API_ERROR(*this, "%s: error (%x > [%x.%x])", uid(), data, idx, subIdx);
 				}
 		        }
 			else

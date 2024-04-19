@@ -66,7 +66,6 @@ private:
 	afb_api_t api_;
 	lely::io::IoGuard io_guard_;
 	std::list<std::shared_ptr<CANopenChannel>> channels_;
-struct node { node*next; CANopenChannel*item; } *head_ = nullptr;
 
 	pthread_t evl = 0;
 	static void *run_(void*);

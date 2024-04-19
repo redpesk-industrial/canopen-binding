@@ -51,10 +51,13 @@ class COdataType
 #else
 # error "unexpected CODATASZ value"
 #endif
-	union
+	union v
 	{
 		u_t u;
 		const char *str;
+		v() {}
+		v(u_t x) : u{x} {}
+		v(const char *x) : str{x} {}
 	} v_;
 	enum {
 		t_void,
@@ -64,17 +67,17 @@ class COdataType
 public:
 	void reset() { t_ = t_void; }
 	COdataType() : t_{t_void} {}
-	COdataType(int8_t v) : t_{t_u}, v_{.u{u_t(i_t(v))}} {}
-	COdataType(uint8_t v) : t_{t_u}, v_{.u{u_t(v)}} {}
-	COdataType(int16_t v) : t_{t_u}, v_{.u{u_t(i_t(v))}} {}
-	COdataType(uint16_t v) : t_{t_u}, v_{.u{u_t(v)}} {}
-	COdataType(int32_t v) : t_{t_u}, v_{.u{u_t(i_t(v))}} {}
-	COdataType(uint32_t v) : t_{t_u}, v_{.u{u_t(v)}} {}
+	COdataType(int8_t v)   : v_{u_t(i_t(v))}, t_{t_u} {}
+	COdataType(uint8_t v)  : v_{u_t(v)}     , t_{t_u} {}
+	COdataType(int16_t v)  : v_{u_t(i_t(v))}, t_{t_u} {}
+	COdataType(uint16_t v) : v_{u_t(v)}     , t_{t_u} {}
+	COdataType(int32_t v)  : v_{u_t(i_t(v))}, t_{t_u} {}
+	COdataType(uint32_t v) : v_{u_t(v)}     , t_{t_u} {}
 #if CODATASZ >= 64
-	COdataType(int64_t v) : t_{t_u}, v_{.u{u_t(v)}} {}
-	COdataType(uint64_t v) : t_{t_u}, v_{.u{v}} {}
+	COdataType(int64_t v)  : v_{u_t(v)}     , t_{t_u} {}
+	COdataType(uint64_t v) : v_{v}          , t_{t_u} {}
 #endif
-	COdataType(const char *v) : t_{t_str}, v_{.str{v}} {}
+	COdataType(const char *v) : v_{v}, t_{t_str} {}
 	operator int8_t() const { return int8_t(v_.u); }
 	operator uint8_t() const { return uint8_t(v_.u); }
 	operator int16_t() const { return int16_t(v_.u); }

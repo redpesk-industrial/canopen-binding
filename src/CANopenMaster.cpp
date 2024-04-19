@@ -89,8 +89,6 @@ CANopenMaster::~CANopenMaster()
 
 int CANopenMaster::init(json_object *rtuJ, rp_path_search_t *paths)
 {
-	int err = 0;
-
 	char *dcf;
 	int sid;
 	unsigned idx, count;

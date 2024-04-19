@@ -27,12 +27,12 @@
 #include "CANopenChannel.hpp"
 
 CANopenExec::CANopenExec(afb_api_t api)
-	: api_(api)
-	, io_guard_{}
-	, lely::io::Context{}
+	: lely::io::Context{}
 	, lely::io::Poll{*this, 0}
 	, lely::ev::Loop{io_poll_get_poll(*this), 1}
 	, lely::io::Timer{*this, *this, CLOCK_MONOTONIC}
+	, api_(api)
+	, io_guard_{}
 	, channels_{}
 {
 }
@@ -51,7 +51,6 @@ std::shared_ptr<CANopenChannel> CANopenExec::open(const char *uri, const char *d
 
 	std::shared_ptr<CANopenChannel> channel(new CANopenChannel(*this, uri, dcf, nodID));
 	channels_.push_back(channel);
-node*h = new node; h->next=head_; h->item=channel.get(); head_=h;
 	return channel;
 }
 

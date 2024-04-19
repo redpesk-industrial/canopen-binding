@@ -180,7 +180,7 @@ CANopenSensor::CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ)
 		}
 	}
 
-	memset(&m_currentVal, 0, sizeof m_currentVal);
+	m_currentVal = 0;
 
 	// create the verb for the sensor
 
@@ -197,7 +197,6 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 {
 	json_object *queryJ;
 	const char *action;
-	json_object *obj;
 	json_object *dataJ = nullptr;
 	afb_data_t data;
 	int err;
