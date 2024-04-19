@@ -31,7 +31,7 @@ target_link_libraries(CANopenEncoder ${link_libraries})
 INSTALL(TARGETS
 		CANopenEncoder
 		DESTINATION
-		${APP_DIR}/lib
+		${CMAKE_INSTALL_FULL_LIBDIR}
 	)
 
 #SET_TARGET_PROPERTIES(CANopenEncoder PROPERTIES
@@ -61,8 +61,6 @@ INSTALL(TARGETS
 SET_TARGET_PROPERTIES(CANopen PROPERTIES
 	PREFIX ""
 	LINK_FLAGS "-Wl,--version-script=${vscript}"
-	INSTALL_RPATH "$ORIGIN"
-#	IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/*${TARGET_NAME}.so
 )
 target_link_libraries(CANopen ${link_libraries} CANopenEncoder)
 

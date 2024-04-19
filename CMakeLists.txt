@@ -41,9 +41,6 @@ set(PROJECT_AUTHOR "Iot-Team")
 set(PROJECT_AUTHOR_MAIL "johann.gautier@iot.bzh")
 set(PROJECT_LICENSE "APL2.0")
 set(PROJECT_URL ${PROJECT_HOMEPAGE_URL})
-set(API_NAME "CANopen")
-set(WIDGET_TYPE application/vnd.RP.service)
-set(WIDGET_ENTRY_POINT lib/afb-CANopen.so)
 
 # Declare options
 set(AFM_APP_DIR ${CMAKE_INSTALL_PREFIX}/redpesk CACHE PATH "Applications directory")
