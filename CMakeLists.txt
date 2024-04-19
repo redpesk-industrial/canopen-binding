@@ -30,7 +30,7 @@ include(GNUInstallDirs)
 # Project Info
 # ------------------
 project(canopen-binding
-	VERSION 1.99.999
+	VERSION 2.0.0
 	DESCRIPTION "Provide a redpesk CANopen Binding"
 	HOMEPAGE_URL "https://github.com/iotbzh/CANopen-service"
 	LANGUAGES CXX C)
@@ -57,7 +57,7 @@ pkg_check_modules(deps REQUIRED
 	afb-binding
 	librp-utils-static
 	afb-helpers4-static>=10.0.5
-	liblely-coapp
+	liblely-coapp>=2.3
 )
 
 pkg_get_variable(vscript afb-binding version_script)
