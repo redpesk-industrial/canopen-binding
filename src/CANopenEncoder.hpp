@@ -32,7 +32,7 @@
 class CANopenSensor;
 
 #ifndef CODATASZ
-# define CODATASZ 64
+# define CODATASZ 32
 #endif
 #ifndef CODATADBL
 # define CODATADBL 0

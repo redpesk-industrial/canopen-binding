@@ -128,12 +128,12 @@ COdataType CANopenEncoder::encodeInt(json_object *dataJ, CANopenSensor *sensor)
 	return COdataType(get_data_int32(dataJ));
 }
 
-/*
+#if CODATADBL
 COdataType CANopenEncoder::encodeDouble(json_object *dataJ, CANopenSensor *sensor)
 {
 	return COdataType(get_data_int64(dataJ));
 }
-*/
+#endif
 
 COdataType CANopenEncoder::encodeString(json_object *dataJ, CANopenSensor *sensor)
 {
@@ -150,12 +150,12 @@ json_object *CANopenEncoder::decodeUint(COdataType data, CANopenSensor *sensor)
 	return json_object_new_int64(int64_t(data));
 }
 
-/*
+#if CODATADBL
 json_object *CANopenEncoder::decodeDouble(COdataType data, CANopenSensor *sensor)
 {
 	return json_object_new_double((double)data.tInt64);
 }
-*/
+#endif
 
 json_object *CANopenEncoder::decodeString(COdataType data, CANopenSensor *sensor)
 {
@@ -177,10 +177,12 @@ void CANopenEncoder::coSDOwrite32bits(CANopenSensor *sensor, COdataType data)
 	coSDOwriteAsync32bits(sensor, data);
 }
 
+#if CODATASZ >= 64
 void CANopenEncoder::coSDOwrite64bits(CANopenSensor *sensor, COdataType data)
 {
 	coSDOwriteAsync64bits(sensor, data);
 }
+#endif
 
 void CANopenEncoder::coSDOwriteString(CANopenSensor *sensor, COdataType data)
 {
@@ -202,10 +204,12 @@ lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync32bits(CANopenSens
 	return sensor->AsyncWrite<uint32_t>((uint32_t)data);
 }
 
+#if CODATASZ >= 64
 lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync64bits(CANopenSensor *sensor, COdataType data)
 {
 	return sensor->AsyncWrite<uint64_t>((uint64_t)data);
 }
+#endif
 
 lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsyncString(CANopenSensor *sensor, COdataType data)
 {
@@ -248,6 +252,7 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync32bits(CANope
 		});
 }
 
+#if CODATASZ >= 64
 lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync64bits(CANopenSensor *sensor)
 {
 	return sensor->AsyncRead<uint64_t>().then(
@@ -259,6 +264,7 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync64bits(CANope
 			}
 		});
 }
+#endif
 
 lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsyncString(CANopenSensor *sensor)
 {
