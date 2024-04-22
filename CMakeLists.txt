@@ -24,9 +24,6 @@
 
 cmake_minimum_required(VERSION 3.15)
 
-include(FindPkgConfig)
-include(GNUInstallDirs)
-
 # Project Info
 # ------------------
 project(canopen-binding
@@ -40,7 +37,9 @@ set(PROJECT_ICON "icon.png")
 set(PROJECT_AUTHOR "Iot-Team")
 set(PROJECT_AUTHOR_MAIL "johann.gautier@iot.bzh")
 set(PROJECT_LICENSE "APL2.0")
-set(PROJECT_URL ${PROJECT_HOMEPAGE_URL})
+
+include(FindPkgConfig)
+include(GNUInstallDirs)
 
 # Declare options
 set(AFM_APP_DIR ${CMAKE_INSTALL_PREFIX}/redpesk CACHE PATH "Applications directory")
@@ -56,8 +55,6 @@ pkg_check_modules(deps REQUIRED
 	afb-helpers4-static>=10.0.5
 	liblely-coapp>=2.3
 )
-
-pkg_get_variable(vscript afb-binding version_script)
 
 add_compile_options(${deps_CFLAGS})
 include_directories(${deps_INCLUDE_DIRS})

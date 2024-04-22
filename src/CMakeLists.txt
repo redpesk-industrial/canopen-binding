@@ -22,50 +22,40 @@
 #  $RP_END_LICENSE$
 ###########################################################################
 
-add_library(CANopenEncoder SHARED
-		CANopenEncoder.cpp
-		CANopenGlue.cpp
-	)
+add_library(CANopenEncoder SHARED CANopenEncoder.cpp CANopenGlue.cpp)
 target_link_libraries(CANopenEncoder ${link_libraries})
-
-INSTALL(TARGETS
-		CANopenEncoder
-		DESTINATION
-		${CMAKE_INSTALL_FULL_LIBDIR}
-	)
-
-#SET_TARGET_PROPERTIES(CANopenEncoder PROPERTIES
-#	IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/libCANopenEncoder.so
-#)
+install(TARGETS CANopenEncoder LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 # Define project Targets
 add_library(CANopen MODULE
-		CANopenBinding.cpp
-		CANopenChannel.cpp
-		CANopenExec.cpp
-		CANopenMaster.cpp
-		CANopenMasterSet.cpp
-		CANopenSensor.cpp
-		CANopenSlaveDriver.cpp
-		utils/utils.cpp
-		utils/jsonc.cpp
-	)
+	CANopenBinding.cpp
+	CANopenChannel.cpp
+	CANopenExec.cpp
+	CANopenMaster.cpp
+	CANopenMasterSet.cpp
+	CANopenSensor.cpp
+	CANopenSlaveDriver.cpp
+	utils/utils.cpp
+	utils/jsonc.cpp
+)
 
-INSTALL(TARGETS
-		CANopen
-		DESTINATION
-		${APP_DIR}/lib
-	)
+install(TARGETS
+	CANopen
+	DESTINATION
+	${APP_DIR}/lib
+)
 
 # Binder exposes a unique public entry point
-SET_TARGET_PROPERTIES(CANopen PROPERTIES
-	PREFIX ""
-	LINK_FLAGS "-Wl,--version-script=${vscript}"
-)
+set_target_properties(CANopen PROPERTIES PREFIX "")
 target_link_libraries(CANopen ${link_libraries} CANopenEncoder)
 
+pkg_get_variable(vscript QUIET afb-binding version_script)
+if(vscript_FOUND)
+	set_target_properties(CANopen PROPERTIES LINK_FLAGS "-Wl,--version-script=${vscript}")
+endif()
+
 configure_file(manifest.yml.in manifest.yml @ONLY)
-INSTALL(FILES
+install(FILES
 		${CMAKE_CURRENT_BINARY_DIR}/manifest.yml
 		DESTINATION
 		${APP_DIR}/.rpconfig
@@ -73,12 +63,11 @@ INSTALL(FILES
 
 # compile any C file starting with a lower case
 file(GLOB CHEADERS *.hpp)
-INSTALL(FILES ${CHEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/CANopen)
+install(FILES ${CHEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/CANopen)
 
 configure_file(CANopen.pc.in CANopen.pc @ONLY)
-INSTALL(FILES
-		${CMAKE_CURRENT_BINARY_DIR}/CANopen.pc
-		DESTINATION
-        ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-	)
-
+install(FILES
+	${CMAKE_CURRENT_BINARY_DIR}/CANopen.pc
+	DESTINATION
+	${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)

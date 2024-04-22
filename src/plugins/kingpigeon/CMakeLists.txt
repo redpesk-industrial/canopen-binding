@@ -25,12 +25,6 @@
 # Define project Targets
 add_library(kingpigeon MODULE kingpigeon-plugin.cpp)
 
-# Alsa Plugin properties
-SET_TARGET_PROPERTIES(kingpigeon PROPERTIES
-		PREFIX ""
-		INSTALL_RPATH "$ORIGIN/.."
-)
-
 target_link_libraries(kingpigeon CANopenEncoder ${link_libraries})
 
 # compilation include path
