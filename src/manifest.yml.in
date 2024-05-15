@@ -15,8 +15,8 @@ targets:
     content:
       src:  lib/CANopen.so
       type: application/vnd.redpesk.resource
-   required-permission:
+    required-permission:
       - urn:AGL:permission::partner:scope-platform
-   provided-binding:
+    provided-binding:
       - name:  canopen
         value: lib/CANopen.so
