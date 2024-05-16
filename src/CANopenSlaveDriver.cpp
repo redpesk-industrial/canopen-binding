@@ -65,16 +65,6 @@ static bool read_config(afb_api_t api, json_object *obj, slave_config &config)
 	return ok;
 }
 
-/**
-* @brief Link for AFB framework verb implementations
-*/
-void CANopenSlaveDriver::OnRequest(afb_req_t request, unsigned nparams, afb_data_t const params[])
-{
-	// retrieve action handle from request and execute the request
-	CANopenSlaveDriver *slave = reinterpret_cast<CANopenSlaveDriver*>(afb_req_get_vcbdata(request));
-	slave->request(request, nparams, params);
-}
-
 CANopenSlaveDriver::CANopenSlaveDriver(
 	CANopenMaster &master,
 	json_object *slaveJ,
@@ -122,6 +112,13 @@ CANopenSlaveDriver::CANopenSlaveDriver(
 		std::shared_ptr<CANopenSensor> sensor = std::make_shared<CANopenSensor>(*this, obj);
 		m_sensors[sensor->uid()] = sensor;
 	}
+}
+
+void CANopenSlaveDriver::OnRequest(afb_req_t request, unsigned nparams, afb_data_t const params[])
+{
+	// retrieve action handle from request and execute the request
+	CANopenSlaveDriver *slave = reinterpret_cast<CANopenSlaveDriver*>(afb_req_get_vcbdata(request));
+	slave->request(request, nparams, params);
 }
 
 void CANopenSlaveDriver::request(afb_req_t request, unsigned nparams, afb_data_t const params[])

@@ -74,6 +74,7 @@ public:
 	}
 
 private:
+	static void OnRequest(afb_req_t request, unsigned nparams, afb_data_t const params[]);
 	void request(afb_req_t request, unsigned nparams, afb_data_t const params[]);
 
 private:
@@ -95,7 +96,6 @@ private:
 	void OnHeartbeat(bool occurred) noexcept override;
 	void OnBoot(lely::canopen::NmtState nmtState, char es, const ::std::string &) noexcept override;
 	void OnConfig(::std::function<void(::std::error_code ec)> res) noexcept override;
-	static void OnRequest(afb_req_t request, unsigned nparams, afb_data_t const params[]);
 };
 
 #endif /* _CANOPENSLAVEDRIVER_INCLUDE_ */
