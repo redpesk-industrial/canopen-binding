@@ -28,6 +28,7 @@
 #include <list>
 #include <memory>
 #include <ostream>
+#include <functional>
 
 #include <lely/io2/linux/can.hpp>
 #include <lely/io2/posix/poll.hpp>
@@ -76,6 +77,7 @@ public:
 		return m_can->AsyncWrite(id, idx, subidx, std::forward<T>(value));
 	}
 
+	void foreach(const std::function<void(const char*,CANopenSlaveDriver&)> &fun);
 
 private:
 	/// @brief the single execution handler

@@ -207,3 +207,8 @@ void CANopenMaster::dump(std::ostream &os) const
 	}
 }
 
+void CANopenMaster::foreach(const std::function<void(const char*,CANopenSlaveDriver&)> &fun)
+{
+	for(auto slave : m_slaves)
+		fun(slave.first, *slave.second);
+}

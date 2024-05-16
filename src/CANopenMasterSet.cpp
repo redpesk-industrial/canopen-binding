@@ -98,3 +98,9 @@ void CANopenMasterSet::dump(std::ostream &os) const
 	for(auto master : masters_)
 		master.second->dump(os);
 }
+
+void CANopenMasterSet::foreach(const std::function<void(const char*,CANopenMaster&)> &fun)
+{
+	for(auto master : masters_)
+		fun(master.first, *master.second);
+}

@@ -26,6 +26,7 @@
 #define _ServiceCANopenMasterSet_INCLUDE_
 
 #include <memory>
+#include <functional>
 
 #include "CANopenMaster.hpp"
 #include "utils/cstrmap.hpp"
@@ -42,6 +43,7 @@ public:
 	json_object *statusJ();
 	void slaveListInfo(json_object *groups);
 	void dump(std::ostream &os) const;
+	void foreach(const std::function<void(const char*,CANopenMaster&)> &fun);
 
 private:
 	/// the single execution handler

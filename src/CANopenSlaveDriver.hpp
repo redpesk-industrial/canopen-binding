@@ -67,6 +67,8 @@ public:
 		return m_master.AsyncWrite(id(), idx, subidx, std::forward<T>(value));
 	}
 
+	void foreach(const std::function<void(const char*,CANopenSensor&)> &fun);
+
 private:
 	static void OnAdminRequest(afb_req_t request, unsigned nparams, afb_data_t const params[]);
 	void admin(afb_req_t request, unsigned nparams, afb_data_t const params[]);

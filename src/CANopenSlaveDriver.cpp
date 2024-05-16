@@ -118,7 +118,6 @@ void CANopenSlaveDriver::OnAdminRequest(afb_req_t request, unsigned nparams, afb
 
 void CANopenSlaveDriver::admin(afb_req_t request, unsigned nparams, afb_data_t const params[])
 {
-
 	const char *action;
 	afb_data_t data;
 	json_object *dataJ = nullptr;
@@ -446,3 +445,8 @@ void CANopenSlaveDriver::doStartAction(int idxcnf, ::std::function<void(::std::e
 	}
 }
 
+void CANopenSlaveDriver::foreach(const std::function<void(const char*,CANopenSensor&)> &fun)
+{
+	for(auto sensor : m_sensors)
+		fun(sensor.first, *sensor.second);
+}
