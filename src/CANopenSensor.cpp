@@ -119,8 +119,7 @@ CANopenSensor::CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ)
 	{
 		APITHROW(*this, "sensor %s, error at register convert %s: %s", m_uid, json_object_to_json_string(config.reg), e.what());
 	}
-	m_subRegister = (uint8_t)(idx & 0x0ff);
-	m_register = (uint16_t)((idx >> 8) & 0x0ffff);
+	m_id = CANopenSensorId((uint32_t)idx);
 
 	// create autentification for sensor
 	if (config.privilege)
@@ -440,6 +439,6 @@ void CANopenSensor::dump(std::ostream &os) const
 	os << i << "verb " << m_verb << std::endl;
 	os << i << "fmt " << m_format << std::endl;
 	os << i << "size " << int(m_size) << std::endl;
-	os << i << "reg " << int(m_register) << std::endl;
-	os << i << "subreg " << int(m_subRegister) << std::endl;
+	os << i << "reg " << int(reg()) << std::endl;
+	os << i << "subreg " << int(subReg()) << std::endl;
 }

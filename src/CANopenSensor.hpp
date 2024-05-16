@@ -32,6 +32,21 @@
 #include "CANopenEncoder.hpp"
 #include "CANopenSlaveDriver.hpp"
 
+class CANopenSensorId
+{
+private:
+	uint32_t id_;
+public:
+	inline CANopenSensorId() : id_{0} {}
+	inline CANopenSensorId(uint32_t id) : id_{id} {}
+	inline CANopenSensorId(uint16_t reg, uint8_t subreg) : id_{(((uint32_t)reg) << 8) | (uint32_t)subreg} {}
+	inline operator uint32_t() const { return id_; }
+	inline uint32_t id() const { return id_; }
+	inline uint16_t reg() const { return (uint16_t)(id_ >> 8); }
+	inline uint8_t subreg() const { return (uint8_t)id_; }
+	inline bool operator <(const CANopenSensorId &other) const { return id_ < other.id_; }
+};
+
 class CANopenSensor
 {
 public:
@@ -43,13 +58,14 @@ public:
 
 	inline coEncodeCB encoder() { return m_encode; }
 	inline coDecodeCB decoder() { return m_decode; }
-	inline const char *uid() { return m_uid; }
+	inline const char *uid() const { return m_uid; }
 	inline const std::string &verb() const { return m_verb; }
-	inline afb_event_t event() { return m_event; }
-	inline uint16_t reg() { return m_register; }
-	inline uint8_t subReg() { return m_subRegister; }
-	inline int size() { return m_size; }
-	inline COdataType currentVal() { return m_currentVal; }
+	inline afb_event_t event() const { return m_event; }
+	inline CANopenSensorId id() const { return m_id; }
+	inline uint16_t reg() const { return m_id.reg(); }
+	inline uint8_t subReg() const { return m_id.subreg(); }
+	inline int size() const { return m_size; }
+	inline COdataType currentVal() const { return m_currentVal; }
 
 	inline operator CANopenSlaveDriver&() { return m_driver; }
 	inline CANopenSlaveDriver *driver() { return &m_driver; }
@@ -60,12 +76,12 @@ public:
 
 	template <class T>
 	lely::canopen::SdoFuture<T> AsyncRead() {
-		return m_driver.AsyncRead<T>(m_register, m_subRegister);
+		return m_driver.AsyncRead<T>(m_id.reg(), m_id.subreg());
 	}
 
 	template <class T>
 	lely::canopen::SdoFuture<void> AsyncWrite(T&& value) {
-		return m_driver.AsyncWrite(m_register, m_subRegister, std::forward<T>(value));
+		return m_driver.AsyncWrite(m_id.reg(), m_id.subreg(), std::forward<T>(value));
 	}
 
 	void dump(std::ostream &os) const;
@@ -77,8 +93,7 @@ private:
 	const char *m_privileges;
 	const char *m_format;
 	std::string m_verb;
-	uint16_t m_register;
-	uint8_t m_subRegister;
+	CANopenSensorId m_id;
 	json_object *m_sample{nullptr};
 	afb_auth_t m_auth;
 
