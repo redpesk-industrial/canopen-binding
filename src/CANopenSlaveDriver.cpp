@@ -34,8 +34,12 @@
 
 #include "utils/jsonc.hpp"
 
-
+#if !NO_ADMIN_PERMISSION
 static afb_auth_t auth_admin = afb::auth_permission("urn:redpesk:permission:canopen:partner:admin");
+#define ADMIN_PERMISSION &auth_admin
+#else
+#define ADMIN_PERMISSION nullptr
+#endif
 
 struct slave_config
 {
@@ -77,7 +81,6 @@ CANopenSlaveDriver::CANopenSlaveDriver(
 {
 	int err = 0;
 	json_object *obj;
-	char *adminCmd;
 	unsigned idx, count;
 	slave_config config;
 
@@ -89,19 +92,9 @@ CANopenSlaveDriver::CANopenSlaveDriver(
 	m_onconfJ = config.onconf;
 	m_uid_len = strlen(m_uid);
 
-	err = asprintf(&adminCmd, "%s/%s", uid(), "superadmin");
-	if (err < 0)
-		throw std::runtime_error(std::string("Fail to create superadmin verb for sensor ") + m_uid);
-
-	err = afb_api_add_verb(m_api, adminCmd, m_info, OnRequest, this, &auth_admin, 0, 0);
+	err = afb_api_add_verb(m_api, uid(), m_info, OnAdminRequest, this, ADMIN_PERMISSION, 0, 0);
 	if (err)
-		throw std::runtime_error(std::string("Failed to register superadmin verb ") + adminCmd);
-
-#if 1
-	err = afb_api_add_verb(m_api, uid(), m_info, OnRequest, this, nullptr, 0, 0);
-	if (err)
-		throw std::runtime_error(std::string("Failed to register superadmin verb ") + adminCmd);
-#endif
+		throw std::runtime_error(std::string("Failed to register admin verb ") + uid());
 
 	// loop on sensors
 	count = (unsigned)json_object_array_length(config.sensors);
@@ -114,14 +107,14 @@ CANopenSlaveDriver::CANopenSlaveDriver(
 	}
 }
 
-void CANopenSlaveDriver::OnRequest(afb_req_t request, unsigned nparams, afb_data_t const params[])
+void CANopenSlaveDriver::OnAdminRequest(afb_req_t request, unsigned nparams, afb_data_t const params[])
 {
 	// retrieve action handle from request and execute the request
 	CANopenSlaveDriver *slave = reinterpret_cast<CANopenSlaveDriver*>(afb_req_get_vcbdata(request));
-	slave->request(request, nparams, params);
+	slave->admin(request, nparams, params);
 }
 
-void CANopenSlaveDriver::request(afb_req_t request, unsigned nparams, afb_data_t const params[])
+void CANopenSlaveDriver::admin(afb_req_t request, unsigned nparams, afb_data_t const params[])
 {
 
 	const char *action;

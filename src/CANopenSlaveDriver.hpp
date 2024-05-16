@@ -74,8 +74,8 @@ public:
 	}
 
 private:
-	static void OnRequest(afb_req_t request, unsigned nparams, afb_data_t const params[]);
-	void request(afb_req_t request, unsigned nparams, afb_data_t const params[]);
+	static void OnAdminRequest(afb_req_t request, unsigned nparams, afb_data_t const params[]);
+	void admin(afb_req_t request, unsigned nparams, afb_data_t const params[]);
 
 private:
 	CANopenMaster &m_master;
