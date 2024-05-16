@@ -304,8 +304,7 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 	// implement the subscriptions
 	else if (act == Subscribe)
 	{
-		m_event_active = true;
-		err = afb_req_subscribe(request, m_event);
+		err = subscribe(request);
 		if (err >= 0)
 		{
 			afb_req_reply(request, 0, 0, NULL);
@@ -317,7 +316,7 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 	}
 	else if (act == Unsubscribe)
 	{
-		err = afb_req_unsubscribe(request, m_event);
+		err = unsubscribe(request);
 		if (err >= 0)
 		{
 			afb_req_reply(request, 0, 0, NULL);
@@ -327,6 +326,17 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 			REQFAIL(request, AFB_ERRNO_GENERIC_FAILURE, "Fail to subscribe slave=%s sensor=%s", m_driver.uid(), m_uid);
 		}
 	}
+}
+
+int CANopenSensor::subscribe(afb_req_t request)
+{
+	m_event_active = true;
+	return afb_req_subscribe(request, m_event);
+}
+
+int CANopenSensor::unsubscribe(afb_req_t request)
+{
+	return afb_req_unsubscribe(request, m_event);
 }
 
 void CANopenSensor::push()

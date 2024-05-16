@@ -86,6 +86,9 @@ public:
 
 	void dump(std::ostream &os) const;
 
+	int subscribe(afb_req_t request);
+	int unsubscribe(afb_req_t request);
+
 private:
 	CANopenSlaveDriver &m_driver;
 	const char *m_uid;
