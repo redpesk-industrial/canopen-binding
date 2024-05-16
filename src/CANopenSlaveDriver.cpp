@@ -140,7 +140,7 @@ void CANopenSlaveDriver::admin(afb_req_t request, unsigned nparams, afb_data_t c
 	}
 	dataJ = json_object_object_get(queryJ, "data");
 
-	if (!strcasecmp(action, "WRITE"))
+	if (!strcmp(action, "write"))
 	{
 		// get write parameters
 		err = rp_jsonc_unpack(dataJ, "{so so si!}",
@@ -196,7 +196,7 @@ void CANopenSlaveDriver::admin(afb_req_t request, unsigned nparams, afb_data_t c
 			afb_req_unref(request);
 		}
 	}
-	else if (!strcasecmp(action, "READ"))
+	else if (!strcmp(action, "read"))
 	{
 		// get read parameters
 		err = rp_jsonc_unpack(dataJ, "{so !}",
@@ -266,7 +266,7 @@ int CANopenSlaveDriver::delSensorEvent(CANopenSensor *sensor)
 	{
 		for (auto q : m_sensorEventSet)
 		{
-			if (!strcasecmp(q->uid(), sensor->uid()))
+			if (!strcmp(q->uid(), sensor->uid()))
 			{
 				m_sensorEventSet.erase(q);
 				break;

@@ -218,13 +218,13 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 	dataJ = json_object_object_get(queryJ, "data");
 
 	// parse the action
-	if (!strcasecmp(action, "WRITE"))
+	if (!strcmp(action, "write"))
 		act = Write;
-	else if (!strcasecmp(action, "READ"))
+	else if (!strcmp(action, "read"))
 		act = Read;
-	else if (!strcasecmp(action, "SUBSCRIBE"))
+	else if (!strcmp(action, "subscribe"))
 		act = Subscribe;
-	else if (!strcasecmp(action, "UNSUBSCRIBE"))
+	else if (!strcmp(action, "unsubscribe"))
 		act = Unsubscribe;
 
 	// check validity of action
