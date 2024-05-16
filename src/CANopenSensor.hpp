@@ -101,6 +101,7 @@ private:
 	// 1 = 8bits 2 = 16bits 4 = 32bits 5 = string
 	int m_size;
 	afb_event_t m_event = nullptr;
+	bool m_event_active = false;
 
 	// read/write callback functions
 	CANopenEncodeCbS m_function;

@@ -45,12 +45,6 @@ public:
 		json_object *slaveJ,
 		uint8_t nodId);
 
-	// IMPORTANT : use this funtion only in the driver exec
-	int addSensorEvent(CANopenSensor *sensor);
-
-	// IMPORTANT : use this funtion only in the driver exec
-	int delSensorEvent(CANopenSensor *sensor);
-
 	json_object *infoJ();
 	const char *info();
 
@@ -86,7 +80,7 @@ private:
 	uint m_count = 0;
 	bool m_connected = true; //false;
 	cstrmap<std::shared_ptr<CANopenSensor>> m_sensors;
-	std::set<CANopenSensor *> m_sensorEventSet;
+	std::map<uint32_t, CANopenSensor*> m_regs;
 	json_object *m_onconfJ = nullptr;
 
 	void doStartAction(int idx, ::std::function<void(::std::error_code ec)> res) noexcept;

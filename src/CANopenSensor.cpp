@@ -304,11 +304,8 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 	// implement the subscriptions
 	else if (act == Subscribe)
 	{
-		err = m_driver.addSensorEvent(this);
-		if (err >= 0)
-		{
-			err = afb_req_subscribe(request, m_event);
-		}
+		m_event_active = true;
+		err = afb_req_subscribe(request, m_event);
 		if (err >= 0)
 		{
 			afb_req_reply(request, 0, 0, NULL);
@@ -337,48 +334,46 @@ void CANopenSensor::push()
 	json_object *jval = m_decode(m_currentVal, this);
 	afb_data_t dval = afb_data_json_c_hold(jval);
 	int sts = afb_event_push(m_event, 1, &dval);
-	if (sts <= 0)
-	{
-		if (sts < 0)
-		{
-			AFB_API_ERROR(m_driver, "event push error slave=%s sensor=%s", m_driver.uid(), m_uid);
-		}
-		m_driver.delSensorEvent(this);
-	}
+	if (sts < 0)
+		AFB_API_ERROR(m_driver, "event push error slave=%s sensor=%s", m_driver.uid(), m_uid);
+	else if (sts == 0)
+		m_event_active = false;
 }
 
 void CANopenSensor::readThenPush()
 {
-	if (m_function.readCB)
-	{
-		// synchronous read
-		try {
-			m_currentVal = m_function.readCB(this);
-			push();
-		}
-		catch (lely::canopen::SdoError &e)
+	if (m_event_active) {
+		if (m_function.readCB)
 		{
-			AFB_API_ERROR(*this, "Fail to read slave=%s sensor=%s: %s", m_driver.uid(), m_uid, e.what());
-		}
-	}
-	else
-	{
-		// asynchronous read
-		m_function.readAsyncCB(this).then(
-			m_driver,
-			[this](lely::canopen::SdoFuture<COdataType> f) {
-				// getting the value can raise the exception
-				try
-				{
-					m_currentVal = f.get().value();
-					push();
-				}
-				catch(std::exception &e)
-				{
-					AFB_API_ERROR(m_driver, "event push error slave=%s sensor=%s", m_driver.uid(), m_uid);
-				}
+			// synchronous read
+			try {
+				m_currentVal = m_function.readCB(this);
+				push();
 			}
-		);
+			catch (lely::canopen::SdoError &e)
+			{
+				AFB_API_ERROR(*this, "Fail to read slave=%s sensor=%s: %s", m_driver.uid(), m_uid, e.what());
+			}
+		}
+		else
+		{
+			// asynchronous read
+			m_function.readAsyncCB(this).then(
+				m_driver,
+				[this](lely::canopen::SdoFuture<COdataType> f) {
+					// getting the value can raise the exception
+					try
+					{
+						m_currentVal = f.get().value();
+						push();
+					}
+					catch(std::exception &e)
+					{
+						AFB_API_ERROR(m_driver, "event push error slave=%s sensor=%s", m_driver.uid(), m_uid);
+					}
+				}
+			);
+		}
 	}
 }
 

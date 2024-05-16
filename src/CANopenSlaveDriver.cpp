@@ -78,6 +78,7 @@ CANopenSlaveDriver::CANopenSlaveDriver(
 	, m_master{master}
 	, m_api{master}
 	, m_sensors{}
+	, m_regs{}
 {
 	int err = 0;
 	json_object *obj;
@@ -104,6 +105,7 @@ CANopenSlaveDriver::CANopenSlaveDriver(
 		AFB_API_DEBUG(m_api, "creation of sensor %s", json_object_to_json_string(obj));
 		std::shared_ptr<CANopenSensor> sensor = std::make_shared<CANopenSensor>(*this, obj);
 		m_sensors[sensor->uid()] = sensor;
+		m_regs[sensor->id()] = sensor.get();
 	}
 }
 
@@ -245,41 +247,6 @@ invalid_request:
 	REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "Invalid 'request' rtu=%s query=%s", uid(), json_object_get_string(queryJ));
 }
 
-// IMPORTANT : use this funtion only in the driver exec
-int CANopenSlaveDriver::addSensorEvent(CANopenSensor *sensor)
-{
-	try
-	{
-		m_sensorEventSet.insert(sensor);
-	}
-	catch (const std::exception &)
-	{
-		return -1;
-	}
-	return 0;
-}
-
-// IMPORTANT : use this funtion only int the driver exec
-int CANopenSlaveDriver::delSensorEvent(CANopenSensor *sensor)
-{
-	try
-	{
-		for (auto q : m_sensorEventSet)
-		{
-			if (!strcmp(q->uid(), sensor->uid()))
-			{
-				m_sensorEventSet.erase(q);
-				break;
-			}
-		}
-	}
-	catch (const std::exception &)
-	{
-		return -1;
-	}
-	return 0;
-}
-
 const char *CANopenSlaveDriver::info()
 {
 	char *formatedInfo;
@@ -313,16 +280,10 @@ void CANopenSlaveDriver::OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept
 #if 0
 	AFB_API_DEBUG(*this, "-- on RPDO write %s:%04x:%u --", uid(), (unsigned)idx, (unsigned)subidx);
 #endif
-	// check in the sensor event list
-	for (auto sensor : m_sensorEventSet)
-	{
-		// If the sensor match, read it and push the event to afb
-		if (idx == sensor->reg() && subidx == sensor->subReg())
-		{
-			sensor->readThenPush();
-			break;
-		}
-	}
+	CANopenSensorId sid(idx, subidx);
+	auto iter = m_regs.find(sid);
+	if (iter != m_regs.end())
+		iter->second->readThenPush();
 }
 
 void CANopenSlaveDriver::OnHeartbeat(bool occurred) noexcept
