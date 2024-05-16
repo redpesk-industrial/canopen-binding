@@ -35,7 +35,7 @@
 #include "utils/jsonc.hpp"
 
 
-static afb_auth_t auth_admin = afb::auth_permission("superadmin");
+static afb_auth_t auth_admin = afb::auth_permission("urn:redpesk:permission:canopen:partner:admin");
 
 struct slave_config
 {
