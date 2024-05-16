@@ -60,7 +60,7 @@ public:
 	inline coDecodeCB decoder() { return m_decode; }
 	inline const char *uid() const { return m_uid; }
 	inline const std::string &verb() const { return m_verb; }
-	inline afb_event_t event() const { return m_event; }
+	inline const char *event_name() const { return m_uid; }
 	inline CANopenSensorId id() const { return m_id; }
 	inline uint16_t reg() const { return m_id.reg(); }
 	inline uint8_t subReg() const { return m_id.subreg(); }

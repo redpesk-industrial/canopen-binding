@@ -171,7 +171,7 @@ CANopenSensor::CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ)
 		}
 
 		// register the event
-		err = afb_api_new_event(*this, m_uid, &m_event);
+		err = afb_api_new_event(*this, event_name(), &m_event);
 		if (err < 0)
 		{
 			m_decode = nullptr;
