@@ -250,7 +250,7 @@ int CANopenSlaveDriver::addSensorEvent(CANopenSensor *sensor)
 {
 	try
 	{
-		m_sensorEventQueue.insert(m_sensorEventQueue.end(), sensor);
+		m_sensorEventSet.insert(sensor);
 	}
 	catch (const std::exception &)
 	{
@@ -264,14 +264,13 @@ int CANopenSlaveDriver::delSensorEvent(CANopenSensor *sensor)
 {
 	try
 	{
-		for (auto q = m_sensorEventQueue.begin(); q != m_sensorEventQueue.end();)
+		for (auto q : m_sensorEventSet)
 		{
-			if (!strcasecmp((*q)->uid(), sensor->uid()))
+			if (!strcasecmp(q->uid(), sensor->uid()))
 			{
-				q = m_sensorEventQueue.erase(q);
+				m_sensorEventSet.erase(q);
+				break;
 			}
-			else
-				q++;
 		}
 	}
 	catch (const std::exception &)
@@ -315,7 +314,7 @@ void CANopenSlaveDriver::OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept
 	AFB_API_DEBUG(*this, "-- on RPDO write %s:%04x:%u --", uid(), (unsigned)idx, (unsigned)subidx);
 #endif
 	// check in the sensor event list
-	for (auto sensor : m_sensorEventQueue)
+	for (auto sensor : m_sensorEventSet)
 	{
 		// If the sensor match, read it and push the event to afb
 		if (idx == sensor->reg() && subidx == sensor->subReg())

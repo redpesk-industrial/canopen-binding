@@ -86,7 +86,7 @@ private:
 	uint m_count = 0;
 	bool m_connected = true; //false;
 	cstrmap<std::shared_ptr<CANopenSensor>> m_sensors;
-	std::set<CANopenSensor *> m_sensorEventQueue;
+	std::set<CANopenSensor *> m_sensorEventSet;
 	json_object *m_onconfJ = nullptr;
 
 	void doStartAction(int idx, ::std::function<void(::std::error_code ec)> res) noexcept;
