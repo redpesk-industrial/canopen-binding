@@ -25,9 +25,14 @@
 
 #include "CANopenExec.hpp"
 #include "CANopenMasterSet.hpp"
+#include "CANopenMaster.hpp"
+#include "CANopenSlaveDriver.hpp"
+#include "CANopenSensor.hpp"
 #include "CANopenEncoder.hpp"
+#include "utils/jsonc.hpp"
 
 #include <iostream>
+#include <regex>
 
 #include <rp-utils/rp-jsonc.h>
 #include <rp-utils/rp-path-search.h>
@@ -134,7 +139,7 @@ class coConfig
 			AFB_API_ERROR(rootapi_, "failed to read events section");
 			status = rc;
 		}
-masters_.dump(std::cerr);
+//masters_.dump(std::cerr);
 		// creates the api
 		if (status == 0) {
 			rc = afb_create_api(&api_, metadata_.api, metadata_.info, 1, _control_, reinterpret_cast<void*>(this));
@@ -143,7 +148,7 @@ masters_.dump(std::cerr);
 				status = rc;
 			}
 		}
-masters_.dump(std::cerr);
+//masters_.dump(std::cerr);
 		// lock json config in ram
 		return status;
 	}
@@ -339,6 +344,107 @@ masters_.dump(std::cerr);
 		afb_req_reply_json_c_hold(request, err, response);
 	}
 
+	// tiny wrapper to enter instance method
+	static void _subscribe_(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		coConfig *current = reinterpret_cast<coConfig*>(afb_req_get_vcbdata(request));
+		current->subunsub(request, nparams, params, true);
+	}
+
+	// tiny wrapper to enter instance method
+	static void _unsubscribe_(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		coConfig *current = reinterpret_cast<coConfig*>(afb_req_get_vcbdata(request));
+		current->subunsub(request, nparams, params, false);
+	}
+
+	// implement subscribe or unsubscribe
+	void subunsub(afb_req_t request, unsigned nparams, afb_data_t const params[], bool sub)
+	{
+		afb_data_t data;
+		json_object *args, *item;
+		const char *pattern;
+		size_t count, nidx;
+		int size;
+		int rc, nrc;
+		int (CANopenSensor::*func)(afb_req_t) = sub ? &CANopenSensor::subscribe : &CANopenSensor::unsubscribe;
+
+		if (nparams == 0) {
+			count = 1;
+			item = NULL;
+		}
+		else {
+			// get the JSON object
+			rc = afb_req_param_convert(request, 0, AFB_PREDEFINED_TYPE_JSON_C, &data);
+			if (rc < 0) {
+				REQFAIL(request, AFB_ERRNO_INVALID_REQUEST, "conversion to JSON failed %d", rc);
+				return;
+			}
+
+			args = reinterpret_cast<json_object*>(afb_data_ro_pointer(data));
+			if(json_object_is_type(args, json_type_array)) {
+				count = json_object_array_length(args);
+				item = count ? json_object_array_get_idx(args, 0) : NULL;
+			}
+			else {
+				count = 1;
+				item = args;
+			}
+		}
+
+		rc = 0;
+		for (nidx = 1 ; ; nidx++) {
+			nrc = 0;
+			if (item == NULL && nidx == 1)
+				pattern = ".*";
+			else if (json_object_is_type(item, json_type_string))
+				pattern = json_object_get_string(item);
+			else {
+				AFB_REQ_ERROR(request, "pattern isn't a string %s", json_object_to_json_string(item));
+				nrc = AFB_ERRNO_INVALID_REQUEST;
+			}
+			if (nrc == 0) {
+				try {
+					struct {
+						std::basic_regex<char> re;
+						afb_req_t request;
+						int (CANopenSensor::*func)(afb_req_t);
+						int rc;
+					} data = {
+						std::basic_regex(pattern),
+						request,
+						func,
+						0
+					};
+					masters_.foreach([&data](const char *masterid, CANopenMaster &master){
+						master.foreach([&data](const char *slaveid, CANopenSlaveDriver &slave){
+							slave.foreach([&data](const char *sensorid, CANopenSensor &sensor){
+								if (std::regex_match(sensorid, data.re)) {
+									int rc = (sensor.*data.func)(data.request);
+									if (rc < 0) {
+										AFB_REQ_ERROR(data.request, "sub/unsub error for %s", sensorid);
+										data.rc = rc;
+									}
+								}
+							});
+						});
+					});
+					nrc = data.rc;
+				}
+				catch(...) {
+					AFB_REQ_ERROR(request, "Bad pattern %s", pattern);
+					nrc = AFB_ERRNO_INVALID_REQUEST;
+				}
+			}
+			if (nrc < 0)
+				rc = nrc;
+			if (nidx == count)
+				break;
+			item = json_object_array_get_idx(args, nidx);
+		}
+		afb_req_reply(request, rc < 0 ? AFB_ERRNO_GENERIC_FAILURE : 0, 0, NULL);
+	}
+
 	// Structure for describing static verbs
 	struct sverbdsc
 		{
@@ -348,16 +454,18 @@ masters_.dump(std::cerr);
 		};
 
 	// Declare array of static verb not depending on CANopen json config file
-	static const sverbdsc common_verbs[2];
+	static const sverbdsc common_verbs[4];
 
 	// the entry point
 	friend int afbBindingEntry(afb_api_t rootapi, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *closure);
 };
 
 // Declare array of static verb not depending on CANopen json config file
-const coConfig::sverbdsc coConfig::common_verbs[2] = {
+const coConfig::sverbdsc coConfig::common_verbs[4] = {
 	{ .name = "ping", .info = "CANopen API ping test", .callback = coConfig::_ping_ },
 	{ .name = "info", .info = "display info about the binding", .callback = coConfig::_info_ },
+	{ .name = "subscribe", .info = "subscribe to pattern event", .callback = coConfig::_subscribe_ },
+	{ .name = "unsubscribe", .info = "unsubscribe to pattern event", .callback = coConfig::_unsubscribe_ },
 };
 
 coConfig *last_global_coconfig;
