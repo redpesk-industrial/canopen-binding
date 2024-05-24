@@ -84,7 +84,7 @@ int32_t get_data_int32(json_object *dataJ)
 	else if (json_object_get_type(dataJ) == json_type_int)
 		return json_object_get_int(dataJ);
 
-	throw std::runtime_error("data " + (std::string)json_object_to_json_string(dataJ) + " not handeled by get_data_int32");
+	throw std::runtime_error("data " + (std::string)json_object_to_json_string(dataJ) + " not handled by get_data_int32");
 	return 0;
 }
 
