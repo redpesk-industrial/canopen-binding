@@ -177,12 +177,10 @@ void CANopenEncoder::coSDOwrite32bits(CANopenSensor *sensor, COdataType data)
 	coSDOwriteAsync32bits(sensor, data);
 }
 
-#if CODATASZ >= 64
 void CANopenEncoder::coSDOwrite64bits(CANopenSensor *sensor, COdataType data)
 {
 	coSDOwriteAsync64bits(sensor, data);
 }
-#endif
 
 void CANopenEncoder::coSDOwriteString(CANopenSensor *sensor, COdataType data)
 {
@@ -204,12 +202,10 @@ lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync32bits(CANopenSens
 	return sensor->AsyncWrite<uint32_t>((uint32_t)data);
 }
 
-#if CODATASZ >= 64
 lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync64bits(CANopenSensor *sensor, COdataType data)
 {
 	return sensor->AsyncWrite<uint64_t>((uint64_t)data);
 }
-#endif
 
 lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsyncString(CANopenSensor *sensor, COdataType data)
 {
@@ -252,7 +248,6 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync32bits(CANope
 		});
 }
 
-#if CODATASZ >= 64
 lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync64bits(CANopenSensor *sensor)
 {
 	return sensor->AsyncRead<uint64_t>().then(
@@ -264,7 +259,6 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync64bits(CANope
 			}
 		});
 }
-#endif
 
 lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsyncString(CANopenSensor *sensor)
 {
@@ -293,6 +287,11 @@ void CANopenEncoder::coPDOwrite32bits(CANopenSensor *sensor, COdataType data)
 	sensor->driver()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint32_t)data;
 }
 
+void CANopenEncoder::coPDOwrite64bits(CANopenSensor *sensor, COdataType data)
+{
+	sensor->driver()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint64_t)data;
+}
+
 COdataType CANopenEncoder::coPDOread8bits(CANopenSensor *sensor)
 {
 	return COdataType((uint8_t)sensor->driver()->rpdo_mapped[sensor->reg()][sensor->subReg()]);
@@ -308,26 +307,38 @@ COdataType CANopenEncoder::coPDOread32bits(CANopenSensor *sensor)
 	return COdataType((uint32_t)sensor->driver()->rpdo_mapped[sensor->reg()][sensor->subReg()]);
 }
 
+COdataType CANopenEncoder::coPDOread64bits(CANopenSensor *sensor)
+{
+	return COdataType((uint64_t)sensor->driver()->rpdo_mapped[sensor->reg()][sensor->subReg()]);
+}
+
 const std::map<int, CANopenEncodeCbS> CANopenEncoder::SDOfunctionCBs{
     {1, {nullptr, coSDOwrite8bits, coSDOreadAsync8bits, coSDOwriteAsync8bits}},
     {2, {nullptr, coSDOwrite16bits, coSDOreadAsync16bits, coSDOwriteAsync16bits}},
     {4, {nullptr, coSDOwrite32bits, coSDOreadAsync32bits, coSDOwriteAsync32bits}},
-    {5, {nullptr, coSDOwriteString, coSDOreadAsyncString, coSDOwriteAsyncString}}};
+    {5, {nullptr, coSDOwriteString, coSDOreadAsyncString, coSDOwriteAsyncString}},
+    {8, {nullptr, coSDOwrite64bits, coSDOreadAsync64bits, coSDOwriteAsync64bits}}
+};
 
 const std::map<int, CANopenEncodeCbS> CANopenEncoder::RPDOfunctionCBs{
     {1, {coPDOread8bits, nullptr, nullptr, nullptr}},
     {2, {coPDOread16bits, nullptr, nullptr, nullptr}},
-    {4, {coPDOread32bits, nullptr, nullptr, nullptr}}};
+    {4, {coPDOread32bits, nullptr, nullptr, nullptr}},
+    {8, {coPDOread64bits, nullptr, nullptr, nullptr}}
+};
 
 const std::map<int, CANopenEncodeCbS> CANopenEncoder::TPDOfunctionCBs{
     {1, {nullptr, coPDOwrite8bits, nullptr, nullptr}},
     {2, {nullptr, coPDOwrite16bits, nullptr, nullptr}},
-    {4, {nullptr, coPDOwrite32bits, nullptr, nullptr}}};
+    {4, {nullptr, coPDOwrite32bits, nullptr, nullptr}},
+    {8, {nullptr, coPDOwrite64bits, nullptr, nullptr}}
+};
 
 const std::map<std::string, std::map<int, CANopenEncodeCbS>> CANopenEncoder::encodingTable{
     {"SDO", SDOfunctionCBs},
     {"TPDO", TPDOfunctionCBs},
-    {"RPDO", RPDOfunctionCBs}};
+    {"RPDO", RPDOfunctionCBs}
+};
 
 std::map<std::string, coEncodeCB> CANopenEncoder::coEncodeFormaterTable{
     {"int", encodeInt},
@@ -335,7 +346,8 @@ std::map<std::string, coEncodeCB> CANopenEncoder::coEncodeFormaterTable{
 #if CODATADBL
     {"double", encodeDouble},
 #endif
-    {"string", encodeString}};
+    {"string", encodeString}
+};
 
 std::map<std::string, coDecodeCB> CANopenEncoder::coDecodeFormaterTable{
     {"int", decodeInt},
@@ -343,4 +355,5 @@ std::map<std::string, coDecodeCB> CANopenEncoder::coDecodeFormaterTable{
 #if CODATADBL
     {"double", decodeDouble},
 #endif
-    {"string", decodeString}};
+    {"string", decodeString}
+};

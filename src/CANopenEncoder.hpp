@@ -31,9 +31,6 @@
 
 class CANopenSensor;
 
-#ifndef CODATASZ
-# define CODATASZ 32
-#endif
 #ifndef CODATADBL
 # define CODATADBL 0
 #endif
@@ -42,15 +39,8 @@ class CANopenSensor;
 // Container for multiple type variable
 class COdataType
 {
-#if CODATASZ == 64
 	using u_t = uint64_t;
 	using i_t = int64_t;
-#elif CODATASZ == 32
-	using u_t = uint32_t;
-	using i_t = int32_t;
-#else
-# error "unexpected CODATASZ value"
-#endif
 	union v
 	{
 		u_t u;
@@ -73,10 +63,8 @@ public:
 	COdataType(uint16_t v) : v_{u_t(v)}     , t_{t_u} {}
 	COdataType(int32_t v)  : v_{u_t(i_t(v))}, t_{t_u} {}
 	COdataType(uint32_t v) : v_{u_t(v)}     , t_{t_u} {}
-#if CODATASZ >= 64
 	COdataType(int64_t v)  : v_{u_t(v)}     , t_{t_u} {}
 	COdataType(uint64_t v) : v_{v}          , t_{t_u} {}
-#endif
 	COdataType(const char *v) : v_{v}, t_{t_str} {}
 	operator int8_t() const { return int8_t(v_.u); }
 	operator uint8_t() const { return uint8_t(v_.u); }
@@ -148,37 +136,33 @@ private:
 	static void coSDOwrite16bits(CANopenSensor *sensor, COdataType data);
 	static void coSDOwrite32bits(CANopenSensor *sensor, COdataType data);
 	static void coSDOwriteString(CANopenSensor *sensor, COdataType data);
-#if CODATASZ >= 64
 	static void coSDOwrite64bits(CANopenSensor *sensor, COdataType data);
-#endif
 
 	// SDO encoding functions
 	static lely::canopen::SdoFuture<void> coSDOwriteAsync8bits(CANopenSensor *sensor, COdataType data);
 	static lely::canopen::SdoFuture<void> coSDOwriteAsync16bits(CANopenSensor *sensor, COdataType data);
 	static lely::canopen::SdoFuture<void> coSDOwriteAsync32bits(CANopenSensor *sensor, COdataType data);
 	static lely::canopen::SdoFuture<void> coSDOwriteAsyncString(CANopenSensor *sensor, COdataType data);
-#if CODATASZ >= 64
 	static lely::canopen::SdoFuture<void> coSDOwriteAsync64bits(CANopenSensor *sensor, COdataType data);
-#endif
 
 	// SDO decoding functions
 	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync8bits(CANopenSensor *sensor);
 	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync32bits(CANopenSensor *sensor);
 	static lely::canopen::SdoFuture<COdataType> coSDOreadAsyncString(CANopenSensor *sensor);
 	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync16bits(CANopenSensor *sensor);
-#if CODATASZ >= 64
 	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync64bits(CANopenSensor *sensor);
-#endif
 
 	// PDO encoding functions
 	static void coPDOwrite8bits(CANopenSensor *sensor, COdataType data);
 	static void coPDOwrite16bits(CANopenSensor *sensor, COdataType data);
 	static void coPDOwrite32bits(CANopenSensor *sensor, COdataType data);
+	static void coPDOwrite64bits(CANopenSensor *sensor, COdataType data);
 
 	// PDO decoding functions
+	static COdataType coPDOread8bits(CANopenSensor *sensor);
 	static COdataType coPDOread16bits(CANopenSensor *sensor);
 	static COdataType coPDOread32bits(CANopenSensor *sensor);
-	static COdataType coPDOread8bits(CANopenSensor *sensor);
+	static COdataType coPDOread64bits(CANopenSensor *sensor);
 
 	// read/write functions tables
 	static const std::map<int, CANopenEncodeCbS> SDOfunctionCBs;
