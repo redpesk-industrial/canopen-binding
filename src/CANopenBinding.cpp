@@ -411,7 +411,7 @@ class coConfig
 						int (CANopenSensor::*func)(afb_req_t);
 						int rc;
 					} data = {
-						std::basic_regex(pattern),
+						std::basic_regex<char>(pattern),
 						request,
 						func,
 						0
