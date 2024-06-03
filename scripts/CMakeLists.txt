@@ -1,8 +1,6 @@
 ###########################################################################
 #  Copyright (C) 2015-2024 IoT.bzh Company
 #
-#  Author: Johann Gautier <johann.gautier@iot.bzh>
-#
 #  $RP_BEGIN_LICENSE$
 #  Commercial License Usage
 #   Licensees holding valid commercial IoT.bzh licenses may use this file in
@@ -22,45 +20,8 @@
 #  $RP_END_LICENSE$
 ###########################################################################
 
-cmake_minimum_required(VERSION 3.15)
-
-# Project Info
-# ------------------
-project(canopen-binding
-	VERSION 2.0.2
-	DESCRIPTION "Provide a redpesk CANopen Binding"
-	HOMEPAGE_URL "https://github.com/iotbzh/CANopen-service"
-	LANGUAGES CXX C)
-
-set(PROJECT_PRETTY_NAME "CANopen binding")
-set(PROJECT_ICON "icon.png")
-set(PROJECT_AUTHOR "Iot-Team")
-set(PROJECT_AUTHOR_MAIL "johann.gautier@iot.bzh")
-set(PROJECT_LICENSE "APL2.0")
-
-include(FindPkgConfig)
-include(GNUInstallDirs)
-
-# Declare options
-set(AFM_APP_DIR ${CMAKE_INSTALL_PREFIX}/redpesk CACHE PATH "Applications directory")
-set(APP_DIR ${AFM_APP_DIR}/${PROJECT_NAME})
-
-# PKG_CONFIG required packages
-# -----------------------------
-
-pkg_check_modules(deps REQUIRED
-	json-c
-	afb-binding
-	librp-utils-static
-	afb-helpers4-static>=10.0.5
-	liblely-coapp>=2.3
+install(FILES
+	dcf2afb.py
+	DESTINATION
+	${CMAKE_INSTALL_BINDIR}
 )
-
-add_compile_options(${deps_CFLAGS})
-include_directories(${deps_INCLUDE_DIRS})
-add_link_options(${deps_LDFLAGS})
-link_libraries(${deps_LINK_LIBRARIES})
-
-add_subdirectory(src)
-add_subdirectory(src/plugins)
-add_subdirectory(scripts)
