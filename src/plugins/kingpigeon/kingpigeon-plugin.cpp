@@ -60,7 +60,7 @@ COdataType setBoolArrayFromArrayMask(COdataType data, bool val, json_object *mas
 }
 
 // set upe a json bool 4 entree array based on an integer corresponding to 4 Kingpigeon DIN
-static json_object *kingpigeon_4_bool_array_decode(COdataType data, CANopenSensor *sensor)
+static json_object *kingpigeon_4_bool_array_decode(COdataType data, CANopenSensor *sensor) noexcept
 {
 	uint32_t x = data;
 	json_object *outputJ = json_object_new_array();
@@ -72,7 +72,7 @@ static json_object *kingpigeon_4_bool_array_decode(COdataType data, CANopenSenso
 }
 
 // set up a json int 2 entree array based on a 32bits unsigned integer corresponding to 2 Kingpigeon 16bits AIN
-static json_object *kingpigeon_2_int_array_decode(COdataType data, CANopenSensor *sensor)
+static json_object *kingpigeon_2_int_array_decode(COdataType data, CANopenSensor *sensor) noexcept
 {
 	uint32_t x = data;
 	json_object *outputJ = json_object_new_array();
@@ -82,7 +82,7 @@ static json_object *kingpigeon_2_int_array_decode(COdataType data, CANopenSensor
 }
 
 // set up an integer bool array based on a json object
-static COdataType kingpigeon_bool_array_encode(json_object *dataJ, CANopenSensor *sensor)
+static COdataType kingpigeon_bool_array_encode(json_object *dataJ, CANopenSensor *sensor) noexcept
 {
 
 	// set output based on a bool array on an integer regardless of it's previous value

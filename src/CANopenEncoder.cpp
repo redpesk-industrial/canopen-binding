@@ -123,96 +123,96 @@ int CANopenEncoder::addDecodeFormater(const std::vector<std::pair<std::string, c
 	return 0;
 }
 
-COdataType CANopenEncoder::encodeInt(json_object *dataJ, CANopenSensor *sensor)
+COdataType CANopenEncoder::encodeInt(json_object *dataJ, CANopenSensor *sensor) noexcept
 {
 	return COdataType(get_data_int32(dataJ));
 }
 
 #if CODATADBL
-COdataType CANopenEncoder::encodeDouble(json_object *dataJ, CANopenSensor *sensor)
+COdataType CANopenEncoder::encodeDouble(json_object *dataJ, CANopenSensor *sensor) noexcept
 {
 	return COdataType(get_data_int64(dataJ));
 }
 #endif
 
-COdataType CANopenEncoder::encodeString(json_object *dataJ, CANopenSensor *sensor)
+COdataType CANopenEncoder::encodeString(json_object *dataJ, CANopenSensor *sensor) noexcept
 {
 	return COdataType(json_object_get_string(dataJ));
 }
 
-json_object *CANopenEncoder::decodeInt(COdataType data, CANopenSensor *sensor)
+json_object *CANopenEncoder::decodeInt(COdataType data, CANopenSensor *sensor) noexcept
 {
 	return json_object_new_int(int32_t(data));
 }
 
-json_object *CANopenEncoder::decodeUint(COdataType data, CANopenSensor *sensor)
+json_object *CANopenEncoder::decodeUint(COdataType data, CANopenSensor *sensor) noexcept
 {
 	return json_object_new_int64(int64_t(data));
 }
 
 #if CODATADBL
-json_object *CANopenEncoder::decodeDouble(COdataType data, CANopenSensor *sensor)
+json_object *CANopenEncoder::decodeDouble(COdataType data, CANopenSensor *sensor) noexcept
 {
 	return json_object_new_double((double)data.tInt64);
 }
 #endif
 
-json_object *CANopenEncoder::decodeString(COdataType data, CANopenSensor *sensor)
+json_object *CANopenEncoder::decodeString(COdataType data, CANopenSensor *sensor) noexcept
 {
 	return json_object_new_string((const char*)data);
 }
 
-void CANopenEncoder::coSDOwrite8bits(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coSDOwrite8bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	coSDOwriteAsync8bits(sensor, data);
 }
 
-void CANopenEncoder::coSDOwrite16bits(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coSDOwrite16bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	coSDOwriteAsync16bits(sensor, data);
 }
 
-void CANopenEncoder::coSDOwrite32bits(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coSDOwrite32bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	coSDOwriteAsync32bits(sensor, data);
 }
 
-void CANopenEncoder::coSDOwrite64bits(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coSDOwrite64bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	coSDOwriteAsync64bits(sensor, data);
 }
 
-void CANopenEncoder::coSDOwriteString(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coSDOwriteString(CANopenSensor *sensor, COdataType data) noexcept
 {
 	coSDOwriteAsyncString(sensor, data);
 }
 
-lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync8bits(CANopenSensor *sensor, COdataType data)
+lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync8bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	return sensor->AsyncWrite<uint8_t>((uint8_t)data);
 }
 
-lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync16bits(CANopenSensor *sensor, COdataType data)
+lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync16bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	return sensor->AsyncWrite<uint16_t>((uint16_t)data);
 }
 
-lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync32bits(CANopenSensor *sensor, COdataType data)
+lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync32bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	return sensor->AsyncWrite<uint32_t>((uint32_t)data);
 }
 
-lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync64bits(CANopenSensor *sensor, COdataType data)
+lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsync64bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	return sensor->AsyncWrite<uint64_t>((uint64_t)data);
 }
 
-lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsyncString(CANopenSensor *sensor, COdataType data)
+lely::canopen::SdoFuture<void> CANopenEncoder::coSDOwriteAsyncString(CANopenSensor *sensor, COdataType data) noexcept
 {
 	return sensor->AsyncWrite<::std::string>(std::string((const char*)data));
 }
 
-lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync8bits(CANopenSensor *sensor)
+lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync8bits(CANopenSensor *sensor) noexcept
 {
 	return sensor->AsyncRead<uint8_t>().then(
 		*sensor, [](lely::canopen::SdoFuture<uint8_t> f){
@@ -224,7 +224,7 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync8bits(CANopen
 		});
 }
 
-lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync16bits(CANopenSensor *sensor)
+lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync16bits(CANopenSensor *sensor) noexcept
 {
 	return sensor->AsyncRead<uint16_t>().then(
 		*sensor, [](lely::canopen::SdoFuture<uint16_t> f){
@@ -236,7 +236,7 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync16bits(CANope
 		});
 }
 
-lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync32bits(CANopenSensor *sensor)
+lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync32bits(CANopenSensor *sensor) noexcept
 {
 	return sensor->AsyncRead<uint32_t>().then(
 		*sensor, [](lely::canopen::SdoFuture<uint32_t> f){
@@ -248,7 +248,7 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync32bits(CANope
 		});
 }
 
-lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync64bits(CANopenSensor *sensor)
+lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync64bits(CANopenSensor *sensor) noexcept
 {
 	return sensor->AsyncRead<uint64_t>().then(
 		*sensor, [](lely::canopen::SdoFuture<uint64_t> f){
@@ -260,7 +260,7 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsync64bits(CANope
 		});
 }
 
-lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsyncString(CANopenSensor *sensor)
+lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsyncString(CANopenSensor *sensor) noexcept
 {
 	return sensor->AsyncRead<std::string>().then(
 		*sensor, [](lely::canopen::SdoFuture<std::string> f){
@@ -272,42 +272,42 @@ lely::canopen::SdoFuture<COdataType> CANopenEncoder::coSDOreadAsyncString(CANope
 		});
 }
 
-void CANopenEncoder::coPDOwrite8bits(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coPDOwrite8bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	sensor->driver()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint8_t)data;
 }
 
-void CANopenEncoder::coPDOwrite16bits(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coPDOwrite16bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	sensor->driver()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint16_t)data;
 }
 
-void CANopenEncoder::coPDOwrite32bits(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coPDOwrite32bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	sensor->driver()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint32_t)data;
 }
 
-void CANopenEncoder::coPDOwrite64bits(CANopenSensor *sensor, COdataType data)
+void CANopenEncoder::coPDOwrite64bits(CANopenSensor *sensor, COdataType data) noexcept
 {
 	sensor->driver()->tpdo_mapped[sensor->reg()][sensor->subReg()] = (uint64_t)data;
 }
 
-COdataType CANopenEncoder::coPDOread8bits(CANopenSensor *sensor)
+COdataType CANopenEncoder::coPDOread8bits(CANopenSensor *sensor) noexcept
 {
 	return COdataType((uint8_t)sensor->driver()->rpdo_mapped[sensor->reg()][sensor->subReg()]);
 }
 
-COdataType CANopenEncoder::coPDOread16bits(CANopenSensor *sensor)
+COdataType CANopenEncoder::coPDOread16bits(CANopenSensor *sensor) noexcept
 {
 	return COdataType((uint16_t)sensor->driver()->rpdo_mapped[sensor->reg()][sensor->subReg()]);
 }
 
-COdataType CANopenEncoder::coPDOread32bits(CANopenSensor *sensor)
+COdataType CANopenEncoder::coPDOread32bits(CANopenSensor *sensor) noexcept
 {
 	return COdataType((uint32_t)sensor->driver()->rpdo_mapped[sensor->reg()][sensor->subReg()]);
 }
 
-COdataType CANopenEncoder::coPDOread64bits(CANopenSensor *sensor)
+COdataType CANopenEncoder::coPDOread64bits(CANopenSensor *sensor) noexcept
 {
 	return COdataType((uint64_t)sensor->driver()->rpdo_mapped[sensor->reg()][sensor->subReg()]);
 }

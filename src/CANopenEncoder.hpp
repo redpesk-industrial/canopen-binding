@@ -87,10 +87,10 @@ struct CANopenEncodeCbS
 };
 
 // type definition for encode callback
-typedef COdataType (*coEncodeCB)(json_object *dataJ, CANopenSensor *sensor);
+typedef COdataType (*coEncodeCB)(json_object *dataJ, CANopenSensor *sensor) noexcept;
 
 // type definition for decode callback
-typedef json_object *(*coDecodeCB)(COdataType data, CANopenSensor *sensor);
+typedef json_object *(*coDecodeCB)(COdataType data, CANopenSensor *sensor) noexcept;
 
 class CANopenEncoder
 {
@@ -114,55 +114,55 @@ public:
 	int addDecodeFormater(const std::vector<std::pair<std::string, coDecodeCB>> &decodeFormaterTable);
 
 	// Built in Encoding Formaters
-	static COdataType encodeInt(json_object *dataJ, CANopenSensor *sensor = nullptr);
-	static COdataType encodeString(json_object *dataJ, CANopenSensor *sensor = nullptr);
+	static COdataType encodeInt(json_object *dataJ, CANopenSensor *sensor = nullptr) noexcept;
+	static COdataType encodeString(json_object *dataJ, CANopenSensor *sensor = nullptr) noexcept;
 #if CODATADBL
-	static COdataType encodeDouble(json_object *dataJ, CANopenSensor *sensor = nullptr);
+	static COdataType encodeDouble(json_object *dataJ, CANopenSensor *sensor = nullptr) noexcept;
 #endif
 
 	// Built in Decoding Formaters
-	static json_object *decodeInt(COdataType data, CANopenSensor *sensor = nullptr);
-	static json_object *decodeUint(COdataType data, CANopenSensor *sensor = nullptr);
-	static json_object *decodeString(COdataType data, CANopenSensor *sensor = nullptr);
+	static json_object *decodeInt(COdataType data, CANopenSensor *sensor = nullptr) noexcept;
+	static json_object *decodeUint(COdataType data, CANopenSensor *sensor = nullptr) noexcept;
+	static json_object *decodeString(COdataType data, CANopenSensor *sensor = nullptr) noexcept;
 #if CODATADBL
-	static json_object *decodeDouble(COdataType data, CANopenSensor *sensor = nullptr);
+	static json_object *decodeDouble(COdataType data, CANopenSensor *sensor = nullptr) noexcept;
 #endif
 
 private:
 	CANopenEncoder(); ///< Private constructor for singleton implementation
 
 	// SDO encoding functions
-	static void coSDOwrite8bits(CANopenSensor *sensor, COdataType data);
-	static void coSDOwrite16bits(CANopenSensor *sensor, COdataType data);
-	static void coSDOwrite32bits(CANopenSensor *sensor, COdataType data);
-	static void coSDOwriteString(CANopenSensor *sensor, COdataType data);
-	static void coSDOwrite64bits(CANopenSensor *sensor, COdataType data);
+	static void coSDOwrite8bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static void coSDOwrite16bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static void coSDOwrite32bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static void coSDOwriteString(CANopenSensor *sensor, COdataType data) noexcept;
+	static void coSDOwrite64bits(CANopenSensor *sensor, COdataType data) noexcept;
 
 	// SDO encoding functions
-	static lely::canopen::SdoFuture<void> coSDOwriteAsync8bits(CANopenSensor *sensor, COdataType data);
-	static lely::canopen::SdoFuture<void> coSDOwriteAsync16bits(CANopenSensor *sensor, COdataType data);
-	static lely::canopen::SdoFuture<void> coSDOwriteAsync32bits(CANopenSensor *sensor, COdataType data);
-	static lely::canopen::SdoFuture<void> coSDOwriteAsyncString(CANopenSensor *sensor, COdataType data);
-	static lely::canopen::SdoFuture<void> coSDOwriteAsync64bits(CANopenSensor *sensor, COdataType data);
+	static lely::canopen::SdoFuture<void> coSDOwriteAsync8bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static lely::canopen::SdoFuture<void> coSDOwriteAsync16bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static lely::canopen::SdoFuture<void> coSDOwriteAsync32bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static lely::canopen::SdoFuture<void> coSDOwriteAsyncString(CANopenSensor *sensor, COdataType data) noexcept;
+	static lely::canopen::SdoFuture<void> coSDOwriteAsync64bits(CANopenSensor *sensor, COdataType data) noexcept;
 
 	// SDO decoding functions
-	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync8bits(CANopenSensor *sensor);
-	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync32bits(CANopenSensor *sensor);
-	static lely::canopen::SdoFuture<COdataType> coSDOreadAsyncString(CANopenSensor *sensor);
-	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync16bits(CANopenSensor *sensor);
-	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync64bits(CANopenSensor *sensor);
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync8bits(CANopenSensor *sensor) noexcept;
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync32bits(CANopenSensor *sensor) noexcept;
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsyncString(CANopenSensor *sensor) noexcept;
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync16bits(CANopenSensor *sensor) noexcept;
+	static lely::canopen::SdoFuture<COdataType> coSDOreadAsync64bits(CANopenSensor *sensor) noexcept;
 
 	// PDO encoding functions
-	static void coPDOwrite8bits(CANopenSensor *sensor, COdataType data);
-	static void coPDOwrite16bits(CANopenSensor *sensor, COdataType data);
-	static void coPDOwrite32bits(CANopenSensor *sensor, COdataType data);
-	static void coPDOwrite64bits(CANopenSensor *sensor, COdataType data);
+	static void coPDOwrite8bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static void coPDOwrite16bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static void coPDOwrite32bits(CANopenSensor *sensor, COdataType data) noexcept;
+	static void coPDOwrite64bits(CANopenSensor *sensor, COdataType data) noexcept;
 
 	// PDO decoding functions
-	static COdataType coPDOread8bits(CANopenSensor *sensor);
-	static COdataType coPDOread16bits(CANopenSensor *sensor);
-	static COdataType coPDOread32bits(CANopenSensor *sensor);
-	static COdataType coPDOread64bits(CANopenSensor *sensor);
+	static COdataType coPDOread8bits(CANopenSensor *sensor) noexcept;
+	static COdataType coPDOread16bits(CANopenSensor *sensor) noexcept;
+	static COdataType coPDOread32bits(CANopenSensor *sensor) noexcept;
+	static COdataType coPDOread64bits(CANopenSensor *sensor) noexcept;
 
 	// read/write functions tables
 	static const std::map<int, CANopenEncodeCbS> SDOfunctionCBs;
