@@ -345,6 +345,23 @@ class coConfig
 	}
 
 	// tiny wrapper to enter instance method
+	static void _status_(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		coConfig *current = reinterpret_cast<coConfig*>(afb_req_get_vcbdata(request));
+		current->status(request, nparams, params);
+	}
+
+	// implement status
+	void status(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		json_object *status = masters_.statusJ();
+		if (status != NULL)
+			afb_req_reply_json_c_hold(request, 0, status);
+		else
+			afb_req_reply(request, AFB_ERRNO_INTERNAL_ERROR, 0, NULL);
+	}
+
+	// tiny wrapper to enter instance method
 	static void _subscribe_(afb_req_t request, unsigned nparams, afb_data_t const params[])
 	{
 		coConfig *current = reinterpret_cast<coConfig*>(afb_req_get_vcbdata(request));
@@ -454,16 +471,17 @@ class coConfig
 		};
 
 	// Declare array of static verb not depending on CANopen json config file
-	static const sverbdsc common_verbs[4];
+	static const sverbdsc common_verbs[5];
 
 	// the entry point
 	friend int afbBindingEntry(afb_api_t rootapi, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *closure);
 };
 
 // Declare array of static verb not depending on CANopen json config file
-const coConfig::sverbdsc coConfig::common_verbs[4] = {
+const coConfig::sverbdsc coConfig::common_verbs[5] = {
 	{ .name = "ping", .info = "CANopen API ping test", .callback = coConfig::_ping_ },
-	{ .name = "info", .info = "display info about the binding", .callback = coConfig::_info_ },
+	{ .name = "info", .info = "info about the binding", .callback = coConfig::_info_ },
+	{ .name = "status", .info = "status of the binding", .callback = coConfig::_status_ },
 	{ .name = "subscribe", .info = "subscribe to pattern event", .callback = coConfig::_subscribe_ },
 	{ .name = "unsubscribe", .info = "unsubscribe to pattern event", .callback = coConfig::_unsubscribe_ },
 };
