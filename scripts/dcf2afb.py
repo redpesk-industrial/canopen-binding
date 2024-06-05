@@ -232,9 +232,9 @@ def filltype(ent, group = None):
 	if pm == None or int(pm) == 0:
 		ent['type'] = 'SDO'
 	elif wr:
-		ent['type'] = 'TPDO'
-	else:
 		ent['type'] = 'RPDO'
+	else:
+		ent['type'] = 'TPDO'
 
 ########################################################################
 ## DCF class ###########################################################
