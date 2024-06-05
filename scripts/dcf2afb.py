@@ -428,20 +428,19 @@ class Gener:
 	# add an entry described by obj of container cont (internal)
 	def put_(self, obj, cont):
 		odef = obj['odef'] if 'odef' in obj else '?'
-		match odef:
-			case 'var':
-				if 'type' in obj and 'format' in obj and 'size' in obj and 'reg' in obj:
-					self.addvar_(obj, cont)
-				else:
-					self.err_(obj, 'unexpected variable ' + obj['id'])
-			case 'record' | 'array':
-				if 'subs' not in obj:
-					self.err_(obj, 'unexpected empty record for ' + obj['id'])
-				else:
-					for s in obj['subs']:
-						self.put_(s, obj)
-			case _:
-				self.err_(obj, 'unexpected object type ' + odef + ' for ' + obj['id'])
+		if odef == 'var':
+			if 'type' in obj and 'format' in obj and 'size' in obj and 'reg' in obj:
+				self.addvar_(obj, cont)
+			else:
+				self.err_(obj, 'unexpected variable ' + obj['id'])
+		elif odef == 'record' or odef ==  'array':
+			if 'subs' not in obj:
+				self.err_(obj, 'unexpected empty record for ' + obj['id'])
+			else:
+				for s in obj['subs']:
+					self.put_(s, obj)
+		else:
+			self.err_(obj, 'unexpected object type ' + odef + ' for ' + obj['id'])
 
 	# add a variable described by obj of container cont (internal)
 	def addvar_(self, obj, cont):
@@ -517,7 +516,7 @@ def main():
 	parser.add_argument(
 		"-c",
 		"--capitalize",
-		action = argparse.BooleanOptionalAction,
+		action = 'store_true',
 		help = "capitalize words of names"
 	)
 	parser.add_argument(
@@ -535,7 +534,7 @@ def main():
 	parser.add_argument(
 		"-i",
 		"--index",
-		action = argparse.BooleanOptionalAction,
+		action = 'store_true',
 		help = "use index for names, not sub-index"
 	)
 	parser.add_argument(
@@ -611,13 +610,13 @@ def main():
 		for i in l:
 			v = i.upper()
 			for a in r:
-				match len(a):
-					case 1:
-						f = v == a[0]
-					case 2:
-						f = a[0] <= v and v <= a[1]
-					case _:
-						f = False
+				lena = len(a)
+				if lena == 1:
+					f = v == a[0]
+				elif lena == 2:
+					f = a[0] <= v and v <= a[1]
+				else:
+					f = False
 				if f:
 					o.append(i)
 					break
