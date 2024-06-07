@@ -330,12 +330,16 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 
 int CANopenSensor::subscribe(afb_req_t request)
 {
+	if (!m_event)
+		return 0;
 	m_event_active = true;
 	return afb_req_subscribe(request, m_event);
 }
 
 int CANopenSensor::unsubscribe(afb_req_t request)
 {
+	if (!m_event)
+		return 0;
 	return afb_req_unsubscribe(request, m_event);
 }
 
