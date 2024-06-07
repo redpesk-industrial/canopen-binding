@@ -26,6 +26,7 @@
 add_library(kingpigeon MODULE kingpigeon-plugin.cpp)
 
 target_link_libraries(kingpigeon CANopenEncoder ${link_libraries})
+set_target_properties(kingpigeon PROPERTIES PREFIX "" INSTALL_RPATH "$ORIGIN/..")
 
 # compilation include path
 target_include_directories(kingpigeon BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/src")
