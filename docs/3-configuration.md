@@ -71,6 +71,31 @@ CANopen binding creates one api/verb by sensor. By default each sensor api/verb 
     ...
 ```
 
+When more than one CAN interface exists, it is possible to use an array of canopen object description.
+The below eluded example gives hint for achieving this.
+
+```json
+"canopen": [
+    {
+        "uid": "Master1",
+        "uri" : "can0",
+	...
+    },
+    {
+        "uid": "Master2",
+        "uri" : "can1",
+	...
+
+    },
+    {
+        "uid": "MasterX",
+        "uri" : "vcan",
+	...
+    }
+]
+```
+
+
 ## CANopen controller exposed
 
 ### Two built-in api/verb
