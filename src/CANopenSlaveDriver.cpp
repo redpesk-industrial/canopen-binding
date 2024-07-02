@@ -276,7 +276,7 @@ json_object *CANopenSlaveDriver::infoJ()
 // This function gets called every time a value is written to the local object dictionary of the master
 void CANopenSlaveDriver::OnRpdoWrite(uint16_t idx, uint8_t subidx) noexcept
 {
-#if 0
+#if 1
 	AFB_API_DEBUG(*this, "-- on RPDO write %s:%04x:%u --", uid(), (unsigned)idx, (unsigned)subidx);
 #endif
 	CANopenSensorId sid(idx, subidx);
