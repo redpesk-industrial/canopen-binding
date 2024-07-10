@@ -310,7 +310,7 @@ class DCF:
 	# get object describing the subsection idx of the index base
 	def getsub(self, base, idx):
 		""
-		key = base + 'sub' + str(idx)
+		key = base + 'sub' + format(idx, 'x')
 		r = {}
 		if self.config.has_section(key):
 			r['objecttype'] = '0x07'
