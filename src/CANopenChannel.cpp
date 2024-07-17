@@ -37,10 +37,12 @@ CANopenChannel::CANopenChannel(CANopenExec &exec, const char *uri, const char *d
 	, chan_{exec, exec}
 	, master_{exec, exec, chan_, dcf, "", nodID}
 {
-#if 0
-	master_.OnWrite([this](uint16_t idx, uint8_t subidx) {
-		AFB_API_DEBUG(*this, "onwrite %04x.%d", unsigned(idx), unsigned(subidx));
-	});
+#if 1
+        if(afb_api_wants_log_level(*this, AFB_SYSLOG_LEVEL_DEBUG)) {
+		master_.OnRpdoWrite([this](uint8_t id, uint16_t idx, uint8_t subidx) {
+			AFB_API_DEBUG(*this, "OnRpdoWrite(id=%d, idx=%d, subidx=%d)", int(id), int(idx), int(subidx));
+		});
+	}
 #endif
 }
 
