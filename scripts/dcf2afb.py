@@ -206,7 +206,7 @@ fmts = {
 
 # inspect the entry ent possibly from the group
 # for adding it the data for binding
-def filltype(ent, group = None):
+def filltype(ent, group = None, swap = False):
 	# get a data from the entry or else from its group if any
 	get = lambda key: ent.get(key) or (group and group.get(key))
 	# inspect the object type
@@ -232,9 +232,9 @@ def filltype(ent, group = None):
 	if pm == None or int(pm) == 0:
 		ent['type'] = 'SDO'
 	elif wr:
-		ent['type'] = 'RPDO'
+		ent['type'] = 'RPDO' if not swap else 'TPDO'
 	else:
-		ent['type'] = 'TPDO'
+		ent['type'] = 'TPDO' if not swap else 'RPDO'
 
 ########################################################################
 ## DCF class ###########################################################
@@ -272,6 +272,8 @@ class DCF:
 				result[k] = v
 			return result
 
+	def __init__(self, swap = False):
+		self.swap_ = swap
 
 	# read the DCF file using the case insensitive dictionnary
 	def read(self, filename):
@@ -337,7 +339,7 @@ class DCF:
 		ok = 'name' in r
 		if ok:
 			# fill the description
-			filltype(r)
+			filltype(r, swap = self.swap_)
 			snum = r.get('subnumber')
 			csub = r.get('compactsubobj')
 			if snum and int(snum) > 0:
@@ -351,7 +353,7 @@ class DCF:
 						v['group'] = index
 						v['subindex'] = i
 						v['reg'] = index + ("%02x" % i)
-						filltype(v, r)
+						filltype(v, group = r, swap = self.swap_)
 						a.append(v)
 						ns = ns - 1
 					i = i + 1
@@ -375,7 +377,7 @@ class DCF:
 						'subindex': i,
 						'reg': index + ("%02x" % i)
 					}
-					filltype(v, r)
+					filltype(v, group = r, swap = self.swap_)
 					a.append(v)
 				r['subs'] = a
 			else:
@@ -514,6 +516,12 @@ def main():
 		help="separator of index and names"
 	)
 	parser.add_argument(
+		"-w",
+		"--swap",
+		action = 'store_true',
+		help = "swap RPDO and TPDO"
+	)
+	parser.add_argument(
 		"-c",
 		"--capitalize",
 		action = 'store_true',
@@ -573,7 +581,7 @@ def main():
 	# read the DCF/EDS file
 	if args.debug or not args.quiet:
 		print("reading " + args.filename + " ...", file = sys.stderr)
-	dcf = DCF()
+	dcf = DCF(swap = args.swap)
 	dcf.read(args.filename)
 
 	# debugging output

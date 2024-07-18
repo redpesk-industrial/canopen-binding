@@ -59,6 +59,12 @@ $ dcf2afb.py --range 2000- item.dcf
 selects variable whose index is greater or equal to 0x2000.
 
 
+## swapping direction
+
+The option `--swap` tells to swap the transmit direction, it
+translates RPD to TPDO and cenversely.
+
+
 ## compacting
 
 For each variable of the product, the generator produces
