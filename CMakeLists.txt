@@ -56,7 +56,7 @@ pkg_check_modules(deps REQUIRED
 	liblely-coapp>=2.3
 )
 
-add_compile_options(${deps_CFLAGS})
+add_compile_options(${deps_CFLAGS} -DAFB_BINDING_VERSION=4)
 include_directories(${deps_INCLUDE_DIRS})
 add_link_options(${deps_LDFLAGS})
 link_libraries(${deps_LINK_LIBRARIES})

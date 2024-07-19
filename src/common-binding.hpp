@@ -27,7 +27,6 @@
 
 #include <json-c/json.h>
 
-#define AFB_BINDING_VERSION 4
 #include <afb/afb-binding>
 #include <afb-helpers4/afb-data-utils.h>
 #include <afb-helpers4/afb-req-utils.h>
