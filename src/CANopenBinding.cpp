@@ -471,6 +471,95 @@ class coConfig
 		afb_req_reply(request, rc < 0 ? AFB_ERRNO_GENERIC_FAILURE : 0, 0, NULL);
 	}
 
+	// tiny wrapper to enter instance method
+	static void _get_(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		coConfig *current = reinterpret_cast<coConfig*>(afb_req_get_vcbdata(request));
+		current->get(request, nparams, params);
+	}
+
+	// get of set of values
+	void get(afb_req_t request, unsigned nparams, afb_data_t const params[])
+	{
+		int rc;
+		unsigned idx, count;
+		size_t size;
+		canopen_xchg_req_t *arr_req;
+		canopen_xchg_value_t *arr_val;
+		afb_data_t dreq, dval;
+
+		// get request array
+		if (nparams < 1) {
+			AFB_REQ_ERROR(request, "missing parameter");
+			goto inval;
+		}
+		rc = afb_req_param_convert(request, 0, canopen_xchg_req_type, &dreq);
+		if (rc < 0) {
+			AFB_REQ_ERROR(request, "invalid first parameter type");
+			goto inval;
+		}
+		rc = afb_data_get_constant(dreq, (void**)&arr_req, &size);
+		if (rc < 0 || arr_req == NULL || size == 0) {
+			AFB_REQ_ERROR(request, "invalid first parameter value");
+			goto inval;
+		}
+		count = size / sizeof *arr_req;
+
+		// get the returned value array
+		if (nparams == 1) {
+			size = count * sizeof *arr_val;
+			rc = afb_create_data_alloc(&dval, canopen_xchg_value_type, (void**)&arr_val, size);
+			if (rc < 0) {
+				AFB_REQ_ERROR(request, "allocation of result failed");
+				rc = AFB_ERRNO_OUT_OF_MEMORY;
+				goto error;
+			}
+		}
+		else {
+			rc = afb_req_param_convert(request, 0, canopen_xchg_value_type, &dval);
+			if (rc < 0) {
+				AFB_REQ_ERROR(request, "invalid second parameter type");
+				goto inval;
+			}
+			rc = afb_data_get_mutable(dreq, (void**)&arr_val, &size);
+			if (rc < 0 || arr_val == NULL || size != count * sizeof *arr_val) {
+				AFB_REQ_ERROR(request, "invalid second parameter value");
+				goto inval;
+			}
+			afb_data_addref(dval);
+		}
+
+		// makes the result
+		try {
+			canopen_xchg_req_t *req = arr_req;
+			canopen_xchg_value_t *val = arr_val;
+			for (idx = 0 ; idx < count ; idx++, req++, val++) {
+				CANopenMaster *master = masters_[req->itf];
+				switch(req->type) {
+				case canopen_xchg_u8:  val->u8  = master->get<  int8_t>(req->id, req->reg, req->subreg); break;
+				case canopen_xchg_i8:  val->i8  = master->get< uint8_t>(req->id, req->reg, req->subreg); break;
+				case canopen_xchg_u16: val->u16 = master->get< int16_t>(req->id, req->reg, req->subreg); break;
+				case canopen_xchg_i16: val->i16 = master->get<uint16_t>(req->id, req->reg, req->subreg); break;
+				case canopen_xchg_u32: val->u32 = master->get< int32_t>(req->id, req->reg, req->subreg); break;
+				case canopen_xchg_i32: val->i32 = master->get<uint32_t>(req->id, req->reg, req->subreg); break;
+				case canopen_xchg_u64: val->u64 = master->get< int64_t>(req->id, req->reg, req->subreg); break;
+				case canopen_xchg_i64: val->i64 = master->get<uint64_t>(req->id, req->reg, req->subreg); break;
+				}
+			}
+			afb_data_notify_changed(dval);
+			return afb_req_reply(request, 0, 1, &dval);
+		}
+		catch (std::exception &e) {
+			AFB_REQ_ERROR(request, "at %u exception catched: %s", idx, e.what());
+			afb_data_unref(dval);
+			rc = AFB_ERRNO_INTERNAL_ERROR;
+			goto error;
+		}
+
+	inval:	rc = AFB_ERRNO_INVALID_REQUEST;
+	error:	return afb_req_reply(request, rc, 0, NULL);
+	}
+
 	// Structure for describing static verbs
 	struct sverbdsc
 		{
@@ -480,19 +569,20 @@ class coConfig
 		};
 
 	// Declare array of static verb not depending on CANopen json config file
-	static const sverbdsc common_verbs[5];
+	static const sverbdsc common_verbs[6];
 
 	// the entry point
 	friend int afbBindingEntry(afb_api_t rootapi, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *closure);
 };
 
 // Declare array of static verb not depending on CANopen json config file
-const coConfig::sverbdsc coConfig::common_verbs[5] = {
+const coConfig::sverbdsc coConfig::common_verbs[6] = {
 	{ .name = "ping", .info = "CANopen API ping test", .callback = coConfig::_ping_ },
 	{ .name = "info", .info = "info about the binding", .callback = coConfig::_info_ },
 	{ .name = "status", .info = "status of the binding", .callback = coConfig::_status_ },
 	{ .name = "subscribe", .info = "subscribe to pattern event", .callback = coConfig::_subscribe_ },
 	{ .name = "unsubscribe", .info = "unsubscribe to pattern event", .callback = coConfig::_unsubscribe_ },
+	{ .name = "get", .info = "get a set of value", .callback = coConfig::_get_ },
 };
 
 coConfig *last_global_coconfig;
