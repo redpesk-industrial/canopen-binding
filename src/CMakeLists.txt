@@ -35,6 +35,7 @@ add_library(CANopen MODULE
 	CANopenMasterSet.cpp
 	CANopenSensor.cpp
 	CANopenSlaveDriver.cpp
+	CANopenXchg.c
 	utils/utils.cpp
 	utils/jsonc.cpp
 )

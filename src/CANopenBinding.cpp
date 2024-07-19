@@ -29,6 +29,7 @@
 #include "CANopenSlaveDriver.hpp"
 #include "CANopenSensor.hpp"
 #include "CANopenEncoder.hpp"
+#include "CANopenXchg.h"
 #include "utils/jsonc.hpp"
 
 #include <iostream>
@@ -98,6 +99,13 @@ class coConfig
 		int rc, status = 0;
 
 		// init instance for searching files
+		rc = canopen_xchg_init();
+		if (rc < 0) {
+			AFB_API_ERROR(rootapi_, "failed to initialize canopen types");
+			status = rc;
+		}
+
+		// init instance for searching files
 		rc = rp_path_search_make_dirs(&paths_, "${CANOPENPATH}:${AFB_ROOTDIR}/etc:${AFB_ROOTDIR}/plugins:.");
 		if (rc < 0) {
 			AFB_API_ERROR(rootapi_, "failed to initialize path search");
@@ -139,6 +147,7 @@ class coConfig
 			AFB_API_ERROR(rootapi_, "failed to read events section");
 			status = rc;
 		}
+
 //masters_.dump(std::cerr);
 		// creates the api
 		if (status == 0) {
