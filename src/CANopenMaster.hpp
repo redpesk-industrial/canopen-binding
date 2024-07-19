@@ -78,6 +78,11 @@ public:
 		return m_can->AsyncWrite(id, idx, subidx, std::forward<T>(value));
 	}
 
+	template <class T>
+	T get(uint8_t id, uint16_t idx, uint8_t subidx) {
+		return m_can->get<T>(id, idx, subidx);
+	}
+
 	void foreach(const std::function<void(const char*,CANopenSlaveDriver&)> &fun);
 
 private:

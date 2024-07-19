@@ -61,6 +61,11 @@ public:
 		return master_.AsyncWrite(exec_, id, idx, subidx, ::std::forward<T>(value));
 	}
 
+	template <class T>
+	T get(uint8_t id, uint16_t idx, uint8_t subidx) {
+		return master_.RpdoMapped(id)[idx][subidx];
+	}
+
 private:
 	CANopenExec &exec_;
 	std::string uri_;
