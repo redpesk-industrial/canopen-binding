@@ -27,6 +27,7 @@
 
 #include <memory>
 #include <functional>
+#include <vector>
 
 #include "CANopenMaster.hpp"
 #include "utils/cstrmap.hpp"
@@ -37,13 +38,14 @@
 class CANopenMasterSet
 {
 public:
-	CANopenMasterSet(CANopenExec &exec) : exec_{exec}, masters_{} {}
+	CANopenMasterSet(CANopenExec &exec) : exec_{exec}, masters_{}, imasters_{4} {}
 	int add(json_object *cfg, rp_path_search_t *paths);
 	int start();
 	json_object *statusJ();
 	void slaveListInfo(json_object *groups);
 	void dump(std::ostream &os) const;
 	void foreach(const std::function<void(const char*,CANopenMaster&)> &fun);
+	CANopenMaster *operator [] (unsigned index) const;
 
 private:
 	/// the single execution handler
@@ -51,6 +53,9 @@ private:
 
 	/** masters canopen buses */
 	cstrmap<std::shared_ptr<CANopenMaster>> masters_;
+
+	/** masters canopen buses */
+	std::vector<std::shared_ptr<CANopenMaster>> imasters_;
 };
 
 #endif /* _ServiceCANopenMasterSet_INCLUDE_ */

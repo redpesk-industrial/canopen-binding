@@ -64,6 +64,7 @@ public:
 	inline operator afb_api_t () const { return m_exec; }
 	inline operator ev_exec_t*() const { return m_exec; }
 	inline operator lely::canopen::BasicMaster&() const { return *m_can; }
+	inline uint8_t index() const { return m_index; }
 	inline const char *uid() const { return m_uid; }
 	void dump(std::ostream &os) const;
 
@@ -88,6 +89,9 @@ private:
 
 	/// @brief uid of the master
 	const char *m_uid = nullptr;
+
+	/// @brief index of the master
+	uint8_t m_index = 0;
 
 	/// @brief nodId of the master
 	uint8_t m_nodId = 255;

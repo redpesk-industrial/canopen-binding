@@ -42,6 +42,7 @@ struct master_config
 	const char *dcf = NULL;
 	json_object *slaves = NULL;
 	uint16_t nodId = 255;
+	uint8_t index = 0;
 };
 
 static bool read_config(afb_api_t api, json_object *obj, master_config &config)
@@ -69,6 +70,11 @@ static bool read_config(afb_api_t api, json_object *obj, master_config &config)
 			ok = false;
 		}
 	}
+
+	intval = 0;
+	get(api, obj, "index", intval);
+	if (intval >= 0 && intval <= 255)
+		config.index = (uint8_t)intval;
 
 	if (!get(api, obj, "slaves", config.slaves, true, json_type_array))
 		ok = false;

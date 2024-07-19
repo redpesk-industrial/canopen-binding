@@ -24,7 +24,7 @@
 
 #include "CANopenMasterSet.hpp"
 
-
+#include <stdexcept>
 
 int CANopenMasterSet::add(json_object *cfg, rp_path_search_t *paths)
 {
@@ -52,6 +52,9 @@ int CANopenMasterSet::add(json_object *cfg, rp_path_search_t *paths)
 
 	// record
 	masters_[master->uid()] = std::shared_ptr<CANopenMaster>(master);
+	if (master->index() >= imasters_.size())
+		imasters_.resize(1 + master->index());
+	imasters_[master->index()] = std::shared_ptr<CANopenMaster>(master);
 	return 0;
 }
 
@@ -103,4 +106,12 @@ void CANopenMasterSet::foreach(const std::function<void(const char*,CANopenMaste
 {
 	for(auto master : masters_)
 		fun(master.first, *master.second);
+}
+
+CANopenMaster *CANopenMasterSet::operator [] (unsigned index) const
+{
+	CANopenMaster *result = imasters_.at(index).get();
+	if (result == nullptr)
+		throw std::out_of_range("null value");
+	return result;
 }
