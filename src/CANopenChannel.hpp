@@ -62,8 +62,24 @@ public:
 	}
 
 	template <class T>
-	T get(uint8_t id, uint16_t idx, uint8_t subidx) {
+	T get(uint8_t id, uint16_t idx, uint8_t subidx) const {
 		return master_.RpdoMapped(id)[idx][subidx];
+	}
+
+	using ConstSubObject = lely::canopen::BasicMaster::ConstSubObject;
+
+	ConstSubObject rpdo(uint8_t id, uint16_t idx, uint8_t subidx) const {
+		if (id == 0)
+			return master_[idx][subidx];
+		return master_.RpdoMapped(id)[idx][subidx];
+	}
+
+	ConstSubObject tpdo(uint8_t id, uint16_t idx, uint8_t subidx) const {
+		if (id == 0)
+			return master_[idx][subidx];
+		// tricks for getting a TPDO
+		const auto tm = const_cast<CANopenChannel*>(this)->master_.TpdoMapped(id);
+		return tm[idx][subidx];
 	}
 
 private:

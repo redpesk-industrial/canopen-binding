@@ -22,9 +22,12 @@
 #  $RP_END_LICENSE$
 ###########################################################################
 
+add_subdirectory(xchg)
+
 add_library(CANopenEncoder SHARED CANopenEncoder.cpp CANopenGlue.cpp)
 target_link_libraries(CANopenEncoder ${link_libraries})
 install(TARGETS CANopenEncoder LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES CANopenEncoder.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/CANopen)
 
 # Define project Targets
 add_library(CANopen MODULE
@@ -35,7 +38,6 @@ add_library(CANopen MODULE
 	CANopenMasterSet.cpp
 	CANopenSensor.cpp
 	CANopenSlaveDriver.cpp
-	CANopenXchg.c
 	utils/utils.cpp
 	utils/jsonc.cpp
 )
@@ -48,7 +50,7 @@ install(TARGETS
 
 # Binder exposes a unique public entry point
 set_target_properties(CANopen PROPERTIES PREFIX "")
-target_link_libraries(CANopen ${link_libraries} CANopenEncoder)
+target_link_libraries(CANopen ${link_libraries} CANopenEncoder CANopenXchg)
 
 pkg_get_variable(vscript QUIET afb-binding version_script)
 if(vscript_FOUND)

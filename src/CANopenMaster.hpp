@@ -79,8 +79,18 @@ public:
 	}
 
 	template <class T>
-	T get(uint8_t id, uint16_t idx, uint8_t subidx) {
+	T get(uint8_t id, uint16_t idx, uint8_t subidx) const {
 		return m_can->get<T>(id, idx, subidx);
+	}
+
+	using ConstSubObject = lely::canopen::BasicMaster::ConstSubObject;
+
+	ConstSubObject rpdo(uint8_t id, uint16_t idx, uint8_t subidx) {
+		return m_can->rpdo(id, idx, subidx);
+	}
+
+	ConstSubObject tpdo(uint8_t id, uint16_t idx, uint8_t subidx) {
+		return m_can->tpdo(id, idx, subidx);
 	}
 
 	void foreach(const std::function<void(const char*,CANopenSlaveDriver&)> &fun);

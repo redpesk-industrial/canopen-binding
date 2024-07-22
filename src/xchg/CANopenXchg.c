@@ -22,58 +22,24 @@
  $RP_END_LICENSE$
 */
 
-#ifndef _CANOPENXCHG_INCLUDE_
-#define _CANOPENXCHG_INCLUDE_
+#include "CANopenXchg.h"
+#include <stdatomic.h>
 
-#include <stdint.h>
+#define canopen_xchg_v1_req_typename   "canopen-xchg-v1-req"
+#define canopen_xchg_v1_value_typename "canopen-xchg-v1-value"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+afb_type_t canopen_xchg_v1_req_type;
+afb_type_t canopen_xchg_v1_value_type;
 
-#include <afb/afb-binding.h>
-
-#define canopen_xchg_u8    0
-#define canopen_xchg_i8    1
-#define canopen_xchg_u16   2
-#define canopen_xchg_i16   3
-#define canopen_xchg_u32   4
-#define canopen_xchg_i32   5
-#define canopen_xchg_u64   6
-#define canopen_xchg_i64   7
-
-typedef
-struct canopen_xchg_req_s
+int canopen_xchg_init()
 {
-	uint8_t  itf;
-	uint8_t  id;
-	uint16_t reg;
-	uint8_t  subreg;
-	uint8_t  type;
+	int rc = afb_type_lookup(&canopen_xchg_v1_req_type, canopen_xchg_v1_req_typename);
+	if (rc < 0)
+		rc = afb_type_register(&canopen_xchg_v1_req_type, canopen_xchg_v1_req_typename, 0);
+	if (rc >= 0) {
+		rc = afb_type_lookup(&canopen_xchg_v1_value_type, canopen_xchg_v1_value_typename);
+		if (rc < 0)
+			rc = afb_type_register(&canopen_xchg_v1_value_type, canopen_xchg_v1_value_typename, 0);
+	}
+	return rc;
 }
-	canopen_xchg_req_t;
-
-typedef
-union canopen_xchg_value_s
-{
-	uint8_t  u8;
-	int8_t   i8;
-	uint16_t u16;
-	int16_t  i16;
-	uint32_t u32;
-	int32_t  i32;
-	uint64_t u64;
-	int64_t  i64;
-}
-	canopen_xchg_value_t;
-
-extern afb_type_t canopen_xchg_req_type;
-extern afb_type_t canopen_xchg_value_type;
-
-extern int canopen_xchg_init();
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif

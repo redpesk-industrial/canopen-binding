@@ -29,7 +29,7 @@
 #include "CANopenSlaveDriver.hpp"
 #include "CANopenSensor.hpp"
 #include "CANopenEncoder.hpp"
-#include "CANopenXchg.h"
+#include "xchg/CANopenXchg.h"
 #include "utils/jsonc.hpp"
 
 #include <iostream>
@@ -484,8 +484,8 @@ class coConfig
 		int rc;
 		unsigned idx, count;
 		size_t size;
-		canopen_xchg_req_t *arr_req;
-		canopen_xchg_value_t *arr_val;
+		canopen_xchg_v1_req_t *arr_req;
+		canopen_xchg_v1_value_t *arr_val;
 		afb_data_t dreq, dval;
 
 		// get request array
@@ -493,7 +493,7 @@ class coConfig
 			AFB_REQ_ERROR(request, "missing parameter");
 			goto inval;
 		}
-		rc = afb_req_param_convert(request, 0, canopen_xchg_req_type, &dreq);
+		rc = afb_req_param_convert(request, 0, canopen_xchg_v1_req_type, &dreq);
 		if (rc < 0) {
 			AFB_REQ_ERROR(request, "invalid first parameter type");
 			goto inval;
@@ -508,7 +508,7 @@ class coConfig
 		// get the returned value array
 		if (nparams == 1) {
 			size = count * sizeof *arr_val;
-			rc = afb_create_data_alloc(&dval, canopen_xchg_value_type, (void**)&arr_val, size);
+			rc = afb_create_data_alloc(&dval, canopen_xchg_v1_value_type, (void**)&arr_val, size);
 			if (rc < 0) {
 				AFB_REQ_ERROR(request, "allocation of result failed");
 				rc = AFB_ERRNO_OUT_OF_MEMORY;
@@ -516,7 +516,7 @@ class coConfig
 			}
 		}
 		else {
-			rc = afb_req_param_convert(request, 0, canopen_xchg_value_type, &dval);
+			rc = afb_req_param_convert(request, 0, canopen_xchg_v1_value_type, &dval);
 			if (rc < 0) {
 				AFB_REQ_ERROR(request, "invalid second parameter type");
 				goto inval;
@@ -531,19 +531,24 @@ class coConfig
 
 		// makes the result
 		try {
-			canopen_xchg_req_t *req = arr_req;
-			canopen_xchg_value_t *val = arr_val;
+			canopen_xchg_v1_req_t *req = arr_req;
+			canopen_xchg_v1_value_t *val = arr_val;
 			for (idx = 0 ; idx < count ; idx++, req++, val++) {
+				AFB_REQ_DEBUG(request, "getting itf %d id %d reg %d.%d", (int)req->itf, (int)req->id, (int)req->reg, (int)req->subreg);
+				using ConstSubObject = lely::canopen::BasicMaster::ConstSubObject;
 				CANopenMaster *master = masters_[req->itf];
+				ConstSubObject csobj =
+					req->tpdo ? master->tpdo(req->id, req->reg, req->subreg)
+					          : master->rpdo(req->id, req->reg, req->subreg);
 				switch(req->type) {
-				case canopen_xchg_u8:  val->u8  = master->get<  int8_t>(req->id, req->reg, req->subreg); break;
-				case canopen_xchg_i8:  val->i8  = master->get< uint8_t>(req->id, req->reg, req->subreg); break;
-				case canopen_xchg_u16: val->u16 = master->get< int16_t>(req->id, req->reg, req->subreg); break;
-				case canopen_xchg_i16: val->i16 = master->get<uint16_t>(req->id, req->reg, req->subreg); break;
-				case canopen_xchg_u32: val->u32 = master->get< int32_t>(req->id, req->reg, req->subreg); break;
-				case canopen_xchg_i32: val->i32 = master->get<uint32_t>(req->id, req->reg, req->subreg); break;
-				case canopen_xchg_u64: val->u64 = master->get< int64_t>(req->id, req->reg, req->subreg); break;
-				case canopen_xchg_i64: val->i64 = master->get<uint64_t>(req->id, req->reg, req->subreg); break;
+				case canopen_xchg_u8:  val->u8  = csobj.Read<  int8_t>(); break;
+				case canopen_xchg_i8:  val->i8  = csobj.Read< uint8_t>(); break;
+				case canopen_xchg_u16: val->u16 = csobj.Read< int16_t>(); break;
+				case canopen_xchg_i16: val->i16 = csobj.Read<uint16_t>(); break;
+				case canopen_xchg_u32: val->u32 = csobj.Read< int32_t>(); break;
+				case canopen_xchg_i32: val->i32 = csobj.Read<uint32_t>(); break;
+				case canopen_xchg_u64: val->u64 = csobj.Read< int64_t>(); break;
+				case canopen_xchg_i64: val->i64 = csobj.Read<uint64_t>(); break;
 				}
 			}
 			afb_data_notify_changed(dval);
