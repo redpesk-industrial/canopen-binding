@@ -516,7 +516,7 @@ class coConfig
 			}
 		}
 		else {
-			rc = afb_req_param_convert(request, 0, canopen_xchg_v1_value_type, &dval);
+			rc = afb_req_param_convert(request, 1, canopen_xchg_v1_value_type, &dval);
 			if (rc < 0) {
 				AFB_REQ_ERROR(request, "invalid second parameter type");
 				goto inval;
