@@ -72,7 +72,7 @@ static bool read_config(afb_api_t api, json_object *obj, master_config &config)
 	}
 
 	intval = 0;
-	get(api, obj, "index", intval);
+	get(api, obj, "index", intval, false);
 	if (intval >= 0 && intval <= 255)
 		config.index = (uint8_t)intval;
 
