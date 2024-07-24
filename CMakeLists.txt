@@ -27,7 +27,7 @@ cmake_minimum_required(VERSION 3.15)
 # Project Info
 # ------------------
 project(canopen-binding
-	VERSION 2.0.3
+	VERSION 2.1.0
 	DESCRIPTION "Provide a redpesk CANopen Binding"
 	HOMEPAGE_URL "https://github.com/iotbzh/CANopen-service"
 	LANGUAGES CXX C)
