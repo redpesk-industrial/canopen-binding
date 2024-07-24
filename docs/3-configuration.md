@@ -163,7 +163,9 @@ A master DCF generator (among others DCF tools) is available in liblely : [dcfge
 
 The generation can be done at build time if the yml configuration file and the slaves DCF files are stored in a directory named identically to the json configuration file.
 
-for example example :
+The tool `dcfgen` has an important option: the option `--remote-pdo` (alias `-r`) that will generate configuration for the master to map the PDO objects of slaves. This might be important for providing mapping of slave's PDO objects.
+
+For example :
 
 ```bash
 project/
@@ -198,3 +200,4 @@ package/etc/
 │   └── my_slave.bin
 └── canopen-kingpigeonM150-config.json
 ```
+

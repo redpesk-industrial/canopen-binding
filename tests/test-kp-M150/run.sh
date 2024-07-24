@@ -31,4 +31,5 @@ export PATH=$B/bin:$PATH
 set -x
 
 export CANOPENPATH=$(realpath $H/../../build/src/plugins/kingpigeon):.
-$p afb-binder -M -F -vvvv --rootdir=$A -b $A/lib/CANopen.so:canopen-kingpigeonM150-config.json $e
+e='-b /home/jobol/.locenv/canopen/redpesk/demex-canopen/lib/demexco.so --tracereq=common'
+$p afb-binder -M -F -v --rootdir=$A -b $A/lib/CANopen.so:canopen-kingpigeonM150-config.json $e
