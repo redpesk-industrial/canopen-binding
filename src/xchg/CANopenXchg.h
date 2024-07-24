@@ -48,12 +48,12 @@ extern "C" {
 typedef
 struct canopen_xchg_v1_req_s
 {
-	uint8_t  itf;
-	uint8_t  id;
-	uint16_t reg;
-	uint8_t  subreg;
-	uint8_t  type;
-	uint8_t  tpdo;
+	uint8_t  itf;      /* index of the interface */
+	uint8_t  id;       /* slave id or 0 for master SDO */
+	uint16_t reg;      /* register index of the PDO mapped value */
+	uint8_t  subreg;   /* sub-register index of the PDO mapped value */
+	uint8_t  type;     /* type of the value (see canopen_xchg_(i|u)(8|16|32|64))*/
+	uint8_t  tpdo;     /* boolean telling if TPDO (otherwise RPDO) */
 }
 	canopen_xchg_v1_req_t;
 

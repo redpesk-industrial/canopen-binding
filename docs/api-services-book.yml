@@ -16,3 +16,5 @@ books:
       name: Configuration
     - url: 4-running_and_testing.md
       name: Running and Testing
+    - url: 5-binary-interface.md
+      name: Using binary interface
