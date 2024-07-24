@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <regex>
+#include <system_error>
 
 #include <rp-utils/rp-jsonc.h>
 #include <rp-utils/rp-path-search.h>
@@ -521,7 +522,7 @@ class coConfig
 				AFB_REQ_ERROR(request, "invalid second parameter type");
 				goto inval;
 			}
-			rc = afb_data_get_mutable(dreq, (void**)&arr_val, &size);
+			rc = afb_data_get_mutable(dval, (void**)&arr_val, &size);
 			if (rc < 0 || arr_val == NULL || size != count * sizeof *arr_val) {
 				AFB_REQ_ERROR(request, "invalid second parameter value");
 				goto inval;
@@ -534,22 +535,32 @@ class coConfig
 			canopen_xchg_v1_req_t *req = arr_req;
 			canopen_xchg_v1_value_t *val = arr_val;
 			for (idx = 0 ; idx < count ; idx++, req++, val++) {
-				AFB_REQ_DEBUG(request, "getting itf %d id %d reg %d.%d", (int)req->itf, (int)req->id, (int)req->reg, (int)req->subreg);
-				using ConstSubObject = lely::canopen::BasicMaster::ConstSubObject;
+				val->u64 = 0;
 				CANopenMaster *master = masters_[req->itf];
-				ConstSubObject csobj =
-					req->tpdo ? master->tpdo(req->id, req->reg, req->subreg)
-					          : master->rpdo(req->id, req->reg, req->subreg);
-				switch(req->type) {
-				case canopen_xchg_u8:  val->u8  = csobj.Read<  int8_t>(); break;
-				case canopen_xchg_i8:  val->i8  = csobj.Read< uint8_t>(); break;
-				case canopen_xchg_u16: val->u16 = csobj.Read< int16_t>(); break;
-				case canopen_xchg_i16: val->i16 = csobj.Read<uint16_t>(); break;
-				case canopen_xchg_u32: val->u32 = csobj.Read< int32_t>(); break;
-				case canopen_xchg_i32: val->i32 = csobj.Read<uint32_t>(); break;
-				case canopen_xchg_u64: val->u64 = csobj.Read< int64_t>(); break;
-				case canopen_xchg_i64: val->i64 = csobj.Read<uint64_t>(); break;
+				if (master != nullptr) {
+					std::error_code ec;
+					using ConstSubObject = lely::canopen::BasicMaster::ConstSubObject;
+					ConstSubObject csobj =
+						req->tpdo ? master->tpdo(req->id, req->reg, req->subreg)
+							: master->rpdo(req->id, req->reg, req->subreg);
+					switch(req->type) {
+					case canopen_xchg_u8:  val->u8  = csobj.Read<  int8_t>(ec); break;
+					case canopen_xchg_i8:  val->i8  = csobj.Read< uint8_t>(ec); break;
+					case canopen_xchg_u16: val->u16 = csobj.Read< int16_t>(ec); break;
+					case canopen_xchg_i16: val->i16 = csobj.Read<uint16_t>(ec); break;
+					case canopen_xchg_u32: val->u32 = csobj.Read< int32_t>(ec); break;
+					case canopen_xchg_i32: val->i32 = csobj.Read<uint32_t>(ec); break;
+					case canopen_xchg_u64: val->u64 = csobj.Read< int64_t>(ec); break;
+					case canopen_xchg_i64: val->i64 = csobj.Read<uint64_t>(ec); break;
+					}
+					if (ec)
+						AFB_REQ_ERROR(request,
+							"can't get (itf %d id %d reg %d.%d): %s",
+							(int)req->itf, (int)req->id, (int)req->reg, (int)req->subreg,
+							ec.message().c_str());
 				}
+				AFB_REQ_DEBUG(request, "idx%u getting itf %d id %d reg %d.%d %llx",
+					idx, (int)req->itf, (int)req->id, (int)req->reg, (int)req->subreg, (long long)val->i64);
 			}
 			afb_data_notify_changed(dval);
 			return afb_req_reply(request, 0, 1, &dval);
