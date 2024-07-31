@@ -87,10 +87,10 @@ struct CANopenEncodeCbS
 };
 
 // type definition for encode callback
-typedef COdataType (*coEncodeCB)(json_object *dataJ, CANopenSensor *sensor) noexcept;
+typedef COdataType (*coEncodeCB)(json_object *dataJ, CANopenSensor *sensor);
 
 // type definition for decode callback
-typedef json_object *(*coDecodeCB)(COdataType data, CANopenSensor *sensor) noexcept;
+typedef json_object *(*coDecodeCB)(COdataType data, CANopenSensor *sensor);
 
 class CANopenEncoder
 {
