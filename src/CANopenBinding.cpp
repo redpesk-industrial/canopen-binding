@@ -84,7 +84,7 @@ class coConfig
 		, config_{json_object_get(config)}
 		, exec_{rootapi}
 		, masters_{exec_}
-		{}
+		{ memset(&metadata_,0,sizeof metadata_); }
 
 	/// destructor
 	~coConfig() {
