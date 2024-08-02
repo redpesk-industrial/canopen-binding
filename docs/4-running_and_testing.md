@@ -58,7 +58,7 @@ install `afb-client`
 
 run it :
 
-``` bash
+```bash
 afb-client --human 'ws://localhost:1234/api'
 # you can now send requests with the following syntax : <api> <verb> [eventual data in json format]
 # here are some available examples for canopen binding :
@@ -71,6 +71,13 @@ canopen slave2/DIN01 {"action":"subscribe"}         # Subscribe to digital 01
 ```
 
 for more option use `afb-client --help`
+
+## Running python tests
+
+The systeme used with the Kingpigeon M150 to check if analogs inputs and digitals outputs are handled correctly look like this :
+
+![img](images/system-test-kpM150.jpg)
+
 
 ## Adding your own config
 
