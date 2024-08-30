@@ -41,5 +41,5 @@ int canopen_xchg_init()
 		if (rc < 0)
 			rc = afb_type_register(&canopen_xchg_v1_value_type, canopen_xchg_v1_value_typename, 0);
 	}
-	return rc;
+	return rc < 0 ? rc : 0;
 }
