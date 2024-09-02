@@ -43,7 +43,7 @@ struct sensor_config
 	const char *format = NULL;
 	int size = 0;
 	const char *info = NULL;
-	const char *privilege = NULL;
+	const char *permission = NULL;
 	json_object *args = NULL;
 	json_object *sample = NULL;
 };
@@ -65,6 +65,9 @@ static bool read_config(afb_api_t api, json_object *obj, sensor_config &config)
 		ok = false;
 
 	if (!get(api, obj, "size", config.size))
+		ok = false;
+
+	if (!get(api, obj, "privilege", config.permission, false))
 		ok = false;
 
 	if (!get(api, obj, "info", config.info, false))
@@ -122,11 +125,11 @@ CANopenSensor::CANopenSensor(CANopenSlaveDriver &driver, json_object *sensorJ)
 	m_id = CANopenSensorId((uint32_t)idx);
 
 	// create autentification for sensor
-	if (config.privilege)
+	if (config.permission)
 	{
 		authent = &m_auth;
 		m_auth.type = afb_auth_Permission;
-		m_auth.text = config.privilege;
+		m_auth.text = config.permission;
 	}
 
 	// load Encoder
@@ -240,7 +243,7 @@ void CANopenSensor::request(afb_req_t request, unsigned nparams, afb_data_t cons
 	// process write
 	else if (act == Write)
 	{
-		// synchronous read
+		// synchronous write
 		try {
 			err = write(dataJ);
 			if (err)
