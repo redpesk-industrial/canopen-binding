@@ -601,8 +601,6 @@ const coConfig::sverbdsc coConfig::common_verbs[6] = {
 	{ .name = "get", .info = "get a set of value", .callback = coConfig::_get_ },
 };
 
-coConfig *last_global_coconfig;
-
 // main entry is called right after binding is loaded with dlopen
 extern "C"
 int afbBindingEntry(afb_api_t rootapi, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *closure)
@@ -619,8 +617,6 @@ int afbBindingEntry(afb_api_t rootapi, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, v
 		AFB_API_ERROR(rootapi, "Out of memory");
 		return -1;
 	}
-
-last_global_coconfig=config;
 
 	// initialize now
 	int rc = config->init();
