@@ -14,7 +14,7 @@ books:
       name: Installation Guide
     - url: 3-configuration.md
       name: Configuration
-    - url: 4-dcf-lely
+    - url: 4-dcf-lely.md
       name: Using DCF and liblely tools
     - url: 5-running_and_testing.md
       name: Running and Testing
@@ -22,5 +22,5 @@ books:
       name: API of CANopen binding
     - url: 7-binary-interface.md
       name: Using binary interface
-    - url: 8-usign-dcf2afb.md
+    - url: 8-using-dcf2afb.md
       name: Using dcf2afb converter tool
