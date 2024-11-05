@@ -6,6 +6,10 @@ description: @PROJECT_DESCRIPTION@
 author: @PROJECT_AUTHOR@ <@PROJECT_AUTHOR_MAIL@>
 license: @PROJECT_LICENSE@
 
+provided-binding:
+  - name:  canopen
+    value: lib/CANopen.so
+
 file-properties:
   - name: lib/CANopen.so
     value: public
@@ -17,6 +21,3 @@ targets:
       type: application/vnd.redpesk.resource
     required-permission:
       - urn:AGL:permission::partner:scope-platform
-    provided-binding:
-      - name:  canopen
-        value: lib/CANopen.so
