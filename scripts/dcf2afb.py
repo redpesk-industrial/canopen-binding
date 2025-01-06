@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (C) 2015-2024 IoT.bzh Company
+# Copyright (C) 2015-2025 IoT.bzh Company
 # SPDX-License-Identifier: 0BSD
 #
 # This program extract from a DCF file the declarations needed
