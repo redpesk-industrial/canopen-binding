@@ -79,19 +79,3 @@ The systeme used with the Kingpigeon M150 to check if analogs inputs and digital
 ![img](images/system-test-kpM150.jpg)
 
 
-## Adding your own config
-
-Json config file is selected from `afb-binder --name=afb-midlename-xxx` option. This allows you to switch from one json config to an other without editing any file. `middlename` is used to select a specific config. As example `--name='afb-kpM15-config'` will select `canopen-kpM150-myconfig.json`.
-
-You may also choose to force your config file by exporting CONTROL_CONFIG_PATH environnement variable. For further information, check AGL controller documentation [here]({% chapter_link libappcontroller-guides.controller-configuration %})
-
-```bash
-# for exemple :
-# $HOME
-# └── my-config
-#     ├── canopen-myconfig-config.json
-#     └── my-master.dcf
-
-export CONTROL_CONFIG_PATH="$HOME/my-config"
-afb-binder --name=afb-myconfig --port=1234  --binding=src/lib/afb-CANopen.so --verbose
-```
