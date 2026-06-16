@@ -1,72 +1,22 @@
 # Installation
 
-## Easy install
+## From package
 
-This binding is available in the redpesk repo, so if you are running
-on one of the supported Linux distros you can install it with your
-package manager :
+You can run the same command on a target runing a redpesk OS or in the [SDK container]({% chapter_link sdk-container-doc.overview %}) (development mode).
 
-* Declare redpesk repository:
-  [(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
-
-* Install the binding :
-
-    ``` bash
-    # Fedora / redpesk :
-    sudo dnf install canopen-binding
-
-    # Ubuntu / Debian :
-    sudo apt install canopen-binding
-
-    # OpenSUSE :
-    sudo zypper install canopen-binding
-    ```
-
-## Install from sources
-
-### Dependencies
-
-* redpesk binding development files 'afb-binding-dev' or 'afb-binding-devel'
-* redpesk helpers 'afb-helpers4-static'
-* lely-core CANopen library
-* for running, redpesk application framework 'afb-binder'
-
-> Note: _use *-dev or *-devel packages if available_
-
-#### redpesk dependencies
-
-Add redpesk repositories and install the Application Framework
-[(see doc)]({% chapter_link host-configuration-doc.setup-your-build-host %})
-
-Install Programs and Libraries you need
-[(see doc)]({% chapter_link host-configuration-doc.getting-your-source-files %})
-
-#### CANopen lib dependencies
-
-Warning : this binding uses a specific version of liblely please use the one specified below
-
-* Compile and Install lely-core CANopen library (preferred version 2.3.3):
-
-``` bash
-curl https://gitlab.com/lely_industries/lely-core/-/archive/v2.3.3/lely-core-v2.3.3.tar.gz
-tar xf lely-core-v2.3.3.tar.gz
-cd lely-core-v2.3.3
-autoreconf -i
-./configure --disable-python --disable-threads --prefix=$HOME/.local
-make -j install
+```bash
+dnf install canopen-binding
 ```
 
-or from git
+## From sources
 
-``` bash
-git clone https://gitlab.com/lely_industries/lely-core.git
-cd liblely
-autoreconf -i
-./configure --disable-python --disable-threads --prefix=$HOME/.local
-make -j install
+When developing inside the SDK container, to install the build dependencies, run the following command:
+
+```bash
+dnf builddep canopen-binding
 ```
 
-### CANopen Binding build
+Then clone and build from sources.
 
 ```bash
 git clone https://github.com/redpesk-industrial/canopen-binding.git
@@ -77,3 +27,5 @@ export PKG_CONFIG_PATH=$HOME/.local/lib64/pkgconfig:$HOME/.local/lib/pkgconfig:$
 cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local
 make
 ```
+
+> Note: To rebuild all (including application framework) from sources, please refer to this [chapter]({% chapter_link host-build-doc.build-framework-on-your-computer %}).
